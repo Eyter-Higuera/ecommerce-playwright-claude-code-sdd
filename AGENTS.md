@@ -3,7 +3,7 @@
 ## Project
 Test automation framework for a third-party demo e-commerce web application, built with
 Spec-Driven Development (SDD). Playwright + TypeScript for API, integration and UI tests
-(Page Object Model), Vitest for unit tests of framework code, GitHub Actions pipeline promoting
+(Page Object Model), Vitest for unit tests of framework code, GitLab CI/CD pipeline promoting
 `eyter_dev → release → main → production`.
 
 ## Commands

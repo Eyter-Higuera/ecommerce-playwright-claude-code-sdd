@@ -2,7 +2,7 @@
 
 ## 1. Objective
 Verify the critical shopping workflows of the target e-commerce web application (a third-party
-demo site) through automated unit, API, integration and UI tests, executed in a GitHub Actions
+demo site) through automated unit, API, integration and UI tests, executed in a GitLab CI/CD
 pipeline that gates promotion `eyter_dev → release → main → production`.
 
 ## 2. Scope
@@ -44,7 +44,7 @@ Suites are selected with `--grep`. Browsers: chromium, firefox, webkit, msedge, 
 | `release` | full regression on all browsers |
 | `main` | smoke on all browsers → production deploy (publish validated framework + report) |
 
-Manual runs: `workflow_dispatch` with inputs branch, suite (smoke/regression) and browser.
+Manual runs: "Run pipeline" (web trigger) with CI/CD variables SUITE (smoke/regression) and BROWSER, on the selected branch.
 
 ## 7. Entry and exit criteria
 - **Entry:** spec in `test-cases-approved` status; environment reachable; secrets configured.
@@ -56,7 +56,7 @@ Manual runs: `workflow_dispatch` with inputs branch, suite (smoke/regression) an
 ## 8. Test data strategy
 - All created data uses the `TEST_` prefix; factories generate unique values per run.
 - Two fixed accounts (for authorization tests) + dynamically registered `TEST_` users.
-- Credentials only via `.env` (local, gitignored) and GitHub Secrets (CI).
+- Credentials only via `.env` (local, gitignored) and masked, protected GitLab CI/CD variables (CI).
 - Data created by a test is cleaned up in `afterEach`/`afterAll`.
 
 ## 9. Risks and mitigations
@@ -69,5 +69,5 @@ Manual runs: `workflow_dispatch` with inputs branch, suite (smoke/regression) an
 | Site layout changes | Role/label-based locators, Page Objects isolate changes |
 
 ## 10. Reporting
-Playwright HTML report and JUnit XML, traces/screenshots/videos on failure, GitHub job summary,
+Playwright HTML report and JUnit XML, traces/screenshots/videos on failure, GitLab JUnit test report in the merge request/pipeline view,
 artifacts retained in CI; traceability matrix in `docs/traceability.md`.
