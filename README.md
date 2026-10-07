@@ -2,7 +2,7 @@
 
 Test automation framework for an e-commerce web application, built with **Spec-Driven
 Development (SDD)** and Claude Code skills. Playwright + TypeScript for API, integration and UI
-tests; Vitest for unit tests; GitHub Actions for the promotion pipeline.
+tests; Vitest for unit tests; GitLab CI/CD for the promotion pipeline.
 
 ## SDD flow
 Constitution → Spec → Clarification → Test cases → Plan → Tasks → Implementation (one task at a
@@ -40,4 +40,4 @@ Prompts for every phase: [samples/prompts.md](samples/prompts.md).
 
 ## Setup
 Commands (install, test, lint) are added in Spec 000 — framework-foundation.
-Credentials go in a local `.env` (never committed) and in GitHub Secrets for CI.
+Credentials go in a local `.env` (never committed) and in masked, protected GitLab CI/CD variables for CI.
