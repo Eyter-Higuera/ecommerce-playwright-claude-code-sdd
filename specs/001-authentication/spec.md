@@ -1,6 +1,6 @@
 # Spec 001 — Authentication
 
-Status: implemented
+Status: validated
 <!-- Allowed values: draft | approved | test-cases-approved | implemented | validated -->
 Source: interview
 

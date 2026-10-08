@@ -1,6 +1,6 @@
 # Validation — Spec 001 Authentication
 
-Date: 2026-10-08 · Branch: eyter_dev · Commit: cdc94ba + uncommitted Spec 001 work
+Date: 2026-10-08 · Branch: eyter_dev · Commit: ce7e5e8
 Spec: specs/001-authentication/spec.md
 
 ## Requirement coverage
@@ -35,7 +35,7 @@ tests run on all three browsers). Unit results come from `npm run test:unit`.
 | RF-24 | TC-001-33, 34, 35 | tests/api/user-authorization.spec.ts › TC-001-33 user endpoint answers 200 with the login token, TC-001-34, TC-001-35 | PASS |
 | RF-25 | TC-001-34, 33, 36 | user-authorization.spec.ts › TC-001-34 user endpoint without Authorization answers 401, TC-001-36 | PASS |
 | RF-26 | TC-001-35, 36, 33 | user-authorization.spec.ts › TC-001-35 user endpoint with a tampered token answers 401, TC-001-36 user endpoint with a malformed token answers 401 | PASS |
-| RF-27 | TC-001-01, 02, 03, 37, 38, 39 | auth-form-login.spec.ts › TC-001-01 to 03 (`NO_TRACE`) · tests/unit/reporting/no-trace.test.ts › TC-001-37 tests typing a real password record no trace, even on retry, TC-001-38 other UI tests still record a trace on first retry · TC-001-39 manual | PASS (automated) · MANUAL pending (TC-001-39) |
+| RF-27 | TC-001-01, 02, 03, 37, 38, 39 | auth-form-login.spec.ts › TC-001-01 to 03 (`NO_TRACE`) · tests/unit/reporting/no-trace.test.ts › TC-001-37 tests typing a real password record no trace, even on retry, TC-001-38 other UI tests still record a trace on first retry · TC-001-39 manual | PASS (automated) · MANUAL PASS (TC-001-39) |
 | RF-28 | TC-001-40, 41 | tests/unit/security/wrong-password-limit.test.ts › TC-001-40 at most one wrong-password test targets a real account, TC-001-41 a second wrong-password test for a real account is flagged | PASS |
 
 All 28 RFs are covered. All 40 TCs marked `Automate: Y` have a test whose title starts with their
@@ -44,7 +44,7 @@ ID (spec:check: 0 warnings).
 ## Manual test cases (Automate: N)
 | Test case | Reason | Result |
 |-----------|--------|--------|
-| TC-001-39 auth suite artifacts pass the secrets scan in the pipeline | Enforced by the CI check:secrets jobs (Spec 000 RF-58); observed on a pipeline that ran the auth suite | NOT RUN: the Spec 001 work is not committed, so no pipeline has run it yet. Local equivalent: `npm run check:secrets` passed after each of the three local runs (api + chromium, firefox, webkit) |
+| TC-001-39 auth suite artifacts pass the secrets scan in the pipeline | Enforced by the CI check:secrets jobs (Spec 000 RF-58); observed on a pipeline that ran the auth suite | PASS (2026-10-08, commit ce7e5e8): `check-secrets-api` and `check-secrets-ui-chromium` (eyter_dev pipeline 2926407382), `check-secrets-release` after the full regression (release pipeline 2926427722), `check-secrets-main` and `check-secrets-production` all passed with "no sensitive value in 4 file(s)" |
 
 ## Quality gates
 | Gate | Result | Notes |
@@ -55,6 +55,7 @@ ID (spec:check: 0 warnings).
 | `npm run lint` | PASS | 0 errors, 0 warnings |
 | `npm run typecheck` | PASS | |
 | `npm run spec:check` | PASS | 2 specs, 0 warnings; docs/traceability.md regenerated (258 rows, 0 missing) |
+| CI pipelines for ce7e5e8 | PASS | eyter_dev 2926407382: 9/9 jobs · release 2926427722: 7/7, `release-regression` 90 passed (Spec 000 + Spec 001 on api, chromium, firefox, webkit), 0 flaky · main 2926467850: 7/7 · production 2926485573: 6/6. Automatic promotion merged each stage |
 | Test review checklist | PASS | Applied per task (T1 to T16) to every changed test, page object, fixture and client; findings were fixed (TC-001-09 AAA structure, two `no-conditional-in-test` warnings in TC-001-11) |
 
 ## Done criteria
@@ -62,14 +63,10 @@ ID (spec:check: 0 warnings).
 - [x] All automated TCs are green on chromium and in the `api` project, and the UI TCs are green on firefox and webkit.
 - [x] test-reviewer PASS.
 - [x] `npm run lint`, `npm run typecheck`, `npm run spec:check` and `npm run check:secrets` PASS.
-- [ ] The pipeline on `eyter_dev` is green. Not run: the Spec 001 work is uncommitted.
-- [ ] User validation.
+- [x] The pipeline on `eyter_dev` is green (2926407382, 9/9 jobs; the chain continued green up to production).
+- [x] User validation (confirmed by the user on 2026-10-08).
 
 ## Issues found
-- **Pipeline not run (Done criterion open; TC-001-39 NOT RUN).** Closing both requires a commit
-  and push to `eyter_dev`. That push also promotes automatically through release, main and
-  production when every gate passes. The release gate runs the full regression, including these
-  80 Spec 001 tests.
 - **Local resource limits (environment, not a defect).** Running all four projects in one local
   invocation crashed workers and browsers ("worker process exited unexpectedly", "Page crashed").
   Every affected test passed when re-run. CI runs each gate in its own job.
@@ -83,9 +80,8 @@ ID (spec:check: 0 warnings).
   `[NEEDS CLARIFICATION]`.
 
 ## Verdict
-The spec IS NOT yet fulfilled. Every local check passes: 80/80 Playwright tests on api,
-chromium, firefox and webkit, 100/100 unit tests, lint, typecheck, spec:check and check:secrets.
-Two Done criteria remain open:
-- a green `eyter_dev` pipeline, which also records TC-001-39;
-- user validation.
-Both depend on committing and pushing the Spec 001 work.
+The spec IS fulfilled and was confirmed as validated by the user on 2026-10-08. Locally: 80/80 Playwright tests on api,
+chromium, firefox and webkit, and 100/100 unit tests; lint, typecheck, spec:check and
+check:secrets all pass. In CI, commit ce7e5e8 went green through eyter_dev, release (full
+regression, 90 passed), main and production, and every check:secrets job passed (TC-001-39). The
+user validated it.

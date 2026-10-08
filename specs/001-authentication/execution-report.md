@@ -73,3 +73,6 @@ Legend: ✅ = passed · ❌ = failed
 | `npm run test:unit` | 100 passed · 0 failed (TC-000-20 updated, Mode C on Spec 000) | ✅ | |
 | `npm run spec:check -- --write` | Passed; docs/traceability.md 258 rows, 0 missing | ✅ | |
 | README.md | Account recovery, secrets in the browser, Windows grep patterns | ✅ | |
+| **Validation (2026-10-08)** | Local re-run and pipelines for commit ce7e5e8 | ✅ | |
+| Local Playwright TC-001 suite | api + chromium 36 · firefox 22 · webkit 22 → 80 passed; check:secrets PASS after each run | ✅ | |
+| CI eyter_dev 2926407382 → release 2926427722 → main 2926467850 → production 2926485573 | All jobs green; release-regression 90 passed, 0 flaky; every check:secrets job passed (TC-001-39) | ✅ | |
