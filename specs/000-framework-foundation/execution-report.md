@@ -160,7 +160,8 @@ Legend: ✅ = passed · ❌ = failed
 | README.md | Setup (npm ci, .env), commands table, reports, account A recovery, `CI=true` locally, Windows/Volta note, CI/CD summary | ✅ | |
 | docs/traceability.md | Regenerated: 140 rows (TC × RF), 67 RFs, 126 automated, 14 manual, 0 missing | ✅ | |
 | **Fix after pipeline #2924882205** | unit job failed in CI: TC-000-41 could not find browsers (PLAYWRIGHT_BROWSERS_PATH not passed to child processes) | | ❌ |
-| tests/unit/helpers/run-cli.ts | PLAYWRIGHT_BROWSERS_PATH added to the child-process allowlist; verified locally (83 passed) — pending re-run in CI | ✅ | |
+| tests/unit/helpers/run-cli.ts | PLAYWRIGHT_BROWSERS_PATH added to the child-process allowlist; verified locally and in CI pipeline #2924894818 (unit 83/83) | ✅ | |
+| **CI pipeline #2924894818 (eyter_dev, 626998f)** | All 8 jobs green: spec-check, lint, typecheck, unit (83/83), smoke-api (1/1), smoke-ui-chromium (1/1), check-secrets-api, check-secrets-ui-chromium; Tests tab 2/2; Flaky tests: 0 | ✅ | |
 
 ## Last full run
 | Command | Result | Passed | Failed |
