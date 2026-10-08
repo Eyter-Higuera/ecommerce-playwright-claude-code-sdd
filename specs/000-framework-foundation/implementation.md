@@ -1301,3 +1301,17 @@ RF-69 to RF-77 · TC-000-86, 87, 97 to 110
   variable was fixed; the gate tests were given explicit Arrange / Act / Assert blocks.
 - Not yet run: TC-000-109 and TC-000-110 (manual, live pipelines). They need `PROMOTION_TOKEN`
   and the user's approval to push.
+
+## Change after validation: TC-000-20 no longer fixes the smoke inventory
+
+Date: 2026-10-08 · Spec change: Mode C approved by the user during Spec 001 T16 · RF-12 · TC-000-20
+
+- Cause: TC-000-20 expected `--grep @smoke` to list exactly TC-000-76 and TC-000-80. Spec 001 adds
+  its own approved smoke tests (TC-001-01, TC-001-33), so the test failed although RF-12 ("execute
+  only tests tagged `@smoke`") still held.
+- test-cases.md: the TC-000-20 expected result is now "Every listed test is tagged `@smoke`; the
+  UI and API sanity tests are listed; mocked tests are excluded".
+- tests/unit/playwright/projects.test.ts: TC-000-20 reads the tags from `--list --reporter=json`
+  (the plain `--list` output has no tags). It asserts that every listed test carries `smoke`, that
+  both sanity tests are present, and that the mocked tests are absent.
+- `npm run test:unit` → 100 passed, 0 failed.

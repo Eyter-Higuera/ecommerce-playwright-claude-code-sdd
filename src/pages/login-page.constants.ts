@@ -7,3 +7,12 @@ export const LOGIN_FORM = {
   PASSWORD_INPUT_NAME: 'enter your passsword',
   LOGIN_BUTTON_NAME: 'Login',
 } as const;
+
+// Messages of the login form named by Spec 001 (RF-4 to RF-7). The wrong-credentials toast is an
+// element with role `alert` whose accessible name is its text (verified live on 2026-10-08).
+export const LOGIN_MESSAGES = {
+  EMAIL_REQUIRED: '*Email is required',
+  PASSWORD_REQUIRED: '*Password is required',
+  VALID_EMAIL: '*Enter Valid Email',
+  INCORRECT_CREDENTIALS: 'Incorrect email or password.',
+} as const;

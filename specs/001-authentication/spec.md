@@ -1,6 +1,6 @@
 # Spec 001 — Authentication
 
-Status: test-cases-approved
+Status: implemented
 <!-- Allowed values: draft | approved | test-cases-approved | implemented | validated -->
 Source: interview
 
@@ -36,7 +36,7 @@ EARS requirements are the source of truth.
 | API login | RF-13 to RF-19 | 200 with `token`, `userId`, "Login Successfully"; 400 for wrong credentials, missing password, missing email, injection-style input, over-long values, untrimmed or differently cased email | TC-001-17 API login with account A returns token, userId and message<br>TC-001-18 API login with account B returns token, userId and message<br>TC-001-19 API login with a wrong password for account A is rejected<br>TC-001-20 API login with an unknown account is rejected<br>TC-001-21 API login without userPassword is rejected<br>TC-001-22 API login without userEmail is rejected<br>TC-001-23 API login with empty-string fields is rejected<br>TC-001-24 API login with injection-style input returns 4xx and no token<br>TC-001-25 API login with over-long values returns 4xx and no token<br>TC-001-26 API login with an untrimmed or differently cased email is rejected |
 | Session | RF-20 to RF-23 | Reload keeps the session; Sign Out goes to login; Back after Sign Out stays on login; dashboard without a session redirects to login | TC-001-05 login page without a session shows no Sign Out<br>TC-001-27 reloading the dashboard keeps the session<br>TC-001-28 Sign Out navigates to the login page<br>TC-001-29 Back after Sign Out stays on the login page<br>TC-001-30 Back while logged in returns to the dashboard<br>TC-001-31 dashboard without a session redirects to the login page<br>TC-001-32 removing the stored session sends the customer to login on reload |
 | API authorization | RF-24 to RF-26 | User endpoint: 200 with token, 401 without token, 401 "Session Timeout" with a tampered token | TC-001-33 user endpoint answers 200 with the login token<br>TC-001-34 user endpoint without Authorization answers 401<br>TC-001-35 user endpoint with a tampered token answers 401<br>TC-001-36 user endpoint with a malformed token answers 401 |
-| Test-framework constraints | RF-27 to RF-28 | No real password in any trace, report or attachment; at most one wrong-password login for a real account per run | TC-001-01 login form with account A opens the dashboard<br>TC-001-02 login form with account B opens the dashboard<br>TC-001-03 keyboard-only login with account B<br>TC-001-37 tests typing a real password record no trace, even on retry<br>TC-001-38 other UI tests still record a trace on first retry<br>TC-001-39 auth suite artifacts pass the secrets scan in the pipeline (manual)<br>TC-001-40 at most one wrong-password test targets a real account<br>TC-001-41 a second wrong-password test for a real account is flagged |
+| Test-framework constraints | RF-27 to RF-28 | No real password or auth token in any trace, report or attachment; at most one wrong-password login for a real account per run | TC-001-01 login form with account A opens the dashboard<br>TC-001-02 login form with account B opens the dashboard<br>TC-001-03 keyboard-only login with account B<br>TC-001-37 tests typing a real password record no trace, even on retry<br>TC-001-38 other UI tests still record a trace on first retry<br>TC-001-39 auth suite artifacts pass the secrets scan in the pipeline (manual)<br>TC-001-40 at most one wrong-password test targets a real account<br>TC-001-41 a second wrong-password test for a real account is flagged |
 
 ## Functional requirements (acceptance criteria in EARS)
 
@@ -84,7 +84,7 @@ header carries the token exactly as returned by the login, with no `Bearer` pref
 - RF-26: IF the protected user endpoint is called with a tampered token (a valid token whose last 4 characters are replaced), THEN THE SYSTEM SHALL answer HTTP 401 with the message "Session Timeout". Source: interview Q4; review 1.9 (observed)
 
 ### Test-framework constraints
-- RF-27: WHEN an authentication test run finishes, THE SYSTEM SHALL leave no TEST_USER_* password in its traces, reports or attachments, as verified by `npm run check:secrets`. Tests that type a real password into the browser therefore record no trace, retries included. This is an explicit exception to Spec 000 RF-49 for those tests. Source: interview Q3; review A-2, C-2
+- RF-27: WHEN an authentication test run finishes, THE SYSTEM SHALL leave no TEST_USER_* password or auth token in its traces, reports or attachments, as verified by `npm run check:secrets`. Tests that type a real password or hold an auth token in the browser therefore record no trace, retries included. This is an explicit exception to Spec 000 RF-49 for those tests. Source: interview Q3; review A-2, C-2; plan D-3
 - RF-28: THE SYSTEM SHALL send at most one login with a wrong password for test account A per Playwright invocation, retries included, and none for test account B. Source: interview Q5, Q6; review A-1
 
 ## Non-functional requirements
@@ -141,3 +141,4 @@ None.
 5. A wrong password on a real account is allowed in a limited way. Other negative cases use unknown `TEST_` emails (interview Q5).
 6. Account B is used for successful logins only (interview Q6).
 7. Spec review 1 (senior QA, 2026-10-08): 39 findings, all resolved with proposals A-1 to A-4, B, C-1 to C-4, D and E, approved by the user. A live probe resolved the RF-11 and whitespace questions. The protected endpoint changed from `product/get-all-products` to the user-scoped `user/get-cart-count/{userId}`.
+8. Plan review (2026-10-08, Mode C approved by the user with plan decision D-3): the shop sends the auth token in its API calls, so a trace of a logged-in UI test would contain it and fail `check:secrets` (Spec 000 RF-23). RF-27 now also covers tests that hold an auth token in the browser.

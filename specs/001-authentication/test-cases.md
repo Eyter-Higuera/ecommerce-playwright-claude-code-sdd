@@ -11,7 +11,8 @@ Source spec: specs/001-authentication/spec.md · Ticket: N/A · Status: approved
 - Smoke: 2 TCs (5%), all P1.
 - Real accounts:
   - Only TC-001-01, TC-001-02, TC-001-03 type a real password into the browser (no trace, RF-27).
-  - Every other UI test gets its session through the API.
+  - Every other UI test gets its session through the API. Tests holding that token in the browser
+    also record no trace (RF-27, plan D-3).
   - The single wrong-password login for account A is TC-001-19, which runs once with retries 0 (RF-28).
   - Account B is used only for successful logins.
 
@@ -92,9 +93,9 @@ Source spec: specs/001-authentication/spec.md · Ticket: N/A · Status: approved
 | Tags            | @regression @ui |
 | Browsers        | chromium, firefox, webkit (msedge on explicit local request) |
 | Preconditions   | Logged out; on the login route |
-| Test data       | Account B from env; only Tab, typing and Enter |
+| Test data       | Account B from env; no pointer action: the email is typed, Tab moves the focus to the password, the password is set without key events (plan D-9: typed text would appear in report step titles, RF-27) and Enter submits |
 | Steps           | **Given** the login page and no mouse use **When** the fields are reached with Tab and the form is submitted with Enter **Then** the login works without a pointer |
-| Expected result | URL contains `#/dashboard`; "Sign Out" button visible |
+| Expected result | After Tab the password field has the focus; URL contains `#/dashboard`; "Sign Out" button visible |
 | Automate        | Y |
 
 ### TC-001-04 — API-established session shows Sign Out on the dashboard

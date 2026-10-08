@@ -414,7 +414,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Valid URL placeholders |
 | Test data       | `--list --grep @smoke` |
 | Steps           | **Given** smoke and non-smoke (`@mocked`) tests exist **When** Playwright lists with `--grep @smoke` **Then** only smoke tests appear |
-| Expected result | Only the UI and API sanity tests are listed; mocked tests are excluded |
+| Expected result | Every listed test is tagged `@smoke`; the UI and API sanity tests are listed; mocked tests are excluded |
 | Automate        | Y |
 
 ### TC-000-21 — --grep with an unused tag finds no tests

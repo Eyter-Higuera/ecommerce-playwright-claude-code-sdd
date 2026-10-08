@@ -1,10 +1,14 @@
 import { buildAuthLoginUrl } from '../config/urls';
 import { API_TIMEOUT_MS } from '../config/timeouts';
+import { loginSessionFailedMessage } from '../errors/messages';
+import { HTTP_STATUS, toApiResult, type ApiResult } from './api-result';
 import { assertLoginResponse, classifyNetworkError, type LoginHttpResponse } from './login-response';
+import { authLoginSuccessSchema } from './schemas/auth-login.schema';
 
-// API client for the shop's authentication endpoint (Spec 000, RF-54 to RF-57). Tests call
-// `login()` and get a token or a precise failure; HTTP details stay here (constitution #3).
-// The request body is never logged or attached, because it holds a password (RF-26).
+// API client for the shop's authentication endpoint (Spec 000, RF-54 to RF-57; Spec 001, RF-13 to
+// RF-19). Tests call `login()` and get a token or a precise failure; HTTP details stay here
+// (constitution #3). The request body is never logged or attached, because it holds a password
+// (RF-26).
 
 /** The part of Playwright's APIRequestContext the client needs; a stub satisfies it in unit tests. */
 export interface LoginRequestContext {
@@ -14,6 +18,17 @@ export interface LoginRequestContext {
 export interface LoginCredentials {
   email: string;
   password: string;
+}
+
+/** Token and user id of a successful API login (Spec 001, RF-13). */
+export interface AuthSession {
+  token: string;
+  userId: string;
+}
+
+/** The request body the shop expects for credentials. */
+export function toLoginBody(credentials: LoginCredentials): { userEmail: string; userPassword: string } {
+  return { userEmail: credentials.email, userPassword: credentials.password };
 }
 
 export class AuthClient {
@@ -27,12 +42,26 @@ export class AuthClient {
     let response: LoginHttpResponse;
     try {
       response = await this.request.post(buildAuthLoginUrl(this.apiBaseUrl), {
-        data: { userEmail: credentials.email, userPassword: credentials.password },
+        data: toLoginBody(credentials),
         timeout: API_TIMEOUT_MS,
       });
     } catch (error) {
       throw classifyNetworkError(error, this.apiBaseUrl);
     }
     return assertLoginResponse(response);
+  }
+
+  /** Sends any body to the login endpoint and returns status and body without throwing (plan D-4). */
+  async postLogin(body: unknown): Promise<ApiResult> {
+    const response = await this.request.post(buildAuthLoginUrl(this.apiBaseUrl), { data: body, timeout: API_TIMEOUT_MS });
+    return toApiResult(response);
+  }
+
+  /** Logs in and returns `{ token, userId }`; throws naming only the status when the login fails. */
+  async loginSession(credentials: LoginCredentials): Promise<AuthSession> {
+    const result = await this.postLogin(toLoginBody(credentials));
+    const parsed = authLoginSuccessSchema.safeParse(result.json);
+    if (result.status !== HTTP_STATUS.OK || !parsed.success) throw new Error(loginSessionFailedMessage(result.status));
+    return { token: parsed.data.token, userId: parsed.data.userId };
   }
 }

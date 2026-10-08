@@ -11,6 +11,8 @@ const UI_SANITY_TEST = 'TC-000-76';
 const API_SANITY_TEST = 'TC-000-80';
 const MOCKED_TESTS = ['TC-000-78', 'TC-000-79'];
 const SUCCESS_EXIT_CODE = 0;
+// Tag names as the JSON reporter reports them (without the leading `@`).
+const SMOKE_TAG = 'smoke';
 const LISTED_LINE = /^\s*\[([^\]]+)\] › (.+)$/;
 // Several CLI runs in one test.
 const MANY_RUNS_TIMEOUT_MS = CLI_TEST_TIMEOUT_MS * 2;
@@ -29,7 +31,28 @@ function list(extraArgs: string[]): { result: CliResult; tests: ListedTest[] } {
   return { result, tests };
 }
 
-const projectsOf = (tests: ListedTest[]) => [...new Set(tests.map((test) => test.project))].sort();
+interface ListedSpec {
+  title: string;
+  tags: string[];
+}
+
+interface JsonSuite {
+  specs?: ListedSpec[];
+  suites?: JsonSuite[];
+}
+
+/** `--list --reporter=json`: the plain list output has no tags, the JSON report has them per test. */
+function listSpecsWithTags(extraArgs: string[]): ListedSpec[] {
+  const result = runPlaywright(['test', '--list', '--reporter=json', ...extraArgs], { env: VALID_URLS });
+  const report = JSON.parse(result.stdout) as { suites: JsonSuite[] };
+  const collect = (suite: JsonSuite): ListedSpec[] => [
+    ...(suite.specs ?? []).map(({ title, tags }) => ({ title, tags })),
+    ...(suite.suites ?? []).flatMap(collect),
+  ];
+  return report.suites.flatMap(collect);
+}
+
+const projectsOf =(tests: ListedTest[]) => [...new Set(tests.map((test) => test.project))].sort();
 const withId = (tests: ListedTest[], id: string) => tests.filter((test) => test.line.includes(` ${id} `));
 
 describe('Playwright projects — positive', () => {
@@ -64,12 +87,17 @@ describe('Playwright projects — positive', () => {
     const args = ['--grep', '@smoke'];
 
     // Act
-    const { tests } = list(args);
-    const ids = [...new Set(tests.map((test) => /TC-\d{3}-\d{2}/.exec(test.line)?.[0]))].sort();
+    const specs = listSpecsWithTags(args);
+    const notSmoke = specs.filter((spec) => !spec.tags.includes(SMOKE_TAG));
+    const titles = specs.map((spec) => spec.title);
 
-    // Assert: only the two sanity tests are selected; the mocked tests are excluded.
-    expect(ids).toEqual([UI_SANITY_TEST, API_SANITY_TEST]);
-    expect(MOCKED_TESTS.flatMap((id) => withId(tests, id))).toEqual([]);
+    // Assert: every selected test carries @smoke (later specs add their own smoke tests, so the
+    // set is not fixed); the two sanity tests are among them; the mocked tests are excluded.
+    expect(specs.length).toBeGreaterThan(0);
+    expect(notSmoke).toEqual([]);
+    expect(titles.some((title) => title.startsWith(`${UI_SANITY_TEST} `))).toBe(true);
+    expect(titles.some((title) => title.startsWith(`${API_SANITY_TEST} `))).toBe(true);
+    expect(titles.filter((title) => MOCKED_TESTS.some((id) => title.startsWith(`${id} `)))).toEqual([]);
   });
 
   it('TC-000-19 API tests run once, in the api project only', { timeout: CLI_TEST_TIMEOUT_MS }, () => {
