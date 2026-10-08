@@ -39,5 +39,47 @@ Status flow of a spec: `draft → approved → test-cases-approved → implement
 Prompts for every phase: [samples/prompts.md](samples/prompts.md).
 
 ## Setup
-Commands (install, test, lint) are added in Spec 000 — framework-foundation.
-Credentials go in a local `.env` (never committed) and in masked, protected GitLab CI/CD variables for CI.
+Requirements: Node 20 or later (in practice 20.19+, the minimum of ESLint 10 and Vite) and npm.
+
+```bash
+npm ci                  # installs dependencies and the chromium, firefox and webkit browsers
+cp .env.example .env    # then fill in the TEST_USER_* values (never commit .env)
+```
+
+Credentials go only in the local `.env` and, for CI, in masked, protected GitLab CI/CD variables.
+Process environment variables take precedence over `.env`.
+
+## Commands
+| Command | What it does |
+|---|---|
+| `npm run test:unit` | Vitest unit tests of the framework (no network, no variables needed) |
+| `npx playwright test --grep @smoke --project=api --project=chromium` | Sanity smoke tests against the demo site |
+| `npx playwright test` | All Playwright tests on `api`, chromium, firefox and webkit |
+| `npx playwright test --project=msedge` | UI tests on Microsoft Edge (local only, Edge must be installed) |
+| `npm run lint` / `npm run typecheck` | ESLint rules and TypeScript strict check |
+| `npm run spec:check` | SDD traceability gate; `npm run spec:check -- --write` regenerates `docs/traceability.md` |
+| `npm run check:secrets` | Scans `reports/`, `playwright-report/` and `test-results/` for passwords and tokens |
+| `npm run report:flaky` | Prints the number of flaky tests of the last run |
+
+Reports: HTML in `playwright-report/`, JUnit in `reports/junit.xml`, traces of first retries in
+`test-results/`.
+
+### Good to know
+- **`CI=true` set locally** makes the run behave like CI: 2 retries and `test.only` forbidden.
+  Unset it for normal local runs.
+- **Test account A locked or its password changed:** the shop is a shared public demo, so a
+  third party can change the account. The API smoke test then fails with "Login API returned
+  status <code> for the account in TEST_USER_EMAIL". To recover:
+  1. Register a new test account on the site, or reset the password.
+  2. Update `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` in `.env` and in the GitLab CI/CD
+     variables (masked and protected).
+- **Windows with Volta:** `npx` passes through `cmd.exe`, so a Vitest `-t` pattern that contains
+  `|` breaks. Run `node node_modules/vitest/vitest.mjs run <file> -t "<pattern>"` with the real
+  Node binary instead.
+
+## CI/CD (GitLab)
+A push to `eyter_dev` runs spec:check, lint, typecheck and the unit tests, then the API and UI
+(chromium) smoke tests, then `check:secrets` on each Playwright job's artifacts. A manual
+"Run pipeline" takes `SUITE` (`smoke` | `regression`) and `BROWSER`
+(`chromium` | `firefox` | `webkit` | `all`). Reports are kept 7 days; JUnit appears in the
+pipeline's Tests tab.

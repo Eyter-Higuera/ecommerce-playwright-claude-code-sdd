@@ -1,0 +1,10 @@
+# Fixture for TC-000-95: a CI definition that prints the environment in three ways.
+# Each offending command is on its own line; `environment:` keys and $CI_ENVIRONMENT_NAME are fine.
+debug-job:
+  environment: TEST_review
+  script:
+    - echo "deploying to $CI_ENVIRONMENT_NAME"
+    - printenv
+    - env | sort
+    - set -x
+    - npm run test:unit

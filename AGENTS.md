@@ -7,11 +7,11 @@ Spec-Driven Development (SDD). Playwright + TypeScript for API, integration and 
 `eyter_dev → release → main → production`.
 
 ## Commands
-Defined in Spec 000 — framework-foundation. Until then there is nothing to run.
 - Unit tests: `npm run test:unit`
-- Playwright tests: `npx playwright test --grep @smoke --project=chromium`
+- Playwright smoke tests: `npx playwright test --grep @smoke --project=api --project=chromium`
 - Lint: `npm run lint`
 - SDD traceability gate: `npm run spec:check`
+- Secrets scan of reports and traces: `npm run check:secrets`
 
 ## Style and conventions
 - TypeScript strict. Files in kebab-case, classes in PascalCase (`LoginPage`), test files `*.spec.ts`, unit tests `*.test.ts`.
