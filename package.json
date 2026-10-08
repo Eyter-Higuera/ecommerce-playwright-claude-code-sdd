@@ -16,7 +16,8 @@
     "report:flaky": "npm run build:scripts --silent && node dist/scripts/flaky-summary.js",
     "spec:check": "npm run build:scripts --silent && node dist/scripts/spec-check/run.js",
     "check:secrets": "npm run build:scripts --silent && node dist/scripts/check-secrets.js",
-    "ci:run-suite": "npm run build:scripts --silent && node dist/scripts/ci-run-suite.js"
+    "ci:run-suite": "npm run build:scripts --silent && node dist/scripts/ci-run-suite.js",
+    "ci:promote": "npm run build:scripts --silent && node dist/scripts/ci-promote.js"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

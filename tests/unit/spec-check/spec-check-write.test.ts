@@ -10,10 +10,15 @@ import { SAMPLE_SPEC_DIR, SpecCheckRepo } from './spec-check-fixture';
 const SUCCESS_EXIT_CODE = 0;
 const TEST_CASES = `${SAMPLE_SPEC_DIR}/test-cases.md`;
 const UI_TESTS = 'tests/ui/sample.spec.ts';
+const SAMPLE_SPEC = `${SAMPLE_SPEC_DIR}/spec.md`;
 
-/** Fixture with one TC in each status: 01 automated, 02 skipped, 03 manual, 04 missing. */
+/**
+ * Fixture with one TC in each status: 01 automated, 02 skipped, 03 manual, 04 missing. Spec 900 is
+ * `implemented`, so the missing test is a violation (RF-33) and not only a warning (RF-68).
+ */
 function repoWithAllStatuses(): SpecCheckRepo {
   const repo = new SpecCheckRepo()
+    .replace(SAMPLE_SPEC, 'Status: test-cases-approved', 'Status: implemented')
     .replace(UI_TESTS, "test('TC-900-02", "test.skip('TC-900-02")
     .remove('docs');
   return repo.write(TEST_CASES, `${repo.read(TEST_CASES)}\n### TC-900-04 — TEST_missing\n| Field | Value |\n|---|---|\n| Requirement | RF-3 |\n| Automate | Y |\n`);

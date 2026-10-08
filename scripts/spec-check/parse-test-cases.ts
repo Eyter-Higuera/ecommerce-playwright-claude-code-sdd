@@ -7,7 +7,8 @@ export interface TestCaseInfo {
   automate: boolean;
 }
 
-const SECTION_HEADING = /^### (TC-\d{3}-\d{2})\b/gm;
+// RF-31: two or more digits after the spec number (TC-000-07, TC-000-100).
+const SECTION_HEADING = /^### (TC-\d{3}-\d{2,})\b/gm;
 const NEXT_HEADING = /^#{2,3} /m;
 const REQUIREMENT_ROW = /^\|\s*Requirement\s*\|([^\n]*)\|/m;
 const AUTOMATE_YES_ROW = /^\|\s*Automate\s*\|\s*Y\b/m;

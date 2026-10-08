@@ -162,14 +162,27 @@ Legend: ✅ = passed · ❌ = failed
 | **Fix after pipeline #2924882205** | unit job failed in CI: TC-000-41 could not find browsers (PLAYWRIGHT_BROWSERS_PATH not passed to child processes) | | ❌ |
 | tests/unit/helpers/run-cli.ts | PLAYWRIGHT_BROWSERS_PATH added to the child-process allowlist; verified locally and in CI pipeline #2924894818 (unit 83/83) | ✅ | |
 | **CI pipeline #2924894818 (eyter_dev, 626998f)** | All 8 jobs green: spec-check, lint, typecheck, unit (83/83), smoke-api (1/1), smoke-ui-chromium (1/1), check-secrets-api, check-secrets-ui-chromium; Tests tab 2/2; Flaky tests: 0 | ✅ | |
+| **Change after validation: RF-33 / RF-68 (Mode C, approved)** | Missing tests are warnings until a spec is implemented, so the pipeline stays usable while Spec 001 is built | ✅ | |
+| specs/000-framework-foundation/spec.md + test-cases.md | RF-33 limited to `implemented` or later; RF-68 added; TC-000-53 updated; TC-000-96 added; TC-000-58 test data | ✅ | |
+| scripts/spec-check/rules.ts | Missing test → warning before `implemented`, error from `implemented` on | ✅ | |
+| tests/unit/spec-check/spec-check.test.ts | TC-000-53 (implemented spec fails) · TC-000-96 (warning, exit 0, status `missing`) | ✅ | |
+| tests/unit/spec-check/spec-check-write.test.ts | TC-000-58 fixture spec set to `implemented` | ✅ | |
+| docs/traceability.md | Regenerated: 225 rows (Spec 000 and Spec 001) | ✅ | |
+| **Change after validation: automatic promotion (Mode C, approved)** | eyter_dev → release → main → production; any failed job stops the chain | ✅ | |
+| specs/000-framework-foundation/spec.md + test-cases.md | RF-31 (TC IDs with 2+ digits), RF-59 generalized, RF-69 to RF-77; TC-000-86/87 updated; TC-000-97 to 110 added | ✅ | |
+| scripts/spec-check/rules.ts + parse-test-cases.ts | TC-000-97: `TC-900-100` accepted, `TC-900-1` rejected | ✅ | |
+| scripts/ci-promote.ts + tests/unit/ci/ci-promote.test.ts | TC-000-102 to 108: next branch, MR create/reuse, merge pinned to SHA keeping the source branch, up to date, SHA moved, not mergeable/conflict, missing token | ✅ | |
+| .gitlab-ci.yml + tests/unit/ci/gitlab-ci.test.ts | TC-000-86, 87, 98 to 101: check jobs on all branches, release/main/production gates, promote last with `when: on_success`, no allow_failure, no force push | ✅ | |
+| README.md, package.json | CI/CD gate table, `PROMOTION_TOKEN` setup, `npm run ci:promote` | ✅ | |
+| TC-000-109 / TC-000-110 (manual, live) | Pending: need `PROMOTION_TOKEN` and approval to push | | |
 
 ## Last full run
 | Command | Result | Passed | Failed |
 |---------|--------|:------:|:------:|
-| `npm run test:unit` | 83 passed · 0 failed | ✅ | |
+| `npm run test:unit` | 96 passed · 0 failed | ✅ | |
 | `npm run typecheck` | exit 0 | ✅ | |
 | `npm run lint` | 0 problems | ✅ | |
-| `npm run spec:check` | passed (1 spec) — 0 errors; `--write` 0 missing rows | ✅ |  |
+| `npm run spec:check` | passed (2 specs) — 0 errors; 40 warnings for Spec 001 TCs not implemented yet (RF-68) | ✅ |  |
 | `npx playwright test` | 10 passed · 0 failed (api + chromium + firefox + webkit) | ✅ | |
 | `npx playwright test --grep @smoke --project=api --project=chromium` | 2 passed · 0 failed (real site and API) | ✅ | |
 | `ci:run-suite selection, real listing (chromium)` | smoke → 2 tests · regression → 4 tests | ✅ | |

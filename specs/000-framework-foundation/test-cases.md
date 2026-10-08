@@ -4,10 +4,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 <!-- Allowed values: draft | approved -->
 
 ## Summary
-- 95 test cases for 67 RFs. Several TCs cover more than one RF when one scenario proves
+- 110 test cases for 77 RFs. Several TCs cover more than one RF when one scenario proves
   the positive case of one RF and the negative case of another (decision tables and partitions).
-- Layers: unit 83, api 1, mocked 2, ui 1, integration 8.
-- Automated: 87; manual: 8.
+- Layers: unit 96, api 1, mocked 2, ui 1, integration 10.
+- Automated: 100; manual: 10.
 - Smoke: 2 TCs (2%), both P1.
 - "unit" TCs run in Vitest with no real network: they inspect config, run CLIs (tsc, ESLint,
   Playwright `--list`, spec:check, check:secrets) on local fixtures, or test helpers with stubs.
@@ -47,7 +47,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-28 | TC-000-44 | TC-000-45 | TC-000-45 | — | 2 |
 | RF-29 | TC-000-46 | TC-000-47 | — | — | 2 |
 | RF-30 | TC-000-48 | TC-000-49 | — | — | 2 |
-| RF-31 | TC-000-50 | TC-000-51 | TC-000-51 | — | 2 |
+| RF-31 | TC-000-50 | TC-000-51 | TC-000-51, TC-000-97 | — | 3 |
 | RF-32 | TC-000-50 | TC-000-52 | — | — | 2 |
 | RF-33 | TC-000-50 | TC-000-53 | TC-000-54 | — | 3 |
 | RF-34 | TC-000-50 | TC-000-55 | — | — | 2 |
@@ -84,6 +84,16 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-65 | TC-000-86 | TC-000-95 | — | TC-000-95 | 2 |
 | RF-66 | TC-000-86 | TC-000-89 | — | — | 2 |
 | RF-67 | TC-000-86 | TC-000-89 | — | — | 2 |
+| RF-68 | TC-000-96 | TC-000-53 | TC-000-96 | — | 2 |
+| RF-69 | TC-000-98, TC-000-109 | TC-000-87, TC-000-110 | — | — | 4 |
+| RF-70 | TC-000-99, TC-000-109 | TC-000-87, TC-000-110 | — | — | 4 |
+| RF-71 | TC-000-100, TC-000-109 | TC-000-87, TC-000-101 | — | — | 4 |
+| RF-72 | TC-000-103, TC-000-104, TC-000-109 | TC-000-101, TC-000-102 | — | — | 5 |
+| RF-73 | TC-000-101 | TC-000-102, TC-000-110 | — | TC-000-101 | 3 |
+| RF-74 | TC-000-103 | TC-000-106, TC-000-107 | TC-000-107 | — | 3 |
+| RF-75 | TC-000-105 | TC-000-103 | TC-000-105 | — | 2 |
+| RF-76 | TC-000-103, TC-000-109 | TC-000-101 | — | TC-000-101 | 3 |
+| RF-77 | TC-000-103, TC-000-109 | TC-000-108 | — | TC-000-108 | 3 |
 
 ## Test cases
 
@@ -919,10 +929,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Expected result | Non-zero exit; message names `TC-900-01` and `RF-99` |
 | Automate        | Y |
 
-### TC-000-53 — spec:check fails when an Automate Y TC has no test
+### TC-000-53 — spec:check fails when an implemented spec has an Automate Y TC without test
 | Field           | Value |
 |-----------------|-------|
-| Requirement     | RF-33 |
+| Requirement     | RF-33, RF-68 |
 | Priority        | P2 |
 | Type            | Negative |
 | Technique       | EP |
@@ -930,8 +940,8 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | None |
-| Test data       | TC-900-02 `Automate: Y`, no test titled `TC-900-02` |
-| Steps           | **Given** the untested TC **When** spec:check runs **Then** it fails |
+| Test data       | Spec 900 with status `implemented`; TC-900-02 `Automate: Y`, no test titled `TC-900-02` |
+| Steps           | **Given** the untested TC of an implemented spec **When** spec:check runs **Then** it fails |
 | Expected result | Non-zero exit; message names `TC-900-02` |
 | Automate        | Y |
 
@@ -1010,7 +1020,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | No `docs/traceability.md` in the fixture |
-| Test data       | Fixture with an automated, a skipped, an `Automate: N` and an untested `Automate: Y` TC |
+| Test data       | Fixture spec with status `implemented` and an automated, a skipped, an `Automate: N` and an untested `Automate: Y` TC |
 | Steps           | **Given** a missing traceability file **When** spec:check runs with `--write` **Then** the file is created |
 | Expected result | File created with one row per Spec/RF/TC/test file/status; statuses `automated`, `skipped`, `manual`, `missing`; the non-skipped test is not `skipped` |
 | Automate        | Y |
@@ -1463,10 +1473,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Expected result | Jobs spec:check, lint, typecheck, unit, smoke API, smoke UI chromium; `check:secrets` after Playwright jobs; JUnit `reports/junit.xml`; artifacts `playwright-report/`, `reports/`, `test-results/` with `when: always` and 7 days; no `env`, `printenv` or `set -x` |
 | Automate        | Y |
 
-### TC-000-87 — push gates are limited to eyter_dev
+### TC-000-87 — each push gate runs only on its own branch
 | Field           | Value |
 |-----------------|-------|
-| Requirement     | RF-58 |
+| Requirement     | RF-58, RF-69, RF-70, RF-71 |
 | Priority        | P3 |
 | Type            | Negative |
 | Technique       | EP |
@@ -1475,8 +1485,8 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Browsers        | n/a (no browser) |
 | Preconditions   | Repository checked out |
 | Test data       | `.gitlab-ci.yml` rules |
-| Steps           | **Given** the job rules **When** they are inspected **Then** push gates target only eyter_dev |
-| Expected result | Push-triggered gate jobs have a rule for branch `eyter_dev` only |
+| Steps           | **Given** the job rules **When** they are inspected **Then** each push gate targets only its own branch |
+| Expected result | Rules compare only against `eyter_dev`, `release`, `main` and `production`; the eyter_dev smoke jobs run on `eyter_dev` only, and each branch's Playwright job runs on that branch only |
 | Automate        | Y |
 
 ### TC-000-88 — push to eyter_dev runs a green pipeline with test report
@@ -1607,6 +1617,246 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Expected result | 3 findings naming the command and line |
 | Automate        | Y |
 
+### TC-000-96 — spec:check warns for an Automate Y TC without test before implementation
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-68, RF-42 |
+| Priority        | P2 |
+| Type            | Boundary |
+| Technique       | State transition |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Spec 900 with status `test-cases-approved`; TC-900-02 `Automate: Y`, no test titled `TC-900-02` |
+| Steps           | **Given** the untested TC of a spec not yet implemented **When** spec:check runs **Then** it warns without failing |
+| Expected result | Exit code 0; no error; a warning names `TC-900-02`; its traceability status is `missing` |
+| Automate        | Y |
+
+### TC-000-97 — spec:check accepts TC IDs with three-digit sequence numbers
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-31 |
+| Priority        | P2 |
+| Type            | Boundary |
+| Technique       | BVA |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Fixture TC-900-100 in test-cases.md and a test titled `TC-900-100 TEST_case`; a test titled `TC-900-1 TEST_case` |
+| Steps           | **Given** a 3-digit and a 1-digit sequence number **When** spec:check runs **Then** only the 1-digit one is rejected |
+| Expected result | `TC-900-100` is accepted and traced; `TC-900-1` is reported as not starting with a TC ID |
+| Automate        | Y |
+
+### TC-000-98 — CI definition runs the release gate
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-69 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.gitlab-ci.yml` |
+| Steps           | **Given** the CI definition **When** the jobs of a `release` push are inspected **Then** they form the release gate |
+| Expected result | Check jobs (spec:check, lint, typecheck, unit) and one Playwright job with SUITE=regression, BROWSER=all run on `release` pushes; a check:secrets job needs that Playwright job |
+| Automate        | Y |
+
+### TC-000-99 — CI definition runs the main gate
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-70 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.gitlab-ci.yml` |
+| Steps           | **Given** the CI definition **When** the jobs of a `main` push are inspected **Then** they form the main gate |
+| Expected result | Check jobs and one Playwright job with SUITE=smoke, BROWSER=all run on `main` pushes; a check:secrets job needs that Playwright job |
+| Automate        | Y |
+
+### TC-000-100 — CI definition runs the production sanity gate
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-71 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.gitlab-ci.yml` |
+| Steps           | **Given** the CI definition **When** the jobs of a `production` push are inspected **Then** they form the sanity gate |
+| Expected result | Check jobs and one Playwright job with SUITE=smoke, BROWSER=chromium run on `production` pushes; a check:secrets job needs that Playwright job |
+| Automate        | Y |
+
+### TC-000-101 — promotion runs last, only on success, and never from web runs or production
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-71, RF-72, RF-73, RF-76 |
+| Priority        | P1 |
+| Type            | Negative |
+| Technique       | Decision table |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.gitlab-ci.yml` |
+| Steps           | **Given** the CI definition **When** the promotion job and its rules are inspected **Then** it can only run after a fully green push pipeline on eyter_dev, release or main |
+| Expected result | `promote` is the last stage; its rules are push on eyter_dev, release or main with `when: on_success`; no rule for web runs or production; no job has `allow_failure`; one promotion at a time per branch (`resource_group`); no `git push --force` or branch deletion anywhere |
+| Automate        | Y |
+
+### TC-000-102 — the next branch is release, main, production and none after that
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-72, RF-73 |
+| Priority        | P2 |
+| Type            | Negative |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Branches `eyter_dev`, `release`, `main`, `production`, `TEST_feature` |
+| Steps           | **Given** each branch **When** the next branch is asked for **Then** only the three promotion branches have one |
+| Expected result | release, main, production, none, none; promoting from production or another branch fails naming the branch and merges nothing |
+| Automate        | Y |
+
+### TC-000-103 — promotion creates a merge request and merges the tested commit
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-72, RF-74, RF-75, RF-76, RF-77 |
+| Priority        | P1 |
+| Type            | Positive |
+| Technique       | State transition |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Stub GitLab API (no network); env with `TEST_` token value; source eyter_dev with one commit not in release; no open merge request; merge status `mergeable` |
+| Steps           | **Given** a green eyter_dev pipeline **When** the promotion runs **Then** it opens and merges eyter_dev → release |
+| Expected result | Merge request created with `remove_source_branch: false`; merge sent with `sha` = pipeline commit and `should_remove_source_branch: false`; exit code 0; output names source, target and merge request; the token never appears in output |
+| Automate        | Y |
+
+### TC-000-104 — promotion reuses an open merge request
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-72 |
+| Priority        | P3 |
+| Type            | Positive |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Stub GitLab API (no network); env with `TEST_` token value; an open merge request release → main already exists |
+| Steps           | **Given** an open promotion merge request **When** the promotion runs **Then** it merges that one |
+| Expected result | No merge request created; the existing one is merged with the pipeline commit `sha`; exit code 0 |
+| Automate        | Y |
+
+### TC-000-105 — promotion passes when the target is already up to date
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-75 |
+| Priority        | P3 |
+| Type            | Boundary |
+| Technique       | BVA |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Stub GitLab API (no network); env with `TEST_` token value; compare main…pipeline commit returns zero commits |
+| Steps           | **Given** nothing new to promote **When** the promotion runs **Then** it merges nothing |
+| Expected result | Exit code 0; message "production is already up to date"; no merge request created or merged |
+| Automate        | Y |
+
+### TC-000-106 — promotion fails when the source branch moved past the tested commit
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-74 |
+| Priority        | P1 |
+| Type            | Negative |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Stub GitLab API (no network); env with `TEST_` token value; the merge call answers 409 (SHA does not match HEAD of source branch) |
+| Steps           | **Given** a newer commit on the source branch **When** the promotion merges **Then** it refuses |
+| Expected result | Non-zero exit; message names eyter_dev, release and the SHA mismatch; nothing merged |
+| Automate        | Y |
+
+### TC-000-107 — promotion fails when the merge request is not mergeable in time
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-74 |
+| Priority        | P2 |
+| Type            | Boundary |
+| Technique       | BVA |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Stub GitLab API (no network); env with `TEST_` token value; merge status stays `checking` past the 60 s budget, or is `conflict` |
+| Steps           | **Given** a conflicting or never-ready merge request **When** the promotion runs **Then** it stops |
+| Expected result | Non-zero exit; message names source, target and the status (`conflict` or not mergeable within 60 s); merge never called |
+| Automate        | Y |
+
+### TC-000-108 — promotion without PROMOTION_TOKEN fails naming the variable
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-77 |
+| Priority        | P1 |
+| Type            | Security |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Env without `PROMOTION_TOKEN`, and env with it set to whitespace |
+| Steps           | **Given** no usable token **When** the promotion runs **Then** it fails before calling GitLab |
+| Expected result | Non-zero exit; message "Missing required environment variable: PROMOTION_TOKEN"; the stub API receives no call |
+| Automate        | Y |
+
+### TC-000-109 — a green eyter_dev push is promoted up to production
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-69, RF-70, RF-71, RF-72, RF-76, RF-77 |
+| Priority        | P1 |
+| Type            | Positive |
+| Technique       | State transition |
+| Layer           | integration |
+| Tags            | n/a (manual check) |
+| Browsers        | n/a (pipeline / CLI level) |
+| Preconditions   | `PROMOTION_TOKEN` configured (masked, protected); the four branches protected |
+| Test data       | A documentation-only commit pushed to eyter_dev |
+| Steps           | **Given** a green eyter_dev pipeline **When** each pipeline finishes **Then** the commit reaches release, main and production |
+| Expected result | Pipelines on eyter_dev, release, main and production green; three promotion merge requests merged; source branches kept; production does not promote; token masked in every job log |
+| Automate        | N — requires real GitLab pipelines on the protected branches; executed once at validation |
+
+### TC-000-110 — a failing job stops the promotion chain
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-59, RF-69, RF-70, RF-73 |
+| Priority        | P1 |
+| Type            | Negative |
+| Technique       | Error guessing |
+| Layer           | integration |
+| Tags            | n/a (manual check) |
+| Browsers        | n/a (pipeline / CLI level) |
+| Preconditions   | `PROMOTION_TOKEN` configured |
+| Test data       | A pipeline with one failing job (the next natural failure, or a temporary failing commit approved by the user) |
+| Steps           | **Given** a failed job **When** the pipeline ends **Then** nothing is promoted |
+| Expected result | Pipeline failed; `promote` job not run; no new merge request; the next branch unchanged |
+| Automate        | N — requires a real failing GitLab pipeline; executed at validation |
+
 ## Out of scope for testing
 - Business flows (catalog, cart, checkout, orders) and login scenarios beyond RF-54 — later specs.
 - Load, performance and penetration testing — excluded by docs/test-plan.md §2.
@@ -1618,7 +1868,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 - TODO: VERIFY how the Playwright JUnit reporter represents flaky tests (TC-000-73).
 - Assumption: `spec:check --write` writes `docs/traceability.md` even when violations exist,
   then exits non-zero, so `missing` rows are visible.
-- TC IDs use two digits (`TC-NNN-XX`); this spec stays below 99 TCs.
+- TC IDs use two or more digits after the spec number (`TC-000-100` and later; RF-31, clarification 12).
 
 ## Open questions
 None.

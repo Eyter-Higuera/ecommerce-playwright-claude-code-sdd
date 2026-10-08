@@ -154,3 +154,23 @@ executed.
 
 Recommended follow-up: run both TCs the next time a pipeline change is made. Spec status:
 `validated`.
+
+### Change after validation (2026-10-08)
+Spec clarification 11 (Mode C, approved by the user) changed RF-33 and added RF-68: a missing
+test fails `spec:check` only from status `implemented`, and is a warning before that.
+- TC-000-53 (RF-33, RF-68): PASS — `tests/unit/spec-check/spec-check.test.ts`.
+- TC-000-96 (RF-68, RF-42): PASS — `tests/unit/spec-check/spec-check.test.ts`.
+- TC-000-58 (RF-42, RF-43) with its updated fixture: PASS — `tests/unit/spec-check/spec-check-write.test.ts`.
+- `npm run test:unit` 84/84, lint and typecheck PASS, `spec:check` passed (2 specs).
+Spec 000 stays `validated`: 68 RFs, 96 TCs (88 automated, 8 manual).
+
+### Change after validation: automatic promotion (2026-10-08)
+Spec clarification 12 (Mode C, approved by the user) added RF-69 to RF-77, generalized RF-59 and
+let RF-31 accept TC IDs with two or more digits.
+- Automated, PASS: TC-000-86, 87, 97, 98, 99, 100, 101 (`tests/unit/ci/gitlab-ci.test.ts`,
+  `tests/unit/spec-check/spec-check.test.ts`) and TC-000-102 to 108 (`tests/unit/ci/ci-promote.test.ts`).
+- Manual, NOT RUN: TC-000-109 (green chain up to production) and TC-000-110 (a failing job stops
+  the chain). Prerequisite: the masked, protected `PROMOTION_TOKEN` variable.
+- `npm run test:unit` 96/96, lint and typecheck PASS, `spec:check` passed (2 specs).
+Spec 000 stays `validated`: 77 RFs, 110 TCs (100 automated, 10 manual). RF-69 to RF-72, RF-76 and
+RF-77 are fully validated only after TC-000-109 runs.

@@ -78,8 +78,28 @@ Reports: HTML in `playwright-report/`, JUnit in `reports/junit.xml`, traces of f
   Node binary instead.
 
 ## CI/CD (GitLab)
-A push to `eyter_dev` runs spec:check, lint, typecheck and the unit tests, then the API and UI
-(chromium) smoke tests, then `check:secrets` on each Playwright job's artifacts. A manual
-"Run pipeline" takes `SUITE` (`smoke` | `regression`) and `BROWSER`
-(`chromium` | `firefox` | `webkit` | `all`). Reports are kept 7 days; JUnit appears in the
-pipeline's Tests tab.
+Every push to a promotion branch runs spec:check, lint, typecheck and the unit tests, then the
+branch's Playwright gate, then `check:secrets` on each Playwright job's artifacts:
+
+| Branch | Playwright gate | On success |
+|---|---|---|
+| `eyter_dev` | smoke on api and chromium | merged into `release` |
+| `release` | regression on api, chromium, firefox and webkit | merged into `main` |
+| `main` | smoke on api, chromium, firefox and webkit | merged into `production` |
+| `production` | smoke on api and chromium | — (last branch) |
+
+Promotion is automatic: the last stage (`promote`, `npm run ci:promote`) starts only when every
+other job of the pipeline passed. It opens (or reuses) the merge request to the next branch and
+merges exactly the tested commit, keeping the source branch. A failed or canceled job stops the
+chain, and if a newer commit reached the source branch meanwhile, the promotion fails and that
+commit is promoted by its own pipeline instead.
+
+A manual "Run pipeline" takes `SUITE` (`smoke` | `regression`) and `BROWSER`
+(`chromium` | `firefox` | `webkit` | `all`) and never promotes. Reports are kept 7 days; JUnit
+appears in the pipeline's Tests tab.
+
+One-time GitLab setup for promotion (done by a maintainer, never committed):
+1. Protect `eyter_dev`, `release`, `main` and `production` (Settings → Repository → Protected
+   branches), with Maintainers allowed to merge.
+2. Create a Project Access Token (Settings → Access tokens) with role Maintainer and scope `api`.
+3. Store it as the CI/CD variable `PROMOTION_TOKEN`, masked and protected.

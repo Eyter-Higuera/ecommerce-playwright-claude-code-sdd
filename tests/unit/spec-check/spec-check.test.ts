@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { runSpecCheck } from '../../../scripts/spec-check/run';
 import { SAMPLE_SPEC_DIR, SpecCheckRepo, manualTestCasesFile, specFile, vitestFile } from './spec-check-fixture';
 
-// Spec 000 — Framework foundation. RF-31 to RF-41: `npm run spec:check` is the SDD traceability
+// Spec 000 — Framework foundation. RF-31 to RF-41 and RF-68: `npm run spec:check` is the SDD traceability
 // gate. Each test runs the real checker in-process against its own copy of a small fixture
 // repository (spec 900, its test cases and two tests), changed only as its TC requires.
 const SUCCESS_EXIT_CODE = 0;
 const TEST_CASES = `${SAMPLE_SPEC_DIR}/test-cases.md`;
+const SAMPLE_SPEC = `${SAMPLE_SPEC_DIR}/spec.md`;
+const TEST_CASES_APPROVED = 'test-cases-approved';
+const IMPLEMENTED = 'implemented';
 const EXTRA_TESTS = 'tests/unit/extra.test.ts';
 const UI_TESTS = 'tests/ui/sample.spec.ts';
 
@@ -71,9 +74,27 @@ describe('spec:check — negative', () => {
     expect(report).toContain('tests/unit/describe-only.test.ts');
   });
 
-  it('TC-000-53 spec:check fails when an Automate Y TC has no test', () => {
-    // Arrange: the only test of TC-900-02 (Automate: Y) is removed.
-    const repo = new SpecCheckRepo().remove(UI_TESTS);
+  it('TC-000-97 spec:check accepts TC IDs with three-digit sequence numbers', () => {
+    // Arrange: TC-900-100 is defined and tested; a second test uses the too-short ID TC-900-1.
+    const repo = new SpecCheckRepo()
+      .write(EXTRA_TESTS, vitestFile(['TC-900-100 TEST_case', 'TC-900-1 TEST_case']));
+    repo.write(TEST_CASES, `${repo.read(TEST_CASES)}\n### TC-900-100 — TEST_case\n| Field | Value |\n|---|---|\n| Requirement | RF-3 |\n| Automate | Y |\n`);
+
+    // Act
+    const result = runSpecCheck({ rootDir: repo.root });
+    const report = result.errors.join('\n');
+
+    // Assert: only the one-digit ID is rejected; the three-digit ID is traced like any other.
+    expect(report).toContain('"TC-900-1 TEST_case"');
+    expect(report).not.toContain('TC-900-100');
+    expect(result.rows.filter((row) => row.testCase === 'TC-900-100').map((row) => row.status)).toEqual(['automated']);
+  });
+
+  it('TC-000-53 spec:check fails when an implemented spec has an Automate Y TC without test', () => {
+    // Arrange: spec 900 is implemented and the only test of TC-900-02 (Automate: Y) is removed.
+    const repo = new SpecCheckRepo()
+      .replace(SAMPLE_SPEC, `Status: ${TEST_CASES_APPROVED}`, `Status: ${IMPLEMENTED}`)
+      .remove(UI_TESTS);
 
     // Act
     const result = runSpecCheck({ rootDir: repo.root });
@@ -189,5 +210,20 @@ describe('spec:check — spec status', () => {
     // Assert: an unfinished test-case design is not a failure, and RF-2 is not reported.
     expect(result.exitCode).toBe(SUCCESS_EXIT_CODE);
     expect(result.output.join('\n')).not.toContain('RF-2');
+  });
+
+  it('TC-000-96 spec:check warns for an Automate Y TC without test before implementation', () => {
+    // Arrange: spec 900 stays test-cases-approved and the only test of TC-900-02 is removed,
+    // as happens while a spec is being implemented task by task.
+    const repo = new SpecCheckRepo().remove(UI_TESTS);
+
+    // Act
+    const result = runSpecCheck({ rootDir: repo.root });
+
+    // Assert: a warning instead of a failure, and the traceability status is still `missing`.
+    expect(result.errors).toEqual([]);
+    expect(result.exitCode).toBe(SUCCESS_EXIT_CODE);
+    expect(result.warnings.some((warning) => warning.includes('TC-900-02'))).toBe(true);
+    expect(result.rows.filter((row) => row.testCase === 'TC-900-02').map((row) => row.status)).toEqual(['missing']);
   });
 });

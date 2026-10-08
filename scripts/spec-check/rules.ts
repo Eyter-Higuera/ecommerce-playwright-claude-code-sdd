@@ -2,7 +2,7 @@ import { statusRank, type SpecInfo } from './parse-spec';
 import type { TestCaseInfo } from './parse-test-cases';
 import type { TestDeclaration } from './scan-titles';
 
-// Traceability rules of `npm run spec:check` (Spec 000, RF-31 to RF-39). Pure: the runner reads
+// Traceability rules of `npm run spec:check` (Spec 000, RF-31 to RF-39 and RF-68). Pure: the runner reads
 // the files, the rules only compare specs, test cases and test declarations. Every message names
 // what is wrong (test, TC, RF, spec, file) so it can be fixed without reading the checker.
 
@@ -33,8 +33,14 @@ export interface RuleResult {
 /** From this status on, test cases are approved (RF-38, RF-39). */
 const TEST_CASES_APPROVED = 'test-cases-approved';
 
-/** A test title must start with a TC ID followed by a space (or end there). */
-export const TC_ID_AT_START = /^(TC-(\d{3})-\d{2})(?=\s|$)/;
+/** From this status on, every automated TC must have its test (RF-33, RF-68). */
+const IMPLEMENTED = 'implemented';
+
+/**
+ * A test title must start with a TC ID followed by a space (or end there). RF-31: three digits for
+ * the spec, two or more for the test case (TC-000-07, TC-000-100).
+ */
+export const TC_ID_AT_START = /^(TC-(\d{3})-\d{2,})(?=\s|$)/;
 
 const describeTest = (test: TestDeclaration): string => `"${test.title ?? '<non-literal title>'}" (${test.file}:${String(test.line)})`;
 
@@ -88,6 +94,7 @@ export function checkTraceability(specs: SpecWithTestCases[], tests: TestDeclara
     const rfs = new Set(spec.rfs);
     const seen = new Set<string>();
     const testCasesApproved = statusRank(spec.status) >= statusRank(TEST_CASES_APPROVED);
+    const implemented = statusRank(spec.status) >= statusRank(IMPLEMENTED);
 
     // RF-38: test-cases.md may be missing only before test-case approval.
     if (spec.testCases === undefined) {
@@ -111,10 +118,15 @@ export function checkTraceability(specs: SpecWithTestCases[], tests: TestDeclara
       for (const rf of testCase.requirements.filter((requirement) => !rfs.has(requirement))) {
         errors.push(`${testCase.id} references ${rf}, which does not exist in spec ${spec.id} (${spec.testCasesFile})`);
       }
-      // RF-33: an automated TC needs a test whose title starts with its ID (skip/fixme counts).
+      // RF-33 / RF-68: an automated TC needs a test whose title starts with its ID (skip/fixme
+      // counts). Before the spec is implemented its tests are still being written, so a missing
+      // test is a warning; from `implemented` on it fails.
       const testsOfCase = testsById.get(testCase.id) ?? [];
       const status = statusOf(testCase, testsOfCase);
-      if (status === 'missing') errors.push(`${testCase.id} is marked Automate: Y but no test title starts with it (${spec.testCasesFile})`);
+      if (status === 'missing') {
+        const missing = `${testCase.id} is marked Automate: Y but no test title starts with it (${spec.testCasesFile})`;
+        (implemented ? errors : warnings).push(missing);
+      }
       const testFiles = [...new Set(testsOfCase.map((test) => test.file))];
       for (const rf of testCase.requirements) rows.push({ spec: spec.id, rf, testCase: testCase.id, testFiles, status });
     }

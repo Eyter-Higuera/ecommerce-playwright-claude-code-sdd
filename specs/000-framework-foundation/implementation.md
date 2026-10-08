@@ -1226,3 +1226,78 @@ typecheck were green; the smoke and scan jobs were skipped.
   `npm run test:unit` → 83 passed; lint and typecheck PASS.
 - This pipeline also showed RF-59 live: one failing job failed the pipeline, and the later
   stages were skipped. This is evidence for TC-000-89 in validation.
+
+## Change after validation: missing tests are warnings until a spec is implemented
+
+Date: 2026-10-08 · Spec change: clarification 11 (Mode C, approved by the user) · RF-33, RF-68
+
+When Spec 001 test cases were approved, `spec:check` failed with 40 errors, one per
+`Automate: Y` TC whose test is not written yet. RF-33 had no status condition, so the
+`eyter_dev` pipeline would stay red for the whole implementation of every spec.
+- Spec: RF-33 now fails only for specs with status `implemented` or later; new RF-68 reports the
+  same gap as a warning before that. Traceability status stays `missing` in both cases (RF-42).
+- Test cases: TC-000-53 renamed and its fixture spec set to `implemented`; new TC-000-96
+  (warning before implementation); TC-000-58 test data now uses an `implemented` fixture spec,
+  so its `missing` row is still a violation.
+- Tests first: TC-000-96 failed before the change ("expected [ …error… ] to equal []").
+- Code: `scripts/spec-check/rules.ts` pushes the missing-test message to `warnings` while the
+  spec is earlier than `implemented`, and to `errors` from then on.
+
+### Files changed
+- `specs/000-framework-foundation/spec.md`, `specs/000-framework-foundation/test-cases.md`
+- `scripts/spec-check/rules.ts`
+- `tests/unit/spec-check/spec-check.test.ts` (TC-000-53, TC-000-96)
+- `tests/unit/spec-check/spec-check-write.test.ts` (TC-000-58 fixture)
+- `docs/traceability.md` (regenerated)
+
+### Quality gates
+- `npm run test:unit` → 84 passed, 0 failed.
+- `npm run lint` and `npm run typecheck` → exit 0.
+- `npm run spec:check -- --write` → "spec:check passed (2 spec(s))", with 40 warnings for the
+  Spec 001 TCs that are not implemented yet.
+- test-reviewer on the changed test files: PASS (TC ID first in each title, Arrange / Act /
+  Assert, no magic values, behavior asserted through exit code, errors, warnings and rows).
+
+## Change after validation: automatic promotion eyter_dev → release → main → production
+
+Date: 2026-10-08 · Spec change: clarification 12 (Mode C, approved by the user) · RF-31, RF-59,
+RF-69 to RF-77 · TC-000-86, 87, 97 to 110
+
+- Spec: RF-69 to RF-71 define the release, main and production gates (docs/test-plan.md §6);
+  RF-72 to RF-77 define the promotion. RF-31 accepts TC IDs with two or more digits, because
+  Spec 000 reached TC-000-99.
+- Tests first: TC-000-97 (spec:check), TC-000-102 to 108 (promotion script) and TC-000-86, 87,
+  98 to 101 (CI definition) were written and failed before the code existed.
+- Code:
+  - `scripts/spec-check/rules.ts`, `scripts/spec-check/parse-test-cases.ts`: `TC-NNN-XX` with
+    `XX` two or more digits.
+  - `scripts/ci-promote.ts` (new, `npm run ci:promote`): next branch; "already up to date" via
+    compare; reuse or create the merge request (`remove_source_branch: false`); wait up to 60 s
+    for `mergeable`; merge with `sha` = pipeline commit and `should_remove_source_branch: false`.
+    GitLab is behind an injectable `GitLabHttp` so unit tests use a stub; the token is only a
+    request header and is never printed.
+  - `.gitlab-ci.yml`: stages check → test → scan → promote. The check jobs run on the four
+    branches; the eyter_dev, release, main and production Playwright gates each have their own
+    check:secrets job. `promote` runs on pushes to eyter_dev, release and main with
+    `when: on_success` and `resource_group: promotion`. No job has `allow_failure`.
+- Docs: README CI/CD section (gate table and one-time `PROMOTION_TOKEN` setup).
+- GitLab, checked read-only (names and flags only): the four branches are protected
+  (Maintainers push and merge); "Pipelines must succeed" is off; `PROMOTION_TOKEN` does not exist
+  yet. The user creates it before the first live promotion.
+
+### Files changed
+- `specs/000-framework-foundation/spec.md`, `specs/000-framework-foundation/test-cases.md`
+- `scripts/ci-promote.ts` (new), `scripts/spec-check/rules.ts`, `scripts/spec-check/parse-test-cases.ts`
+- `.gitlab-ci.yml`, `package.json` (`ci:promote`), `README.md`
+- `tests/unit/ci/ci-promote.test.ts` (new), `tests/unit/ci/gitlab-ci.test.ts`, `tests/unit/spec-check/spec-check.test.ts`
+- `docs/traceability.md` (regenerated)
+
+### Quality gates
+- `npm run test:unit` → 96 passed, 0 failed.
+- `npm run lint` and `npm run typecheck` → exit 0.
+- `npm run spec:check -- --write` → passed (2 specs); 0 `missing` rows for Spec 000; 40 warnings
+  for Spec 001 TCs not implemented yet.
+- test-reviewer on the changed test files: PASS. The lint error from an unused destructured
+  variable was fixed; the gate tests were given explicit Arrange / Act / Assert blocks.
+- Not yet run: TC-000-109 and TC-000-110 (manual, live pipelines). They need `PROMOTION_TOKEN`
+  and the user's approval to push.
