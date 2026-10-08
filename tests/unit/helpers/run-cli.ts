@@ -15,8 +15,12 @@ export const CLI_TEST_TIMEOUT_MS = 60_000;
 
 const VITEST_CLI = join(REPO_ROOT, 'node_modules', 'vitest', 'vitest.mjs');
 
-// Variables the OS needs to start Node and resolve temp folders; nothing project-specific.
-const SYSTEM_ENV_ALLOWLIST = ['PATH', 'Path', 'SystemRoot', 'SYSTEMROOT', 'TEMP', 'TMP', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA'];
+// Variables the OS needs to start Node and resolve temp folders, plus where browsers are installed
+// (the CI Playwright image sets PLAYWRIGHT_BROWSERS_PATH=/ms-playwright); nothing project-specific.
+const SYSTEM_ENV_ALLOWLIST = [
+  'PATH', 'Path', 'SystemRoot', 'SYSTEMROOT', 'TEMP', 'TMP', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA',
+  'PLAYWRIGHT_BROWSERS_PATH',
+];
 
 export interface CliResult {
   exitCode: number | null;

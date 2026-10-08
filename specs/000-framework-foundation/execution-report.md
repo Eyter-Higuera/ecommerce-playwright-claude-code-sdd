@@ -159,6 +159,8 @@ Legend: ✅ = passed · ❌ = failed
 | **T33 — Document setup and run the full local gate** | Done when: lint, typecheck, test:unit and spec:check exit 0; `--write` has no `missing` row; smoke passes; check:secrets exits 0 | ✅ | |
 | README.md | Setup (npm ci, .env), commands table, reports, account A recovery, `CI=true` locally, Windows/Volta note, CI/CD summary | ✅ | |
 | docs/traceability.md | Regenerated: 140 rows (TC × RF), 67 RFs, 126 automated, 14 manual, 0 missing | ✅ | |
+| **Fix after pipeline #2924882205** | unit job failed in CI: TC-000-41 could not find browsers (PLAYWRIGHT_BROWSERS_PATH not passed to child processes) | | ❌ |
+| tests/unit/helpers/run-cli.ts | PLAYWRIGHT_BROWSERS_PATH added to the child-process allowlist; verified locally (83 passed) — pending re-run in CI | ✅ | |
 
 ## Last full run
 | Command | Result | Passed | Failed |

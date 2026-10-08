@@ -1206,3 +1206,23 @@ Date: 2026-10-08
 Pre-commit secret check: none of the 4 real TEST_USER_* values from `.env` (emails and
 passwords, plain and URL-encoded) appears in the 134 files to be committed; `.env` is not tracked.
 `npm run test:unit` → 83 passed.
+
+## Fix after the first pipeline (#2924882205)
+
+Date: 2026-10-08
+
+The first eyter_dev pipeline failed in `unit`: 82 passed, 1 failed. spec-check, lint and
+typecheck were green; the smoke and scan jobs were skipped.
+- Failing test: TC-000-41, with "browserType.launch: Executable doesn't exist at
+  /root/.cache/ms-playwright/…".
+- Root cause: `tests/unit/helpers/run-cli.ts` starts child processes with an allowlisted
+  environment that did not include `PLAYWRIGHT_BROWSERS_PATH`. The Playwright image installs its
+  browsers in `/ms-playwright` and sets that variable, so the child looked in the default cache.
+  Locally the default cache is where the browsers live, so the defect only showed in CI.
+- Fix: `PLAYWRIGHT_BROWSERS_PATH` added to the allowlist. It says where browsers are installed and
+  is not project data.
+- Proof: with `PLAYWRIGHT_BROWSERS_PATH` pointing to a nonexistent folder, TC-000-41 now fails
+  with that folder in the error, so the variable reaches the child. With the real path it passes.
+  `npm run test:unit` → 83 passed; lint and typecheck PASS.
+- This pipeline also showed RF-59 live: one failing job failed the pipeline, and the later
+  stages were skipped. This is evidence for TC-000-89 in validation.
