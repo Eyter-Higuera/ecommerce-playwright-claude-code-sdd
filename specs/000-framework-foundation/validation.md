@@ -169,8 +169,19 @@ Spec clarification 12 (Mode C, approved by the user) added RF-69 to RF-77, gener
 let RF-31 accept TC IDs with two or more digits.
 - Automated, PASS: TC-000-86, 87, 97, 98, 99, 100, 101 (`tests/unit/ci/gitlab-ci.test.ts`,
   `tests/unit/spec-check/spec-check.test.ts`) and TC-000-102 to 108 (`tests/unit/ci/ci-promote.test.ts`).
-- Manual, NOT RUN: TC-000-109 (green chain up to production) and TC-000-110 (a failing job stops
-  the chain). Prerequisite: the masked, protected `PROMOTION_TOKEN` variable.
+- TC-000-109 (RF-69 to RF-72, RF-76, RF-77): **PASS**, live on 2026-10-08 after commit
+  6e3a638 was pushed to eyter_dev:
+  - eyter_dev pipeline 2925606874: 9/9 jobs green; `promote` logged "Promoted eyter_dev → release:
+    merge request !4 merged at 6e3a638…".
+  - release pipeline 2925619862 (release-regression on api, chromium, firefox, webkit): 7/7 green;
+    MR !5 release → main merged.
+  - main pipeline 2925638938 (main-smoke on api and three browsers): 7/7 green; MR !6 main →
+    production merged.
+  - production pipeline 2925654814 (production-smoke): 6/6 green, no `promote` job.
+  - MRs !4, !5 and !6 have `force_remove_source_branch: false`; all four branches still exist.
+    The token appears nowhere in the promote log (masked, protected variable).
+- Manual, NOT RUN: TC-000-110 (a failing job stops the chain). It is recorded at the next natural
+  failure, or with a temporary failing commit if the user approves one.
 - `npm run test:unit` 96/96, lint and typecheck PASS, `spec:check` passed (2 specs).
 Spec 000 stays `validated`: 77 RFs, 110 TCs (100 automated, 10 manual). RF-69 to RF-72, RF-76 and
-RF-77 are fully validated only after TC-000-109 runs.
+RF-77 are validated by TC-000-109; RF-73 still awaits its live negative case (TC-000-110).

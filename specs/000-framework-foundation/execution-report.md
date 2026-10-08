@@ -174,7 +174,8 @@ Legend: ✅ = passed · ❌ = failed
 | scripts/ci-promote.ts + tests/unit/ci/ci-promote.test.ts | TC-000-102 to 108: next branch, MR create/reuse, merge pinned to SHA keeping the source branch, up to date, SHA moved, not mergeable/conflict, missing token | ✅ | |
 | .gitlab-ci.yml + tests/unit/ci/gitlab-ci.test.ts | TC-000-86, 87, 98 to 101: check jobs on all branches, release/main/production gates, promote last with `when: on_success`, no allow_failure, no force push | ✅ | |
 | README.md, package.json | CI/CD gate table, `PROMOTION_TOKEN` setup, `npm run ci:promote` | ✅ | |
-| TC-000-109 / TC-000-110 (manual, live) | Pending: need `PROMOTION_TOKEN` and approval to push | | |
+| TC-000-109 (manual, live) | Green chain: eyter_dev 2925606874 → MR !4 → release 2925619862 → MR !5 → main 2925638938 → MR !6 → production 2925654814; source branches kept | ✅ | |
+| TC-000-110 (manual, live) | Pending: a failing job stops the chain (next natural failure or an approved failing commit) | | |
 
 ## Last full run
 | Command | Result | Passed | Failed |
