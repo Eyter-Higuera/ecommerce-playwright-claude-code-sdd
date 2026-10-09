@@ -3,8 +3,8 @@ import { join } from 'node:path';
 import type { EnvValues } from '../src/config/env';
 import { API_PROJECT, DEFAULT_BROWSER_PROJECTS } from '../src/config/playwright-options';
 
-// Manual pipeline runner (Spec 000, RF-60 to RF-63): `npm run ci:run-suite` reads SUITE and BROWSER
-// (GitLab "Run pipeline" variables), validates them, checks the selection is not empty, then runs
+// Manual run selector (Spec 000, RF-60 to RF-63): `npm run ci:run-suite` reads SUITE and BROWSER
+// (the GitHub Actions workflow_dispatch inputs), validates them, checks the selection is not empty, then runs
 // Playwright. msedge is not allowed in CI (spec: local only).
 
 export const SUITE_TAGS = { smoke: '@smoke', regression: '@regression' } as const;

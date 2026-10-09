@@ -1354,3 +1354,62 @@ RF-78 to RF-82 · TC-000-111 to 118
 - `npm run lint` (0 errors) and `npm run typecheck` → exit 0; `npm run spec:check` → passed (5 specs).
 - test-reviewer on `github-actions.test.ts`: PASS (Arrange / Act / Assert, describes by scenario type).
 - Not yet run: TC-000-118 (manual, live GitHub Actions run after the push).
+
+## Change after validation: GitHub only (GitLab removed)
+
+Date: 2026-10-09 · Spec change: clarification 14 (Mode C, approved by the user with the plan) ·
+RF-58 to RF-82 · TC-000-04, 86 to 89, 93, 94, 98 to 110, 114 to 116, 118
+
+- Context: the user stopped using GitLab and removed the `gitlab` remote. The user chose:
+  - automatic promotion in GitHub Actions;
+  - removing the GitLab files;
+  - letting the promotion bring `release`, `main` and `production` up to date, with no
+    manual push.
+- First GitHub run (37918960715) failed: `checks (test:unit)` failed on TC-000-30 because `git`
+  exited 128 in the container (dubious ownership of the checked-out workspace). Fixed by marking
+  `$GITHUB_WORKSPACE` as a safe git directory after checkout in every job (RF-82).
+- Spec:
+  - RF-58 to RF-77 rewritten for GitHub Actions: encrypted secrets, JUnit kept in the artifacts,
+    a merge through the GitHub merges API, and a fine-grained `PROMOTION_TOKEN`;
+  - RF-78 to RF-82 are now the workflow rules;
+  - the GitLab TCs are retargeted with the same IDs. TC-000-111, 112, 113 and 117 are removed
+    because they duplicated TC-000-86, 98 to 100, 87 and 04.
+- Code:
+  - `.gitlab-ci.yml`, `tests/unit/ci/gitlab-ci.test.ts` and its print-env fixture deleted
+    (`tests/fixtures/ci/print-env/ci.yml` replaces the fixture);
+  - `scripts/ci-promote.ts` rewritten for GitHub: the source tip must equal `GITHUB_SHA`;
+    compare `identical`/`behind` means up to date; `POST /merges` with `head` = tested SHA,
+    where 201 is merged, 204 is up to date, and anything else fails with nothing merged;
+  - `.github/workflows/ci.yml`:
+    - `safe.directory` in every job;
+    - `actions/checkout@v5` and `actions/upload-artifact@v5` (Node 24);
+    - a new `promote` job: needs every other job, `!cancelled() && !failure()`, push on
+      eyter_dev, release or main only, `concurrency: promotion`, `PROMOTION_TOKEN` from
+      secrets;
+  - GitLab wording removed from `scripts/ci-run-suite.ts`, `src/fixtures/test.ts` and
+    `tests/unit/reporting/reporters.test.ts`.
+- Tests:
+  - `tests/unit/ci/ci-promote.test.ts` (TC-000-102 to 108) runs against a stub GitHub API;
+  - `tests/unit/ci/github-actions.test.ts` now holds TC-000-04, 86, 87, 95, 98 to 101 and
+    114 to 116;
+  - four temporary mutations of the workflow, each reverted, were all caught: no failure guard,
+    production promoting and `promote` not needing `run-suite` each failed TC-000-101, and a
+    job without `safe.directory` failed TC-000-86.
+- Docs: README and AGENTS.md now have a single "CI/CD (GitHub Actions)" section, and
+  `docs/test-plan.md` §1, §6, §8 and §10 describe GitHub Actions.
+
+### Files changed
+- `specs/000-framework-foundation/spec.md`, `test-cases.md`, `implementation.md`, `validation.md`
+- `.github/workflows/ci.yml`, `scripts/ci-promote.ts`, `scripts/ci-run-suite.ts`, `src/fixtures/test.ts`
+- `tests/unit/ci/ci-promote.test.ts`, `tests/unit/ci/github-actions.test.ts`,
+  `tests/unit/reporting/reporters.test.ts`, `tests/fixtures/ci/print-env/ci.yml` (new)
+- Deleted: `.gitlab-ci.yml`, `tests/unit/ci/gitlab-ci.test.ts`, `tests/fixtures/ci/print-env/.gitlab-ci.yml`
+- `README.md`, `AGENTS.md`, `docs/test-plan.md`, `docs/traceability.md` (regenerated)
+
+### Quality gates
+- `npm run test:unit -- tests/unit/ci` → 22 passed; `npm run test:unit` → 103 passed (26 files).
+- `npm run lint` → 0 errors (10 pre-existing warnings in tests/api, none in CI files).
+- `npm run typecheck` → exit 0; `npm run spec:check -- --write` → passed (5 specs).
+- test-reviewer on the two CI test files: PASS (TC IDs in titles, Arrange / Act / Assert, describes
+  by scenario type, stubbed HTTP only, `TEST_` data).
+- Pending (live): TC-000-109 and 118 after the push, once `PROMOTION_TOKEN` is set.

@@ -85,7 +85,7 @@ interface AutoFixtures {
   /**
    * RF-50: Playwright's JUnit reporter has no flaky marker (a test that passes on retry is a plain
    * pass). This automatic fixture annotates such a test; the JUnit reporter embeds annotations as
-   * <property> entries, so GitLab's test report shows it. The HTML report marks flaky natively.
+   * <property> entries, so reports/junit.xml shows it. The HTML report marks flaky natively.
    */
   markFlaky: void;
 }

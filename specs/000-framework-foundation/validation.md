@@ -192,3 +192,14 @@ Spec clarification 13 (Mode C, approved by the user) added RF-78 to RF-82.
 - Manual, pending: TC-000-118 (GitHub mirror run on eyter_dev), recorded after the first push
   once the user has set the GitHub secrets.
 Spec 000 stays `validated`: 82 RFs, 118 TCs (107 automated, 11 manual).
+
+### Change after validation: GitHub only (2026-10-09)
+Spec clarification 14 (Mode C, approved by the user) moves CI and promotion to GitHub Actions and
+removes GitLab.
+- Automated, PASS:
+  - `tests/unit/ci/github-actions.test.ts`: TC-000-04, 86, 87, 95, 98 to 101 and 114 to 116;
+  - `tests/unit/ci/ci-promote.test.ts`: TC-000-102 to 108.
+- Removed: TC-000-111, 112, 113 and 117 (duplicates).
+- Manual: TC-000-88, 89, 93, 94, 109, 110 and 118 are re-run against GitHub Actions. The earlier
+  GitLab results no longer apply.
+- Spec 000 stays `validated`: 82 RFs, 114 TCs (103 automated, 11 manual).

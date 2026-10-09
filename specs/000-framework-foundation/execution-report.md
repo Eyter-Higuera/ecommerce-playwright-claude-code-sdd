@@ -192,3 +192,14 @@ Legend: ✅ = passed · ❌ = failed
 | `npx playwright test tests/api/auth-login.spec.ts --project=api` | 1 passed · 0 failed; no trace, no attachment, 0 password matches in reports | ✅ | |
 | `npx playwright test tests/mocked/login-page-unavailable.spec.ts --project=chromium` | 2 passed · 0 failed | ✅ | |
 | `npx playwright test tests/ui/login-page.spec.ts --project=chromium --project=firefox --project=webkit` | 3 passed · 0 failed | ✅ | |
+
+## Change after validation: GitHub only (2026-10-09)
+| Command | Result | Passed | Failed |
+|---------|--------|:------:|:------:|
+| `npm run test:unit -- tests/unit/ci` | 22 passed · 0 failed | ✅ | |
+| `npm run test:unit` | 103 passed · 0 failed (26 files) | ✅ | |
+| `npm run typecheck` | exit 0 | ✅ | |
+| `npm run lint` | 0 errors (10 pre-existing warnings in tests/api) | ✅ | |
+| `npm run spec:check -- --write` | passed (5 specs) | ✅ | |
+| Workflow mutations (4, reverted) | each caught by TC-000-86 or TC-000-101 | ✅ | |
+| GitHub run 37918960715 (before the fix) | `checks (test:unit)` failed on TC-000-30 (git exit 128 in the container) | | ❌ |

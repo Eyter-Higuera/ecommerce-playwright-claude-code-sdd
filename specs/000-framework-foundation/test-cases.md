@@ -4,10 +4,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 <!-- Allowed values: draft | approved -->
 
 ## Summary
-- 118 test cases for 82 RFs. Several TCs cover more than one RF when one scenario proves
+- 114 test cases for 82 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
   the positive case of one RF and the negative case of another (decision tables and partitions).
-- Layers: unit 103, api 1, mocked 2, ui 1, integration 11.
-- Automated: 107; manual: 11.
+- Layers: unit 99, api 1, mocked 2, ui 1, integration 11.
+- Automated: 103; manual: 11.
 - Smoke: 2 TCs (2%), both P1.
 - "unit" TCs run in Vitest with no real network: they inspect config, run CLIs (tsc, ESLint,
   Playwright `--list`, spec:check, check:secrets) on local fixtures, or test helpers with stubs.
@@ -74,13 +74,13 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-55 | TC-000-80 | TC-000-81 | — | TC-000-81 | 2 |
 | RF-56 | TC-000-80 | TC-000-82 | TC-000-83 | — | 3 |
 | RF-57 | TC-000-80 | TC-000-84 | TC-000-85 | — | 3 |
-| RF-58 | TC-000-86 | TC-000-87 | — | — | 2 |
+| RF-58 | TC-000-86, TC-000-88 | TC-000-87 | — | — | 3 |
 | RF-59 | TC-000-88 | TC-000-89 | — | — | 2 |
 | RF-60 | TC-000-90 | TC-000-91 | — | — | 2 |
 | RF-61 | TC-000-90 | TC-000-91 | — | — | 2 |
 | RF-62 | TC-000-90 | TC-000-91 | TC-000-91 | — | 2 |
 | RF-63 | TC-000-90 | TC-000-92 | — | — | 2 |
-| RF-64 | TC-000-93 | TC-000-94 | — | TC-000-93, TC-000-94 | 2 |
+| RF-64 | TC-000-93 | TC-000-94, TC-000-116 | — | TC-000-93, TC-000-94, TC-000-116 | 3 |
 | RF-65 | TC-000-86 | TC-000-95 | — | TC-000-95 | 2 |
 | RF-66 | TC-000-86 | TC-000-89 | — | — | 2 |
 | RF-67 | TC-000-86 | TC-000-89 | — | — | 2 |
@@ -94,11 +94,11 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-75 | TC-000-105 | TC-000-103 | TC-000-105 | — | 2 |
 | RF-76 | TC-000-103, TC-000-109 | TC-000-101 | — | TC-000-101 | 3 |
 | RF-77 | TC-000-103, TC-000-109 | TC-000-108 | — | TC-000-108 | 3 |
-| RF-78 | TC-000-111, TC-000-112, TC-000-118 | TC-000-113 | — | — | 4 |
+| RF-78 | TC-000-86, TC-000-118 | TC-000-87 | — | — | 3 |
 | RF-79 | TC-000-114, TC-000-118 | TC-000-116 | — | TC-000-114 | 3 |
-| RF-80 | TC-000-115 | TC-000-113 | — | — | 2 |
-| RF-81 | TC-000-116 | TC-000-113 | — | TC-000-116 | 2 |
-| RF-82 | TC-000-117 | TC-000-05 | — | — | 2 |
+| RF-80 | TC-000-115 | TC-000-87 | — | — | 2 |
+| RF-81 | TC-000-116 | TC-000-101 | — | TC-000-116 | 2 |
+| RF-82 | TC-000-04, TC-000-86 | TC-000-05 | — | — | 3 |
 
 ## Test cases
 
@@ -161,7 +161,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | Repository checked out with lockfile |
-| Test data       | `.gitlab-ci.yml`, `package-lock.json` |
+| Test data       | `.github/workflows/ci.yml`, `package-lock.json` |
 | Steps           | **Given** the CI definition and the lockfile **When** the unit test compares the image tag version with the locked @playwright/test version **Then** both versions are equal |
 | Expected result | Image tag version string equals the locked @playwright/test version |
 | Automate        | Y |
@@ -689,7 +689,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (manual check) |
 | Browsers        | n/a (pipeline / CLI level) |
 | Preconditions   | eyter_dev pipeline with credentials configured |
-| Test data       | Account A from GitLab variables |
+| Test data       | Account A from GitHub secrets |
 | Steps           | **Given** the smoke jobs have finished **When** the `check:secrets` job runs **Then** no sensitive value is found |
 | Expected result | `check:secrets` job passes with exit code 0 |
 | Automate        | N — enforced by the `check:secrets` job in every eyter_dev pipeline (RF-58), not by a titled test |
@@ -1465,7 +1465,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 ### TC-000-86 — CI definition declares the gates, reports and artifacts
 | Field           | Value |
 |-----------------|-------|
-| Requirement     | RF-58, RF-65, RF-66, RF-67 |
+| Requirement     | RF-58, RF-65, RF-66, RF-67, RF-78, RF-82 |
 | Priority        | P2 |
 | Type            | Positive |
 | Technique       | EP |
@@ -1473,15 +1473,15 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | Repository checked out |
-| Test data       | `.gitlab-ci.yml` and `scripts/` |
-| Steps           | **Given** the CI definition **When** the unit test inspects it as text **Then** all declarations are present |
-| Expected result | Jobs spec:check, lint, typecheck, unit, smoke API, smoke UI chromium; `check:secrets` after Playwright jobs; JUnit `reports/junit.xml`; artifacts `playwright-report/`, `reports/`, `test-results/` with `when: always` and 7 days; no `env`, `printenv` or `set -x` |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** the unit test inspects its jobs as text **Then** all declarations are present |
+| Expected result | Push trigger on the four promotion branches; checks job runs spec:check, lint, typecheck and test:unit; `smoke-api` and `smoke-ui-chromium` run the @smoke suite on `api` and chromium only for `eyter_dev`, after the checks; every job marks the workspace as a safe git directory after checkout and before `npm ci`; every Playwright job prints the flaky count and keeps `playwright-report/`, `reports/` (JUnit included) and `test-results/` for 7 days |
 | Automate        | Y |
 
 ### TC-000-87 — each push gate runs only on its own branch
 | Field           | Value |
 |-----------------|-------|
-| Requirement     | RF-58, RF-69, RF-70, RF-71 |
+| Requirement     | RF-58, RF-69, RF-70, RF-71, RF-78, RF-80 |
 | Priority        | P3 |
 | Type            | Negative |
 | Technique       | EP |
@@ -1489,12 +1489,12 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | Repository checked out |
-| Test data       | `.gitlab-ci.yml` rules |
-| Steps           | **Given** the job rules **When** they are inspected **Then** each push gate targets only its own branch |
-| Expected result | Rules compare only against `eyter_dev`, `release`, `main` and `production`; the eyter_dev smoke jobs run on `eyter_dev` only, and each branch's Playwright job runs on that branch only |
+| Test data       | `.github/workflows/ci.yml` triggers and job conditions |
+| Steps           | **Given** the workflow triggers and job conditions **When** they are inspected **Then** each push gate targets only its own branch |
+| Expected result | Only `push` and `workflow_dispatch` trigger the workflow; each push gate is conditioned on exactly one branch; together the gates cover `eyter_dev`, `release`, `main` and `production` |
 | Automate        | Y |
 
-### TC-000-88 — push to eyter_dev runs a green pipeline with test report
+### TC-000-88 — push to eyter_dev runs a green workflow run with test report
 | Field           | Value |
 |-----------------|-------|
 | Requirement     | RF-59 |
@@ -1504,13 +1504,13 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Layer           | integration |
 | Tags            | n/a (manual check) |
 | Browsers        | n/a (pipeline / CLI level) |
-| Preconditions   | GitLab variables configured |
+| Preconditions   | GitHub secrets configured |
 | Test data       | A commit without violations |
-| Steps           | **Given** a clean commit **When** it is pushed to eyter_dev **Then** the pipeline passes |
-| Expected result | All jobs green; pipeline passed; Tests tab lists the smoke results |
-| Automate        | N — requires a real GitLab pipeline; observed at validation |
+| Steps           | **Given** a clean commit **When** it is pushed to eyter_dev **Then** the workflow run passes |
+| Expected result | All jobs green; run passed; the artifacts contain `reports/junit.xml` with the smoke results |
+| Automate        | N — requires a real GitHub Actions run; observed at validation |
 
-### TC-000-89 — a failing job fails the pipeline and keeps evidence
+### TC-000-89 — a failing job fails the workflow run and keeps evidence
 | Field           | Value |
 |-----------------|-------|
 | Requirement     | RF-59, RF-66, RF-67 |
@@ -1520,11 +1520,11 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Layer           | integration |
 | Tags            | n/a (manual check) |
 | Browsers        | n/a (pipeline / CLI level) |
-| Preconditions   | GitLab variables configured |
+| Preconditions   | GitHub secrets configured |
 | Test data       | A commit with one deliberately failing smoke assertion (reverted afterwards) |
-| Steps           | **Given** a failing smoke test **When** the pipeline runs **Then** it fails with evidence |
-| Expected result | Pipeline failed; failing test shown in the Tests tab; report and test-results artifacts downloadable |
-| Automate        | N — requires a real GitLab pipeline and a temporary failing commit; executed once at validation |
+| Steps           | **Given** a failing smoke test **When** the workflow runs **Then** it fails with evidence |
+| Expected result | Run failed; the failing test is listed in `reports/junit.xml`; report and test-results artifacts downloadable once `check:secrets` passed |
+| Automate        | N — requires a real GitHub Actions run and a temporary failing commit; executed once at validation |
 
 ### TC-000-90 — SUITE and BROWSER values select the right tests
 | Field           | Value |
@@ -1574,7 +1574,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Expected result | "No tests found for SUITE=regression"; non-zero exit |
 | Automate        | Y |
 
-### TC-000-93 — credential variables are masked and protected in GitLab
+### TC-000-93 — credential values are stored as GitHub encrypted secrets
 | Field           | Value |
 |-----------------|-------|
 | Requirement     | RF-64 |
@@ -1584,13 +1584,13 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Layer           | integration |
 | Tags            | n/a (manual check) |
 | Browsers        | n/a (pipeline / CLI level) |
-| Preconditions   | Maintainer access to the GitLab project |
-| Test data       | TEST_USER_EMAIL, TEST_USER_PASSWORD, TEST_USER_2_EMAIL, TEST_USER_2_PASSWORD |
-| Steps           | **Given** the project CI/CD variables **When** the settings are reviewed **Then** the four are protected and masked |
-| Expected result | All four show Masked and Protected; BASE_URL and API_BASE_URL may be visible |
-| Automate        | N — GitLab settings review; no API access from the framework |
+| Preconditions   | Admin access to the GitHub repository |
+| Test data       | BASE_URL, API_BASE_URL, TEST_USER_EMAIL, TEST_USER_PASSWORD, TEST_USER_2_EMAIL, TEST_USER_2_PASSWORD, PROMOTION_TOKEN |
+| Steps           | **Given** the repository secrets **When** they are listed by name (`gh secret list`) **Then** all seven exist |
+| Expected result | All seven names listed; no value is shown or stored in the repository |
+| Automate        | N — GitHub settings review; the framework has no access to repository settings |
 
-### TC-000-94 — unprotected branch run gets no credentials and leaks nothing
+### TC-000-94 — job logs leak no credential values
 | Field           | Value |
 |-----------------|-------|
 | Requirement     | RF-64 |
@@ -1600,11 +1600,11 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Layer           | integration |
 | Tags            | n/a (manual check) |
 | Browsers        | n/a (pipeline / CLI level) |
-| Preconditions   | A temporary unprotected branch |
-| Test data       | Manual pipeline run SUITE=smoke, BROWSER=chromium |
-| Steps           | **Given** an unprotected branch **When** the manual pipeline runs **Then** credentials are unavailable |
-| Expected result | API smoke fails with "Missing required environment variable: TEST_USER_EMAIL"; job log shows no credential values |
-| Automate        | N — requires a real GitLab pipeline on a temporary branch; executed once at validation |
+| Preconditions   | A finished GitHub Actions run with the secrets in use |
+| Test data       | Job logs of the eyter_dev run |
+| Steps           | **Given** a finished run **When** its job logs are reviewed **Then** no credential value appears |
+| Expected result | Secret values appear only as `***`; no step prints the environment |
+| Automate        | N — requires a real GitHub Actions run; executed once at validation |
 
 ### TC-000-95 — CI script check flags environment printing
 | Field           | Value |
@@ -1665,7 +1665,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | Repository checked out |
-| Test data       | `.gitlab-ci.yml` |
+| Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the CI definition **When** the jobs of a `release` push are inspected **Then** they form the release gate |
 | Expected result | Check jobs (spec:check, lint, typecheck, unit) and one Playwright job with SUITE=regression, BROWSER=all run on `release` pushes; a check:secrets job needs that Playwright job |
 | Automate        | Y |
@@ -1681,7 +1681,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | Repository checked out |
-| Test data       | `.gitlab-ci.yml` |
+| Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the CI definition **When** the jobs of a `main` push are inspected **Then** they form the main gate |
 | Expected result | Check jobs and one Playwright job with SUITE=smoke, BROWSER=all run on `main` pushes; a check:secrets job needs that Playwright job |
 | Automate        | Y |
@@ -1697,12 +1697,12 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | Repository checked out |
-| Test data       | `.gitlab-ci.yml` |
+| Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the CI definition **When** the jobs of a `production` push are inspected **Then** they form the sanity gate |
 | Expected result | Check jobs and one Playwright job with SUITE=smoke, BROWSER=chromium run on `production` pushes; a check:secrets job needs that Playwright job |
 | Automate        | Y |
 
-### TC-000-101 — promotion runs last, only on success, and never from web runs or production
+### TC-000-101 — promotion runs last, only on success, and never from manual runs or production
 | Field           | Value |
 |-----------------|-------|
 | Requirement     | RF-71, RF-72, RF-73, RF-76 |
@@ -1713,9 +1713,9 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | Repository checked out |
-| Test data       | `.gitlab-ci.yml` |
+| Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the CI definition **When** the promotion job and its rules are inspected **Then** it can only run after a fully green push pipeline on eyter_dev, release or main |
-| Expected result | `promote` is the last stage; its rules are push on eyter_dev, release or main with `when: on_success`; no rule for web runs or production; no job has `allow_failure`; one promotion at a time per branch (`resource_group`); no `git push --force` or branch deletion anywhere |
+| Expected result | `promote` needs every other job and runs only when none failed or was canceled; its condition is a push on eyter_dev, release or main; it never runs for `workflow_dispatch` or production; one promotion at a time (`concurrency: promotion`); no `continue-on-error`; no force-push or branch deletion command |
 | Automate        | Y |
 
 ### TC-000-102 — the next branch is release, main, production and none after that
@@ -1734,7 +1734,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Expected result | release, main, production, none, none; promoting from production or another branch fails naming the branch and merges nothing |
 | Automate        | Y |
 
-### TC-000-103 — promotion creates a merge request and merges the tested commit
+### TC-000-103 — promotion merges the tested commit into the next branch
 | Field           | Value |
 |-----------------|-------|
 | Requirement     | RF-72, RF-74, RF-75, RF-76, RF-77 |
@@ -1745,12 +1745,12 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | None |
-| Test data       | Stub GitLab API (no network); env with `TEST_` token value; source eyter_dev with one commit not in release; no open merge request; merge status `mergeable` |
-| Steps           | **Given** a green eyter_dev pipeline **When** the promotion runs **Then** it opens and merges eyter_dev → release |
-| Expected result | Merge request created with `remove_source_branch: false`; merge sent with `sha` = pipeline commit and `should_remove_source_branch: false`; exit code 0; output names source, target and merge request; the token never appears in output |
+| Test data       | Stub GitHub API (no network); env with `TEST_` token value; the tested commit is eyter_dev's tip and release lacks it |
+| Steps           | **Given** a tested commit that release lacks **When** the promotion runs **Then** it merges that commit into release |
+| Expected result | One call to the merges API with `base: release` and `head` = tested commit; branches only read, never deleted; exit code 0; output names source, target and commit; the token never appears in output |
 | Automate        | Y |
 
-### TC-000-104 — promotion reuses an open merge request
+### TC-000-104 — promotion from release and main targets the next branch
 | Field           | Value |
 |-----------------|-------|
 | Requirement     | RF-72 |
@@ -1761,9 +1761,9 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | None |
-| Test data       | Stub GitLab API (no network); env with `TEST_` token value; an open merge request release → main already exists |
-| Steps           | **Given** an open promotion merge request **When** the promotion runs **Then** it merges that one |
-| Expected result | No merge request created; the existing one is merged with the pipeline commit `sha`; exit code 0 |
+| Test data       | Stub GitHub API (no network); env with `TEST_` token value; runs on release and on main, each with a commit the target lacks |
+| Steps           | **Given** a green run on release or main **When** the promotion runs **Then** it merges into the next branch |
+| Expected result | release merges into main and main into production, each with `head` = tested commit; exit code 0 |
 | Automate        | Y |
 
 ### TC-000-105 — promotion passes when the target is already up to date
@@ -1777,9 +1777,9 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | None |
-| Test data       | Stub GitLab API (no network); env with `TEST_` token value; compare main…pipeline commit returns zero commits |
+| Test data       | Stub GitHub API (no network); env with `TEST_` token value; compare of production with the tested commit answers `identical` or `behind` |
 | Steps           | **Given** nothing new to promote **When** the promotion runs **Then** it merges nothing |
-| Expected result | Exit code 0; message "production is already up to date"; no merge request created or merged |
+| Expected result | Exit code 0; message "production is already up to date"; nothing merged |
 | Automate        | Y |
 
 ### TC-000-106 — promotion fails when the source branch moved past the tested commit
@@ -1793,12 +1793,12 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | None |
-| Test data       | Stub GitLab API (no network); env with `TEST_` token value; the merge call answers 409 (SHA does not match HEAD of source branch) |
+| Test data       | Stub GitHub API (no network); env with `TEST_` token value; eyter_dev's tip is a newer commit than the tested one |
 | Steps           | **Given** a newer commit on the source branch **When** the promotion merges **Then** it refuses |
-| Expected result | Non-zero exit; message names eyter_dev, release and the SHA mismatch; nothing merged |
+| Expected result | Non-zero exit; message names eyter_dev, release and "moved past"; no merge attempted |
 | Automate        | Y |
 
-### TC-000-107 — promotion fails when the merge request is not mergeable in time
+### TC-000-107 — promotion fails on a merge conflict
 | Field           | Value |
 |-----------------|-------|
 | Requirement     | RF-74 |
@@ -1809,9 +1809,9 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
 | Browsers        | n/a (no browser) |
 | Preconditions   | None |
-| Test data       | Stub GitLab API (no network); env with `TEST_` token value; merge status stays `checking` past the 60 s budget, or is `conflict` |
-| Steps           | **Given** a conflicting or never-ready merge request **When** the promotion runs **Then** it stops |
-| Expected result | Non-zero exit; message names source, target and the status (`conflict` or not mergeable within 60 s); merge never called |
+| Test data       | Stub GitHub API (no network); env with `TEST_` token value; the merges API answers 409 "Merge conflict" |
+| Steps           | **Given** a conflicting merge **When** the promotion runs **Then** it stops |
+| Expected result | Non-zero exit; message names source, target and GitHub's reason, and says nothing was merged |
 | Automate        | Y |
 
 ### TC-000-108 — promotion without PROMOTION_TOKEN fails naming the variable
@@ -1826,7 +1826,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Browsers        | n/a (no browser) |
 | Preconditions   | None |
 | Test data       | Env without `PROMOTION_TOKEN`, and env with it set to whitespace |
-| Steps           | **Given** no usable token **When** the promotion runs **Then** it fails before calling GitLab |
+| Steps           | **Given** no usable token **When** the promotion runs **Then** it fails before calling GitHub |
 | Expected result | Non-zero exit; message "Missing required environment variable: PROMOTION_TOKEN"; the stub API receives no call |
 | Automate        | Y |
 
@@ -1840,11 +1840,11 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Layer           | integration |
 | Tags            | n/a (manual check) |
 | Browsers        | n/a (pipeline / CLI level) |
-| Preconditions   | `PROMOTION_TOKEN` configured (masked, protected); the four branches protected |
-| Test data       | A documentation-only commit pushed to eyter_dev |
-| Steps           | **Given** a green eyter_dev pipeline **When** each pipeline finishes **Then** the commit reaches release, main and production |
-| Expected result | Pipelines on eyter_dev, release, main and production green; three promotion merge requests merged; source branches kept; production does not promote; token masked in every job log |
-| Automate        | N — requires real GitLab pipelines on the protected branches; executed once at validation |
+| Preconditions   | `PROMOTION_TOKEN` secret configured (fine-grained token, Contents read and write on this repository) |
+| Test data       | The commit that moves CI to GitHub only, pushed to eyter_dev |
+| Steps           | **Given** a green eyter_dev run **When** each run finishes **Then** the commit reaches release, main and production |
+| Expected result | Runs on eyter_dev, release, main and production green; three promotion merges of the tested commit; all four branches kept; production does not promote; the token appears only as `***` in job logs |
+| Automate        | N — requires real GitHub Actions runs on the four branches; executed once at validation |
 
 ### TC-000-110 — a failing job stops the promotion chain
 | Field           | Value |
@@ -1858,57 +1858,9 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Browsers        | n/a (pipeline / CLI level) |
 | Preconditions   | `PROMOTION_TOKEN` configured |
 | Test data       | A pipeline with one failing job (the next natural failure, or a temporary failing commit approved by the user) |
-| Steps           | **Given** a failed job **When** the pipeline ends **Then** nothing is promoted |
-| Expected result | Pipeline failed; `promote` job not run; no new merge request; the next branch unchanged |
-| Automate        | N — requires a real failing GitLab pipeline; executed at validation |
-
-### TC-000-111 — GitHub workflow runs the checks and the eyter_dev gate
-| Field           | Value |
-|-----------------|-------|
-| Requirement     | RF-78 |
-| Priority        | P1 |
-| Type            | Positive |
-| Technique       | EP |
-| Layer           | unit |
-| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
-| Browsers        | n/a (no browser) |
-| Preconditions   | Repository checked out |
-| Test data       | `.github/workflows/ci.yml` |
-| Steps           | **Given** the GitHub workflow **When** the jobs of an `eyter_dev` push are inspected **Then** they mirror the GitLab eyter_dev gate |
-| Expected result | Push trigger on the four promotion branches; the checks job runs spec:check, lint, typecheck and test:unit; `smoke-api` and `smoke-ui-chromium` run the @smoke suite on `api` and chromium only for `eyter_dev`, after the checks |
-| Automate        | Y |
-
-### TC-000-112 — GitHub workflow runs the release, main and production gates
-| Field           | Value |
-|-----------------|-------|
-| Requirement     | RF-78 |
-| Priority        | P2 |
-| Type            | Positive |
-| Technique       | Decision table |
-| Layer           | unit |
-| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
-| Browsers        | n/a (no browser) |
-| Preconditions   | Repository checked out |
-| Test data       | `.github/workflows/ci.yml` |
-| Steps           | **Given** the GitHub workflow **When** the jobs of each later branch are inspected **Then** each runs its gate |
-| Expected result | `release-regression` (SUITE=regression, BROWSER=all), `main-smoke` (smoke, all) and `production-smoke` (smoke, chromium) run `npm run ci:run-suite`, each only on its branch, after the checks |
-| Automate        | Y |
-
-### TC-000-113 — each GitHub gate runs only on its own branch or event
-| Field           | Value |
-|-----------------|-------|
-| Requirement     | RF-78, RF-80, RF-81 |
-| Priority        | P1 |
-| Type            | Negative |
-| Technique       | Decision table |
-| Layer           | unit |
-| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
-| Browsers        | n/a (no browser) |
-| Preconditions   | Repository checked out |
-| Test data       | `.github/workflows/ci.yml` |
-| Steps           | **Given** the GitHub workflow **When** the triggers and job conditions are inspected **Then** no gate runs elsewhere |
-| Expected result | Only `push` (the four branches) and `workflow_dispatch` trigger the workflow; each gate job is conditioned on exactly one branch and on a push; `run-suite` only on `workflow_dispatch`; no job named or doing `promote` |
-| Automate        | Y |
+| Steps           | **Given** a failed job **When** the run ends **Then** nothing is promoted |
+| Expected result | Run failed; `promote` job skipped; the next branch unchanged |
+| Automate        | N — requires a real failing GitHub Actions run; executed at validation |
 
 ### TC-000-114 — GitHub workflow scans secrets after every Playwright job and uploads only after a clean scan
 | Field           | Value |
@@ -1938,14 +1890,14 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Browsers        | n/a (no browser) |
 | Preconditions   | Repository checked out |
 | Test data       | `.github/workflows/ci.yml` |
-| Steps           | **Given** the GitHub workflow **When** the manual run is inspected **Then** it reuses the GitLab selector |
+| Steps           | **Given** the GitHub workflow **When** the manual run is inspected **Then** it reuses the shared selector |
 | Expected result | `workflow_dispatch` has `suite` (smoke, regression) and `browser` (chromium, firefox, webkit, all) choice inputs; `run-suite` passes them as SUITE and BROWSER to `npm run ci:run-suite` |
 | Automate        | Y |
 
 ### TC-000-116 — GitHub workflow is read-only, never ignores a failure, prints no environment and never pushes
 | Field           | Value |
 |-----------------|-------|
-| Requirement     | RF-81, RF-79 |
+| Requirement     | RF-64, RF-65, RF-77, RF-79, RF-81 |
 | Priority        | P1 |
 | Type            | Security |
 | Technique       | Error guessing |
@@ -1955,26 +1907,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the GitHub workflow **When** it is scanned **Then** none of the forbidden patterns appears |
-| Expected result | `permissions: contents: read`; no `continue-on-error`; no environment printing (RF-65 check); no `git push`, merge or force/delete command; the six variables come only from `${{ secrets.* }}` |
+| Expected result | `permissions: contents: read`; no `continue-on-error`; no environment printing (RF-65 check); no `git push` or `git merge`; the seven variables, `PROMOTION_TOKEN` included, come only from `${{ secrets.* }}` with the same name |
 | Automate        | Y |
 
-### TC-000-117 — GitHub container image version equals installed @playwright/test version
-| Field           | Value |
-|-----------------|-------|
-| Requirement     | RF-82 |
-| Priority        | P2 |
-| Type            | Positive |
-| Technique       | EP |
-| Layer           | unit |
-| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
-| Browsers        | n/a (no browser) |
-| Preconditions   | Repository checked out |
-| Test data       | `.github/workflows/ci.yml`, `package-lock.json` |
-| Steps           | **Given** the workflow and the lockfile **When** the container images are read **Then** they match the library |
-| Expected result | At least one Playwright image; every image version equals the locked `@playwright/test` version |
-| Automate        | Y |
-
-### TC-000-118 — GitHub mirror run on eyter_dev passes
+### TC-000-118 — GitHub run on eyter_dev passes
 | Field           | Value |
 |-----------------|-------|
 | Requirement     | RF-78, RF-79 |

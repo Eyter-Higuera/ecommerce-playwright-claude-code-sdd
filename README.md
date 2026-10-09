@@ -2,7 +2,7 @@
 
 Test automation framework for an e-commerce web application, built with **Spec-Driven
 Development (SDD)** and Claude Code skills. Playwright + TypeScript for API, integration and UI
-tests; Vitest for unit tests; GitLab CI/CD for the promotion pipeline.
+tests; Vitest for unit tests; GitHub Actions for the branch gates and the automatic promotion.
 
 ## SDD flow
 Constitution → Spec → Clarification → Test cases → Plan → Tasks → Implementation (one task at a
@@ -46,7 +46,7 @@ npm ci                  # installs dependencies and the chromium, firefox and we
 cp .env.example .env    # then fill in the TEST_USER_* values (never commit .env)
 ```
 
-Credentials go only in the local `.env` and, for CI, in masked, protected GitLab CI/CD variables.
+Credentials go only in the local `.env` and, for CI, in GitHub encrypted secrets.
 Process environment variables take precedence over `.env`.
 
 ## Commands
@@ -76,8 +76,8 @@ Reports: HTML in `playwright-report/`, JUnit in `reports/junit.xml`, traces of f
   To recover:
   1. Register a new test account on the site, or reset the password.
   2. Update `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` (account A) or `TEST_USER_2_EMAIL` /
-     `TEST_USER_2_PASSWORD` (account B) in `.env` and in the GitLab CI/CD variables (masked and
-     protected).
+     `TEST_USER_2_PASSWORD` (account B) in `.env` and in the GitHub secrets
+     (`gh secret set <NAME> -R Eyter-Higuera/ecommerce-playwright-claude-code-sdd`).
 
   To keep the accounts safe, a run sends at most one wrong password for account A and none for
   account B (Spec 001 RF-28; the unit test `wrong-password-limit.test.ts` enforces it).
@@ -93,9 +93,11 @@ Reports: HTML in `playwright-report/`, JUnit in `reports/junit.xml`, traces of f
   `node node_modules/vitest/vitest.mjs run <file> -t "<pattern>"` or
   `node node_modules/@playwright/test/cli.js test --grep "<pattern>"`.
 
-## CI/CD (GitLab)
-Every push to a promotion branch runs spec:check, lint, typecheck and the unit tests, then the
-branch's Playwright gate, then `check:secrets` on each Playwright job's artifacts:
+## CI/CD (GitHub Actions)
+The repository lives on GitHub (`origin`: https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd)
+and `.github/workflows/ci.yml` is its only CI (Spec 000 RF-58 to RF-82). Every push to a
+promotion branch runs spec:check, lint, typecheck and the unit tests, then the branch's Playwright
+gate. Each Playwright job then runs `check:secrets` on its own reports:
 
 | Branch | Playwright gate | On success |
 |---|---|---|
@@ -104,39 +106,26 @@ branch's Playwright gate, then `check:secrets` on each Playwright job's artifact
 | `main` | smoke on api, chromium, firefox and webkit | merged into `production` |
 | `production` | smoke on api and chromium | — (last branch) |
 
-Promotion is automatic: the last stage (`promote`, `npm run ci:promote`) starts only when every
-other job of the pipeline passed. It opens (or reuses) the merge request to the next branch and
-merges exactly the tested commit, keeping the source branch. A failed or canceled job stops the
-chain, and if a newer commit reached the source branch meanwhile, the promotion fails and that
-commit is promoted by its own pipeline instead.
+- **Promotion is automatic.** The last job (`promote`, `npm run ci:promote`) starts only when no
+  other job of the run failed or was canceled. It merges exactly the tested commit into the next
+  branch through the GitHub merges API. That merge starts the next branch's run, and so on up to
+  `production`.
+- **A failed or canceled job stops the chain.** If a newer commit reached the source branch in the
+  meantime, the promotion fails, and that commit is promoted by its own run instead.
+- **Reports.** Each Playwright job runs `check:secrets` whether it passed or failed. It uploads
+  `playwright-report/`, `reports/` (JUnit included) and `test-results/` for 7 days only when that
+  scan passes.
+- **Manual run.** Actions → CI → Run workflow takes `suite` (`smoke` | `regression`) and
+  `browser` (`chromium` | `firefox` | `webkit` | `all`), and never promotes.
 
-A manual "Run pipeline" takes `SUITE` (`smoke` | `regression`) and `BROWSER`
-(`chromium` | `firefox` | `webkit` | `all`) and never promotes. Reports are kept 7 days; JUnit
-appears in the pipeline's Tests tab.
+One-time setup, done by a maintainer and never committed. These are the repository secrets
+(Settings → Secrets and variables → Actions):
+- `BASE_URL`, `API_BASE_URL`, `TEST_USER_EMAIL`, `TEST_USER_PASSWORD`, `TEST_USER_2_EMAIL`
+  and `TEST_USER_2_PASSWORD`. For example:
+  `gh secret set -f .env -R Eyter-Higuera/ecommerce-playwright-claude-code-sdd`.
+- `PROMOTION_TOKEN`: a fine-grained personal access token for this repository only, with
+  *Contents: read and write*. It is needed because merges made with the default `GITHUB_TOKEN` do
+  not start the next branch's run.
 
-One-time GitLab setup for promotion (done by a maintainer, never committed):
-1. Protect `eyter_dev`, `release`, `main` and `production` (Settings → Repository → Protected
-   branches), with Maintainers allowed to merge.
-2. Create a Project Access Token (Settings → Access tokens) with role Maintainer and scope `api`.
-3. Store it as the CI/CD variable `PROMOTION_TOKEN`, masked and protected.
-
-## GitHub mirror (GitHub Actions)
-The repository is mirrored on GitHub (`origin`: https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd);
-GitLab is the `gitlab` remote. `.github/workflows/ci.yml` runs the same checks and branch gates as
-the table above (Spec 000 RF-78 to RF-82), but **never promotes**: only GitLab merges between
-branches, and only `eyter_dev` is pushed to GitHub by hand.
-
-- Each Playwright job runs `check:secrets` on its reports, passed or failed, and uploads them
-  (7 days) only when the scan passes.
-- A manual run (Actions → CI → Run workflow) takes `suite` and `browser`, like the GitLab "Run
-  pipeline".
-- Secrets (Settings → Secrets and variables → Actions, set by a maintainer, never committed):
-  `BASE_URL`, `API_BASE_URL`, `TEST_USER_EMAIL`, `TEST_USER_PASSWORD`, `TEST_USER_2_EMAIL`,
-  `TEST_USER_2_PASSWORD`. For example `gh secret set -f .env -R Eyter-Higuera/ecommerce-playwright-claude-code-sdd`.
-
-Pushing a change of `eyter_dev` to both remotes:
-
-```
-git push origin eyter_dev
-git -c credential.helper= -c "credential.helper=!glab auth git-credential" push gitlab eyter_dev
-```
+Push changes with `git push origin eyter_dev` only. `release`, `main` and `production` are
+updated by the promotion, never by hand. Never force-push and never delete a branch.

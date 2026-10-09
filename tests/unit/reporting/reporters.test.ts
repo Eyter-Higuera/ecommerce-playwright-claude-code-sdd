@@ -5,7 +5,7 @@ import { buildPlaywrightConfig } from '../../../src/config/playwright-options';
 import { CLI_TEST_TIMEOUT_MS, fixturePath, makeEmptyDir, runPlaywright } from '../helpers/run-cli';
 
 // Spec 000 — Framework foundation. RF-46 to RF-48: every Playwright run writes an HTML report to
-// playwright-report/ and a JUnit report to reports/junit.xml (GitLab reads that path), and only CI
+// playwright-report/ and a JUnit report to reports/junit.xml (kept in the CI artifacts), and only CI
 // retries failed tests (2 times), so local failures are never hidden by a retry.
 const DEFAULT_ARGV = ['node', 'playwright', 'test'];
 const HTML_REPORT_DIR = 'playwright-report';

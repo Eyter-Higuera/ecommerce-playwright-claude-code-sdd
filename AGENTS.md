@@ -3,7 +3,7 @@
 ## Project
 Test automation framework for a third-party demo e-commerce web application, built with
 Spec-Driven Development (SDD). Playwright + TypeScript for API, integration and UI tests
-(Page Object Model), Vitest for unit tests of framework code, GitLab CI/CD pipeline promoting
+(Page Object Model), Vitest for unit tests of framework code, GitHub Actions workflow promoting
 `eyter_dev → release → main → production`.
 
 ## Commands
@@ -14,13 +14,12 @@ Spec-Driven Development (SDD). Playwright + TypeScript for API, integration and 
 - SDD traceability gate: `npm run spec:check`
 - Secrets scan of reports and traces: `npm run check:secrets`
 - CI definition and promotion checks: `npm run test:unit -- tests/unit/ci`
-  (`github-actions.test.ts`: GitHub mirror gates, scan-before-upload, read-only, no promotion;
-  `gitlab-ci.test.ts`: branch gates, `promote` last with `when: on_success`, no `allow_failure`,
-  no force push or branch deletion, no environment printing, Playwright image version;
-  `ci-promote.test.ts`: promotion script against a stub GitLab API; `ci-run-suite.test.ts`:
-  SUITE/BROWSER selection)
-- Manual suite run (CI "Run pipeline"): `npm run ci:run-suite` with `SUITE` and `BROWSER`
-- Promotion (CI only, last stage): `npm run ci:promote`
+  (`github-actions.test.ts`: branch gates, safe.directory, scan before upload, `promote` last and
+  only on success, no `continue-on-error`, no force push or branch deletion, no environment
+  printing, secrets only from `secrets.*`, Playwright image version; `ci-promote.test.ts`:
+  promotion script against a stub GitHub API; `ci-run-suite.test.ts`: SUITE/BROWSER selection)
+- Manual suite run (Actions "Run workflow"): `npm run ci:run-suite` with `SUITE` and `BROWSER`
+- Promotion (CI only, last job): `npm run ci:promote`
 
 ## Style and conventions
 - TypeScript strict. Files in kebab-case, classes in PascalCase (`LoginPage`), test files `*.spec.ts`, unit tests `*.test.ts`.
@@ -44,9 +43,10 @@ Spec-Driven Development (SDD). Playwright + TypeScript for API, integration and 
 - **Never force push** (`git push --force`, `git push -f`, `git push --force-with-lease`).
 
 ## CI/CD and promotion
-Defined in `.gitlab-ci.yml` (Spec 000, RF-58 to RF-77). Every push to a promotion branch runs
+GitHub is the only remote (`origin`) and CI platform; GitLab is no longer used. The workflow is
+`.github/workflows/ci.yml` (Spec 000, RF-58 to RF-82). Every push to a promotion branch runs
 spec:check, lint, typecheck and the unit tests, then the branch's Playwright gate, then
-`check:secrets` after each Playwright job:
+`check:secrets` in each Playwright job before its artifacts are uploaded:
 
 | Branch | Playwright gate | On success |
 |---|---|---|
@@ -55,25 +55,22 @@ spec:check, lint, typecheck and the unit tests, then the branch's Playwright gat
 | `main` | smoke on api, chromium, firefox and webkit | merged into `production` |
 | `production` | smoke on api and chromium | — (last branch, never promotes) |
 
-- Only the `promote` stage merges between these branches, and only after every other job of the
-  pipeline passed. Never add `allow_failure`, and never merge or push to `release`, `main` or
-  `production` by hand.
-- The promotion merges exactly the tested commit (pinned SHA) and keeps the source branch.
-  Manual "Run pipeline" runs never promote.
-- `PROMOTION_TOKEN` lives only in a masked, protected GitLab CI/CD variable; never print or
-  commit it.
-- If a promotion fails, fix the cause on `eyter_dev` and let a new green pipeline promote it.
-- GitHub mirror (Spec 000 RF-78 to RF-82): `origin` is GitHub, `gitlab` is GitLab. Push `eyter_dev`
-  to both; `.github/workflows/ci.yml` runs the same gates there but never merges, pushes or
-  promotes. Never push `release`, `main` or `production` to either remote by hand. GitHub secrets
-  (`BASE_URL`, `API_BASE_URL`, `TEST_USER_*`) are set by a maintainer and never printed.
-- Any change to `.gitlab-ci.yml`, `.github/workflows/ci.yml`, `scripts/ci-*.ts` or `scripts/check-ci-scripts.ts` starts in
-  Spec 000 (Mode C) and must keep `npm run test:unit -- tests/unit/ci` green: those tests are the
-  executable form of the pipeline rules.
+- Only the `promote` job merges between these branches, and only after every other job of the run
+  passed. Never add `continue-on-error`. Push by hand only to `eyter_dev`
+  (`git push origin eyter_dev`). Never merge or push to `release`, `main` or `production` by hand.
+- The promotion merges exactly the tested commit (pinned SHA) and keeps every branch. Manual "Run
+  workflow" runs never promote.
+- `PROMOTION_TOKEN` (fine-grained token, Contents read and write on this repository) and the
+  `BASE_URL`, `API_BASE_URL` and `TEST_USER_*` values live only in GitHub encrypted secrets, set
+  by a maintainer. Never print or commit them.
+- If a promotion fails, fix the cause on `eyter_dev` and let a new green run promote it.
+- Any change to `.github/workflows/ci.yml`, `scripts/ci-*.ts` or `scripts/check-ci-scripts.ts`
+  starts in Spec 000 (Mode C) and must keep `npm run test:unit -- tests/unit/ci` green: those tests
+  are the executable form of the workflow rules.
 
 ## When finishing any task
 1. Run the relevant tests and show the result.
 2. Run the `test-reviewer` skill against `docs/test-review-checklist.md`; every item must PASS.
 3. Run `npm run lint`, `npm run typecheck` and `npm run spec:check`. If the task touched
-   `.gitlab-ci.yml` or a CI script, also run `npm run test:unit -- tests/unit/ci`.
+   `.github/workflows/ci.yml` or a CI script, also run `npm run test:unit -- tests/unit/ci`.
 4. Tick the task in `tasks.md`, state which RF/TC it covers, and STOP.
