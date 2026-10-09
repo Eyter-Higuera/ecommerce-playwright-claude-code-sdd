@@ -4,10 +4,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 <!-- Allowed values: draft | approved -->
 
 ## Summary
-- 114 test cases for 82 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
+- 132 test cases for 89 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
   the positive case of one RF and the negative case of another (decision tables and partitions).
-- Layers: unit 99, api 1, mocked 2, ui 1, integration 11.
-- Automated: 103; manual: 11.
+- Layers: unit 115, api 1, mocked 2, ui 1, integration 13.
+- Automated: 119; manual: 13.
 - Smoke: 2 TCs (2%), both P1.
 - "unit" TCs run in Vitest with no real network: they inspect config, run CLIs (tsc, ESLint,
   Playwright `--list`, spec:check, check:secrets) on local fixtures, or test helpers with stubs.
@@ -99,6 +99,13 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-80 | TC-000-115 | TC-000-87 | — | — | 2 |
 | RF-81 | TC-000-116 | TC-000-101 | — | TC-000-116 | 2 |
 | RF-82 | TC-000-04, TC-000-86 | TC-000-05 | — | — | 3 |
+| RF-83 | TC-000-119 | TC-000-110, TC-000-87 | — | — | 3 |
+| RF-84 | TC-000-120, TC-000-121, TC-000-127 | TC-000-125 | TC-000-122, TC-000-135 | — | 6 |
+| RF-85 | TC-000-123, TC-000-124, TC-000-127 | TC-000-123 | — | — | 3 |
+| RF-86 | TC-000-126, TC-000-127 | — | TC-000-126 | — | 2 |
+| RF-87 | — | TC-000-125 | — | — | 1 |
+| RF-88 | TC-000-128, TC-000-133 | TC-000-130, TC-000-134 | TC-000-129 | TC-000-130, TC-000-131, TC-000-136 | 7 |
+| RF-89 | TC-000-132, TC-000-133 | — | — | — | 2 |
 
 ## Test cases
 
@@ -1475,13 +1482,13 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the GitHub workflow **When** the unit test inspects its jobs as text **Then** all declarations are present |
-| Expected result | Push trigger on the four promotion branches; checks job runs spec:check, lint, typecheck and test:unit; `smoke-api` and `smoke-ui-chromium` run the @smoke suite on `api` and chromium only for `eyter_dev`, after the checks; every job marks the workspace as a safe git directory after checkout and before `npm ci`; every Playwright job prints the flaky count and keeps `playwright-report/`, `reports/` (JUnit included) and `test-results/` for 7 days |
+| Expected result | Push trigger on the four promotion branches; the checks job runs spec:check, lint and typecheck; the `unit-tests` job runs test:unit; `eyter-dev-api` and `eyter-dev-ui-chromium` run the @smoke suite on `api` and chromium only for `eyter_dev`; every job marks the workspace as a safe git directory after checkout and before `npm ci`; every Playwright job prints the flaky count and keeps `playwright-report/`, `reports/` (JUnit included) and `test-results/` for 7 days |
 | Automate        | Y |
 
 ### TC-000-87 — each push gate runs only on its own branch
 | Field           | Value |
 |-----------------|-------|
-| Requirement     | RF-58, RF-69, RF-70, RF-71, RF-78, RF-80 |
+| Requirement     | RF-58, RF-69, RF-70, RF-71, RF-78, RF-80, RF-83 |
 | Priority        | P3 |
 | Type            | Negative |
 | Technique       | EP |
@@ -1491,7 +1498,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `.github/workflows/ci.yml` triggers and job conditions |
 | Steps           | **Given** the workflow triggers and job conditions **When** they are inspected **Then** each push gate targets only its own branch |
-| Expected result | Only `push` and `workflow_dispatch` trigger the workflow; each push gate is conditioned on exactly one branch; together the gates cover `eyter_dev`, `release`, `main` and `production` |
+| Expected result | Only `push` and `workflow_dispatch` trigger the workflow; the shared `checks` and `unit-tests` jobs have no branch condition; each branch API and UI job (the push gates) is conditioned on exactly one branch; together the gates cover `eyter_dev`, `release`, `main` and `production` |
 | Automate        | Y |
 
 ### TC-000-88 — push to eyter_dev runs a green workflow run with test report
@@ -1667,7 +1674,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the CI definition **When** the jobs of a `release` push are inspected **Then** they form the release gate |
-| Expected result | Check jobs (spec:check, lint, typecheck, unit) and one Playwright job with SUITE=regression, BROWSER=all run on `release` pushes; a check:secrets job needs that Playwright job |
+| Expected result | On `release` pushes, `release-api` runs `npx playwright test --grep @regression --project=api`, and `release-ui-chromium`, `release-ui-firefox` and `release-ui-webkit` run the @regression suite on their browser; each job runs check:secrets after its tests |
 | Automate        | Y |
 
 ### TC-000-99 — CI definition runs the main gate
@@ -1683,7 +1690,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the CI definition **When** the jobs of a `main` push are inspected **Then** they form the main gate |
-| Expected result | Check jobs and one Playwright job with SUITE=smoke, BROWSER=all run on `main` pushes; a check:secrets job needs that Playwright job |
+| Expected result | On `main` pushes, `main-api` runs `npx playwright test --grep @smoke --project=api`, and `main-ui-chromium`, `main-ui-firefox` and `main-ui-webkit` run the @smoke suite on their browser; each job runs check:secrets after its tests |
 | Automate        | Y |
 
 ### TC-000-100 — CI definition runs the production sanity gate
@@ -1699,7 +1706,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the CI definition **When** the jobs of a `production` push are inspected **Then** they form the sanity gate |
-| Expected result | Check jobs and one Playwright job with SUITE=smoke, BROWSER=chromium run on `production` pushes; a check:secrets job needs that Playwright job |
+| Expected result | On `production` pushes, `production-api` runs `npx playwright test --grep @smoke --project=api` and `production-ui-chromium` runs the @smoke suite on chromium; each job runs check:secrets after its tests |
 | Automate        | Y |
 
 ### TC-000-101 — promotion runs last, only on success, and never from manual runs or production
@@ -1849,7 +1856,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 ### TC-000-110 — a failing job stops the promotion chain
 | Field           | Value |
 |-----------------|-------|
-| Requirement     | RF-59, RF-69, RF-70, RF-73 |
+| Requirement     | RF-59, RF-69, RF-70, RF-73, RF-83 |
 | Priority        | P1 |
 | Type            | Negative |
 | Technique       | Error guessing |
@@ -1859,7 +1866,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | `PROMOTION_TOKEN` configured |
 | Test data       | A pipeline with one failing job (the next natural failure, or a temporary failing commit approved by the user) |
 | Steps           | **Given** a failed job **When** the run ends **Then** nothing is promoted |
-| Expected result | Run failed; `promote` job skipped; the next branch unchanged |
+| Expected result | Run failed; every job after the failed one and `promote` skipped (RF-83); the next branch unchanged |
 | Automate        | N — requires a real failing GitHub Actions run; executed at validation |
 
 ### TC-000-114 — GitHub workflow scans secrets after every Playwright job and uploads only after a clean scan
@@ -1891,7 +1898,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the GitHub workflow **When** the manual run is inspected **Then** it reuses the shared selector |
-| Expected result | `workflow_dispatch` has `suite` (smoke, regression) and `browser` (chromium, firefox, webkit, all) choice inputs; `run-suite` passes them as SUITE and BROWSER to `npm run ci:run-suite` |
+| Expected result | `workflow_dispatch` has `suite` (smoke, regression) and `browser` (chromium, firefox, webkit, all) choice inputs; `run-suite` needs `unit-tests` and passes them as SUITE and BROWSER to `npm run ci:run-suite` |
 | Automate        | Y |
 
 ### TC-000-116 — GitHub workflow is read-only, never ignores a failure, prints no environment and never pushes
@@ -1923,8 +1930,296 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | GitHub secrets set by the user |
 | Test data       | A push of `eyter_dev` to GitHub |
 | Steps           | **Given** a push to `eyter_dev` on GitHub **When** the workflow finishes **Then** every job passed |
-| Expected result | Checks, `smoke-api` and `smoke-ui-chromium` pass; each check:secrets step passes; artifacts are uploaded |
+| Expected result | `checks`, `unit-tests`, `eyter-dev-api` and `eyter-dev-ui-chromium` pass, in that order; each check:secrets step passes; artifacts are uploaded |
 | Automate        | N — requires a real GitHub Actions run; executed at validation |
+
+### TC-000-119 — each push stage is a separate job that starts only after the previous one
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-83, RF-58, RF-69, RF-70, RF-71, RF-80 |
+| Priority        | P1 |
+| Type            | Positive |
+| Technique       | State transition |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** the `needs` of every job are inspected **Then** they form one chain per branch |
+| Expected result | `checks` has no `needs` and `fail-fast: true` (a failing check cancels the others); no job except `publish-results` uses `always()` in its condition and only `promote` uses `!cancelled() && !failure()`, so a failed or canceled job skips every later stage; `unit-tests` needs exactly `checks`; each branch API job and `run-suite` need exactly `unit-tests`; the first UI job of each branch needs exactly its API job; on `release` and `main` the firefox job needs exactly the chromium job and the webkit job needs exactly the firefox job; no Playwright job runs `npm run test:unit` |
+| Automate        | Y |
+
+### TC-000-120 — test summary reports a Playwright run
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-84 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `tests/fixtures/reports/summary/` Playwright JSON report with 5 expected, 2 unexpected, 1 skipped and 1 flaky test, duration 83,400 ms |
+| Steps           | **Given** the Playwright results file **When** `report:summary` runs with the title `API` **Then** it prints the summary table |
+| Expected result | A Markdown table with Stage `API`, Passed 6 (expected + flaky), Failed 2, Skipped 1, Flaky 1, Total 9, Duration `01:23`; below it the titles of the 2 failed tests; `reports/summary.json` holds the same stage, counts and duration; exit code 0 |
+| Automate        | Y |
+
+### TC-000-121 — test summary reports a Vitest run
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-84 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `tests/fixtures/reports/summary/` Vitest JSON results with 10 passed, 1 failed, 1 pending and 1 todo test |
+| Steps           | **Given** the Vitest results file **When** `report:summary` runs with the title `Unit` **Then** it prints the summary table |
+| Expected result | Stage `Unit`, Passed 10, Failed 1, Skipped 2 (pending + todo), Flaky 0, Total 13, duration from the start time to the last end time in mm:ss; the failed test title is listed; exit code 0 |
+| Automate        | Y |
+
+### TC-000-122 — test summary is added to the GitHub job summary only when one is available
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-84 |
+| Priority        | P2 |
+| Type            | Boundary |
+| Technique       | EP / BVA |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `tests/fixtures/reports/summary/` Playwright JSON report; a temporary file that already contains a line, used as `GITHUB_STEP_SUMMARY` |
+| Steps           | **Given** `GITHUB_STEP_SUMMARY` set, then unset **When** `report:summary` runs **Then** the table goes to the log and, only when set, to the job summary |
+| Expected result | With the variable set, the table is appended after the existing line (nothing overwritten) and also printed; with the variable unset, the table is only printed and no file is created |
+| Automate        | Y |
+
+### TC-000-123 — unit summary adds code coverage only when a coverage summary exists
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-85 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `tests/fixtures/reports/summary/` Vitest JSON results and a `coverage-summary.json` with lines 91.25 %, branches 80 %, functions 88.5 %, statements 90.75 % |
+| Steps           | **Given** the results with and without the coverage summary **When** `report:summary` runs **Then** coverage is shown only when it exists |
+| Expected result | With the coverage file, a coverage table shows Lines 91.25 %, Branches 80.00 %, Functions 88.50 %, Statements 90.75 %; without it, no coverage table and no error |
+| Automate        | Y |
+
+### TC-000-124 — unit coverage covers src and scripts with no threshold
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-85 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `vitest.config.mts`, `package.json` |
+| Steps           | **Given** the Vitest configuration and the npm scripts **When** they are inspected **Then** coverage is configured for CI and never gates |
+| Expected result | Coverage provider `v8` with `@vitest/coverage-v8` pinned to the installed vitest version; include `src/**` and `scripts/**`; reporters include `json-summary` and `html`; reports directory `reports/coverage`; `reportOnFailure: true` so coverage is reported when unit tests fail; no `thresholds`; `test:unit:ci` runs Vitest with `--coverage` and writes JSON results to `reports/unit-results.json`; `test:unit` is unchanged |
+| Automate        | Y |
+
+### TC-000-125 — test summary without a results file reports unknown results and passes
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-87, RF-84 |
+| Priority        | P2 |
+| Type            | Negative |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | A results path that does not exist; a temporary `GITHUB_STEP_SUMMARY` file |
+| Steps           | **Given** no results file **When** `report:summary` runs **Then** it reports unknown results without failing |
+| Expected result | Log and job summary contain `Results unknown (no report at <path>)`; exit code 0 |
+| Automate        | Y |
+
+### TC-000-126 — spec:check --summary reports requirements coverage per spec
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-86 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP / BVA |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | Fixture repository with spec 900 (status test-cases-approved; 3 RFs, 4 TCs: 2 automated, 1 manual, 1 missing) and the draft spec 901 (2 RFs) without test-cases.md; a temporary `GITHUB_STEP_SUMMARY` file |
+| Steps           | **Given** the fixture repository **When** `spec:check --summary` runs **Then** it prints one row per spec |
+| Expected result | Spec 900: RFs 3, TCs 4, automated 2, manual 1, skipped 0, missing 1, automated 50 %; spec 901: RFs 2, TCs 0, automated `—`; `reports/summary.json` holds the same counts; the same table is appended to the job summary; the exit code is the same as without `--summary` |
+| Automate        | Y |
+
+### TC-000-127 — CI jobs write their summaries before the secrets scan
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-84, RF-85, RF-86, RF-79 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** each test job's steps are inspected **Then** the summary step is wired in |
+| Expected result | The spec:check leg of `checks` runs spec:check with `--summary`; `unit-tests` runs `npm run test:unit:ci`; every unit, API, UI and manual job runs `npm run report:summary` with `if: always()` after its tests and before `check:secrets`; `unit-tests` uploads `reports/` only after a clean scan; each test job uploads its `summary-<job>` artifact only after a clean scan |
+| Automate        | Y |
+
+### TC-000-128 — results page updates one branch and keeps the others
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-88 |
+| Priority        | P1 |
+| Type            | Positive |
+| Technique       | State transition |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `tests/fixtures/reports/summary/` a previous `results.json` with `release` and `main` entries; summary artifacts of an `eyter_dev` run where checks, unit and API passed and UI chromium failed |
+| Steps           | **Given** the previous results and the new eyter_dev summaries **When** `report:pages` runs **Then** the page shows every branch |
+| Expected result | `eyter_dev` shows the new commit, run link, date in UTC ISO 8601, overall result `failed` (one stage failed), and per stage the passed, failed, skipped and flaky counts and duration, with the unit coverage and requirements coverage; `release` and `main` keep their previous entries unchanged; `production` shows `no run yet`; `index.html` and `results.json` are written under `reports/pages/` |
+| Automate        | Y |
+
+### TC-000-129 — results page shows stages that did not run and handles the first publication
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-88 |
+| Priority        | P2 |
+| Type            | Boundary |
+| Technique       | BVA |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | No previous `results.json`; summary artifacts of a `release` run that stopped after the API job |
+| Steps           | **Given** no published page and a run that stopped early **When** `report:pages` runs **Then** missing data is shown, not invented |
+| Expected result | `release` shows checks, unit and API with their counts and UI chromium, firefox and webkit as `not run`; the three other branches show `no run yet`; exit code 0 |
+| Automate        | Y |
+
+### TC-000-130 — only the publish job can write to Pages, after the scan, from push runs
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-88, RF-81 |
+| Priority        | P1 |
+| Type            | Security |
+| Technique       | Decision table |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** the publish job and the permissions are inspected **Then** publishing is limited and scanned |
+| Expected result | `publish-results` runs with `always()` only for push events and needs every test job; it is the only job with `pages: write` and `id-token: write`; the top-level permissions stay `contents: read`; it uses the `github-pages` environment and `concurrency` group `pages`; `npm run report:pages` and `npm run check:secrets` run before `upload-pages-artifact`, which comes before `deploy-pages`; `run-suite` never publishes; `promote` needs `publish-results` |
+| Automate        | Y |
+
+### TC-000-131 — results page escapes test titles
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-88 |
+| Priority        | P2 |
+| Type            | Security |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | A summary artifact whose failed test title is `TC-999-01 <script>alert(1)</script> & "quotes"` |
+| Steps           | **Given** a failed title with HTML characters **When** `report:pages` builds the page **Then** it is shown as text |
+| Expected result | `index.html` contains the escaped title (`&lt;script&gt;`, `&amp;`, `&quot;`) and no `<script>` element from data |
+| Automate        | Y |
+
+### TC-000-132 — README shows badges, the results page and the manual-testing guide
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-89 |
+| Priority        | P3 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `README.md` |
+| Steps           | **Given** the README **When** it is inspected **Then** results and the manual-testing guide are present |
+| Expected result | One CI badge (`actions/workflows/ci.yml/badge.svg?branch=<branch>`) for each of eyter_dev, release, main and production; a link to the GitHub Pages results page; the guide shows the local commands for the unit tests (with and without coverage), the API tests, the UI tests on chromium, firefox and webkit, the `@smoke` and `@regression` suites, and the manual GitHub run with `gh workflow run ci.yml --ref <branch> -f suite=<suite> -f browser=<browser>` for the four branches |
+| Automate        | Y |
+
+### TC-000-133 — GitHub Pages shows the results of a real push run
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-88, RF-89 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | integration |
+| Tags            | n/a (manual check) |
+| Browsers        | n/a (pipeline level) |
+| Preconditions   | Repository public; Pages source GitHub Actions; `github-pages` environment allows the four branches |
+| Test data       | A push of `eyter_dev` |
+| Steps           | **Given** a push to `eyter_dev` **When** the run finishes **Then** the results page and README badge reflect it |
+| Expected result | The run Summary shows the requirements coverage, unit (with coverage), API and UI tables; the Pages URL shows the eyter_dev entry for the pushed commit; the README badge shows the run result; after promotion, the release, main and production entries appear |
+| Automate        | N — requires a real GitHub Actions run and Pages; executed at validation |
+
+### TC-000-134 — results page fails without deploying when the published results cannot be read
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-88 |
+| Priority        | P1 |
+| Type            | Negative |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | A stubbed fetch of the published `results.json` that answers HTTP 500, then one that throws a network error; summary artifacts of an `eyter_dev` run |
+| Steps           | **Given** the previous results cannot be read **When** `report:pages` runs **Then** it fails and writes no page |
+| Expected result | Exit code non-zero; the message names the `results.json` URL and the reason (`HTTP 500`, or the network error); nothing is written under `reports/pages/` |
+| Automate        | Y |
+
+### TC-000-135 — test summary lists at most 50 failed titles
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-84 |
+| Priority        | P3 |
+| Type            | Boundary |
+| Technique       | BVA |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | Playwright JSON reports with 50 and with 51 failed tests |
+| Steps           | **Given** 50, then 51 failed tests **When** `report:summary` runs **Then** the list is capped |
+| Expected result | With 50 failures, all 50 titles and no "more" line; with 51, the first 50 titles followed by `and 1 more` |
+| Automate        | Y |
+
+### TC-000-136 — git history has no secrets before the repository is made public
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-88, RF-20, RF-23 |
+| Priority        | P1 |
+| Type            | Security |
+| Technique       | Error guessing |
+| Layer           | integration |
+| Tags            | n/a (manual check) |
+| Browsers        | n/a (repository level) |
+| Preconditions   | Local `.env` with the real values; repository still private |
+| Test data       | The full git history of every branch (`git log -p --all`) |
+| Steps           | **Given** the whole history **When** it is searched for the `.env` password values (plain and URL-encoded) and JWT-shaped tokens **Then** nothing is found |
+| Expected result | Zero matches; the search command and its result (counts only, never the values) are recorded in validation.md before the visibility change |
+| Automate        | N — one-off check of the real history with real secret values; executed at validation, before the repository is made public |
 
 ## Out of scope for testing
 - Business flows (catalog, cart, checkout, orders) and login scenarios beyond RF-54 — later specs.

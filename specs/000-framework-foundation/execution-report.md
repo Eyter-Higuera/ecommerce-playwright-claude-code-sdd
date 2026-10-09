@@ -11,7 +11,7 @@ Legend: ✅ = passed · ❌ = failed
 ## Summary
 | Tasks completed | Passed | Failed |
 |-----------------|--------|--------|
-| 33 / 33 | ✅ 33 | ❌ 0 |
+| 41 / 41 | ✅ 41 | ❌ 0 |
 
 ## Results
 | Task / File | Purpose | Passed | Failed |
@@ -204,3 +204,55 @@ Legend: ✅ = passed · ❌ = failed
 | Workflow mutations (4, reverted) | each caught by TC-000-86 or TC-000-101 | ✅ | |
 | GitHub run 37918960715 (before the fix) | `checks (test:unit)` failed on TC-000-30 (git exit 128 in the container) | | ❌ |
 | GitHub runs for `83ba6e7`: eyter_dev 37925874939, release 37926325361, main 37929397499, production 37930026405 | all green; promoted up to production; production did not promote | ✅ | |
+
+## Change after validation: staged jobs, test summaries and results page (clarifications 15 to 17)
+| Task / File | Purpose | Passed | Failed |
+|-------------|---------|:------:|:------:|
+| **T34 — Split the workflow into chained stage jobs** | Done when: `npm run test:unit -- tests/unit/ci` passes | ✅ | |
+| .github/workflows/ci.yml | checks (spec:check, lint, typecheck; `fail-fast: true`) → unit-tests → `<branch>-api` → `<branch>-ui-chromium` → firefox → webkit (release, main); `run-suite` and every API job need `unit-tests`; `promote` needs all 15 other jobs | ✅ | |
+| tests/unit/ci/github-actions.test.ts | TC-000-86, 87, 98, 99, 100, 101, 114, 115, 116 updated to the new jobs; TC-000-119 new (exact `needs` chain, `fail-fast`, no `always()` outside `promote`) | ✅ | |
+| `npm run test:unit -- tests/unit/ci` | 23 passed · 0 failed (4 files) | ✅ | |
+| `npm run test:unit` | 104 passed · 0 failed (26 files) | ✅ | |
+| `npm run typecheck` / `npm run lint` | exit 0 / 0 errors (10 pre-existing warnings in tests/api) | ✅ | |
+| Workflow mutations (3, reverted) | firefox needing the API job, `fail-fast: false`, `always()` on a UI job: each caught by TC-000-98 or TC-000-119 | ✅ | |
+| `npm run spec:check` | 15 errors expected: TC-000-120 to 132, 134, 135 belong to T35 to T41 (not pushed until they are done) | | ❌ |
+| **T35 — Implement the test summary script** | Done when: `npx vitest run tests/unit/reporting/test-summary.test.ts` passes (5 tests) | ✅ | |
+| scripts/test-summary.ts, package.json (`report:summary`) | Playwright or Vitest JSON → table (passed incl. flaky, failed, skipped, flaky, total, mm:ss), failed titles capped at 50, `reports/summary.json`, GITHUB_STEP_SUMMARY append; missing file → "Results unknown", exit 0 | ✅ | |
+| tests/unit/reporting/test-summary.test.ts, tests/fixtures/reports/summary/ | TC-000-120, 121, 122, 125, 135 — 5 passed | ✅ | |
+| **T36 — Add unit-test code coverage** | Done when: TC-000-123 and 124 pass and `npm run test:unit:ci` writes the results and the coverage summary | ✅ | |
+| package.json, package-lock.json | `@vitest/coverage-v8` 4.1.11 (exact, = installed vitest; approved in clarification 16); `test:unit:ci` | ✅ | |
+| vitest.config.mts | coverage v8 of `src/**` and `scripts/**`, `text` + `json-summary` + `html` into `reports/coverage`, `reportOnFailure: true`, no thresholds | ✅ | |
+| scripts/test-summary.ts | `--coverage <file>` adds the Lines / Branches / Functions / Statements table and `coverage` in summary.json | ✅ | |
+| tests/unit/reporting/unit-coverage.test.ts | TC-000-123, TC-000-124 — 2 passed | ✅ | |
+| `npm run test:unit:ci` (real run) | 111 passed · 0 failed (28 files) in 00:58; coverage lines 52.43 %, branches 54.54 %, functions 39.49 %, statements 51.97 % | ✅ | |
+| **T37 — Add spec:check --summary** | Done when: `npx vitest run tests/unit/spec-check/spec-check-summary.test.ts` passes | ✅ | |
+| scripts/spec-check/summary.ts, scripts/spec-check/run.ts | `--summary`: per spec RFs, TCs (each counted once), automated / manual / skipped / missing, automated % over all TCs (— without TCs); printed, appended to GITHUB_STEP_SUMMARY, saved to `reports/summary.json`; exit code unchanged | ✅ | |
+| tests/unit/spec-check/spec-check-summary.test.ts | TC-000-126 — 1 passed; spec-check folder 19 passed | ✅ | |
+| `npm run spec:check -- --summary` (repository) | 000: 89 RFs, 132 TCs, 112 automated, 13 manual, 7 missing (T38 to T41), 85 % · 001: 98 % · 002, 003, 004: 100 % | ✅ | |
+| **T38 — Wire the summaries into the workflow** | Done when: `npm run test:unit -- tests/unit/ci` passes | ✅ | |
+| .github/workflows/ci.yml | spec:check leg runs `-- --summary` (matrix `include`), scans and uploads `summary-checks`; `unit-tests` runs `test:unit:ci`, `report:summary` with results + coverage, scan, uploads `reports/` and `summary-unit-tests`; every Playwright and manual job runs `report:summary` (`if: always()`) before `check:secrets` and uploads `summary-<job>` only after a clean scan | ✅ | |
+| tests/unit/ci/github-actions.test.ts | TC-000-127 — CI tests 24 passed | ✅ | |
+| Workflow mutations (2, reverted) | summary upload without the scan condition, unit summary without coverage: both caught by TC-000-127 | ✅ | |
+| **T39 — Implement the results page builder** | Done when: `npx vitest run tests/unit/reporting/results-page.test.ts` passes (4 tests) | ✅ | |
+| scripts/results-page.ts, package.json (`report:pages`) | Reads the published results.json (404 → first publication; other failure → exit 1, nothing written), builds this branch's entry from `NEEDS_JSON` job results and `summary-<job>` artifacts (stages in chain order, "not run" when skipped, `passed` only when every stage passed, UTC ISO date), keeps the other branches, writes escaped HTML without scripts + results.json | ✅ | |
+| tests/unit/reporting/results-page.test.ts, tests/fixtures/reports/pages/ | TC-000-128, 129, 131, 134 — 4 passed (stub fetcher, no network) | ✅ | |
+| Local run of `dist/scripts/results-page.js` with real summaries | first publication (real 404), `reports/pages/index.html` + `results.json` written; `check:secrets` passed (85 files) | ✅ | |
+| **T40 — Add the publish-results job** | Done when: `npm run test:unit -- tests/unit/ci` passes | ✅ | |
+| .github/workflows/ci.yml | `publish-results`: `always()` on push only, needs the 14 test jobs, `NEEDS_JSON: ${{ toJSON(needs) }}`, job-level `pages: write` + `id-token: write`, environment `github-pages`, concurrency `pages`; download `summary-*` → `report:pages` → `check:secrets` → upload-pages-artifact → deploy-pages; `promote` also needs it | ✅ | |
+| tests/unit/ci/github-actions.test.ts | TC-000-130 new, TC-000-119 updated (only publish-results uses `always()`) — CI tests 25 passed | ✅ | |
+| Workflow mutations (3, reverted) | deploy before the scan and publishing from manual runs: caught at once; top-level `pages: write`: first missed, TC-000-130 strengthened (top-level permissions must be exactly `contents: read`), then caught | ✅ | |
+| **T41 — Publish results and the manual-testing guide in the README** | Done when: `npx vitest run tests/unit/docs/readme.test.ts` passes; lint, typecheck, test:unit and spec:check exit 0 | ✅ | |
+| README.md | "Test results" (4 CI badges + results page link), "Running tests manually" (local commands for unit, coverage, API, UI per browser, smoke, regression; `gh workflow run ci.yml --ref <branch>` table for the 4 branches), CI/CD section with the job chains, summaries, results page and the Pages setup | ✅ | |
+| AGENTS.md, docs/test-plan.md | Commands and CI table updated (§6 stage order, §10 summaries and results page) | ✅ | |
+| tests/unit/docs/readme.test.ts | TC-000-132 — 1 passed | ✅ | |
+
+### Last full run (after T41)
+| Command | Result | Passed | Failed |
+|---------|--------|:------:|:------:|
+| `npm run test:unit` | 119 passed · 0 failed (31 files) | ✅ | |
+| `npm run test:unit -- tests/unit/ci` | 25 passed · 0 failed | ✅ | |
+| `npm run typecheck` / `npm run lint` | exit 0 / 0 errors (10 pre-existing warnings in tests/api) | ✅ | |
+| `npm run spec:check -- --write` | passed (5 specs); docs/traceability.md 458 rows | ✅ | |
+| `npx playwright test --grep @smoke --project=api --project=chromium` | 11 passed · 0 failed (real site); `report:summary` on its JSON: 11 / 0 / 0 / 0, 00:18 | ✅ | |
+| `npm run check:secrets` | passed (81 files) | ✅ | |
+| Manual TCs TC-000-110, 118, 133, 136 | Pending: executed at validation; TC-000-136 before the repository is made public | | |

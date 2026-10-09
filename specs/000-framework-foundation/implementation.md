@@ -1413,3 +1413,102 @@ RF-58 to RF-82 · TC-000-04, 86 to 89, 93, 94, 98 to 110, 114 to 116, 118
 - test-reviewer on the two CI test files: PASS (TC IDs in titles, Arrange / Act / Assert, describes
   by scenario type, stubbed HTTP only, `TEST_` data).
 - Pending (live): TC-000-109 and 118 after the push, once `PROMOTION_TOKEN` is set.
+
+## Change after validation: staged jobs, test summaries and results page (clarifications 15 to 17)
+
+### T34 — Split the workflow into chained stage jobs
+- Covers RF-58, RF-69 to RF-71, RF-78, RF-80, RF-83 / TC-000-86, 87, 98 to 101, 114 to 116, 119.
+- Tests first: `tests/unit/ci/github-actions.test.ts` describes each branch chain with `gateChain()`
+  (API job after `unit-tests`, then one UI job per browser after the previous one) and checks the
+  exact `needs` of every job (`needsOf()`), the job conditions (`conditionOf()`: no `always()`,
+  `cancelled()` or `failure()` outside `promote`) and `fail-fast: true` on `checks`. 9 tests red
+  before the workflow change.
+- `.github/workflows/ci.yml`: `checks` keeps spec:check, lint and typecheck; `unit-tests` is a new
+  job; `smoke-api`, `smoke-ui-chromium`, `release-regression`, `main-smoke` and `production-smoke`
+  are replaced by `eyter-dev-api`, `eyter-dev-ui-chromium`, `release-api`, `release-ui-{chromium,
+  firefox,webkit}`, `main-api`, `main-ui-{chromium,firefox,webkit}`, `production-api` and
+  `production-ui-chromium`, each running `npx playwright test --grep <tag> --project=<project>`.
+  The push gates no longer use `ci:run-suite`; the manual `run-suite` still does, after `unit-tests`.
+- Quality gates: CI tests 23 passed; unit suite 104 passed; lint 0 errors; typecheck exit 0;
+  3 workflow mutations caught; test-reviewer PASS. `spec:check` reports the 15 TCs of T35 to T41
+  as missing tests, as expected until those tasks are done.
+
+### T35 — Implement the test summary script
+- Covers RF-84, RF-87 / TC-000-120, 121, 122, 125, 135. Tests first (red: module missing), then
+  `scripts/test-summary.ts` (`summarizeResults`, `renderSummary`, `formatDuration`, `runSummary`),
+  same structure as `scripts/flaky-summary.ts`; `npm run report:summary -- --title <stage> [--report <file>]`.
+- Format detection: Vitest JSON has `numTotalTests`, Playwright JSON has `stats`. Vitest duration is
+  the run start to the last file end (files run in parallel).
+- Note: on Windows, the Volta npm shim mangles arguments with spaces (`UI webkit` → `^UI^ webkit^`);
+  `node dist/scripts/test-summary.js` prints it correctly, and CI runs on Linux.
+- Quality gates: 5 tests passed; lint 0 errors; typecheck exit 0; test-reviewer PASS.
+
+### T36 — Add unit-test code coverage
+- Covers RF-85 / TC-000-123, 124. Tests first (red), then `npm install --save-dev --save-exact
+  @vitest/coverage-v8@4.1.11` (approved), the `coverage` block in `vitest.config.mts` (the file is
+  `.mts`; the test cases and plan said `.ts` and were corrected), `test:unit:ci`, and the coverage
+  table in `scripts/test-summary.ts` (`--coverage <file>`).
+- TC-000-124 reads `vitest.config.mts` as text: importing it inside a Vitest test fails
+  (`Cannot find module …/vitest/config`).
+- First real measurement: lines 52.43 %, branches 54.54 %, functions 39.49 %, statements 51.97 %.
+  The number is lower than the code the tests exercise, because many unit tests run the CLIs
+  (spec:check, check:secrets, Playwright, tsc) in child processes, which v8 coverage of the Vitest
+  process does not see. Reported only; no threshold (RF-85).
+- Quality gates: reporting tests 18 passed; `npm run test:unit:ci` 111 passed; lint 0 errors;
+  typecheck exit 0; test-reviewer PASS.
+
+### T37 — Add spec:check --summary
+- Covers RF-86 / TC-000-126. Tests first (red), then `scripts/spec-check/summary.ts`
+  (`requirementsSummary`, `automatedPercent`, `renderRequirementsSummary`) and the `summary` option
+  of `runSpecCheck` (`--summary` on the CLI). Reuses the `TraceRow[]` of `checkTraceability`; a TC
+  covering several RFs is counted once. The table is added whatever the check result.
+- TC-000-126 now names the fixture specs actually used (900 and 901 instead of 001 and 002).
+- Quality gates: spec-check tests 19 passed; lint 0 errors; typecheck exit 0; test-reviewer PASS.
+
+### T38 — Wire the summaries into the workflow
+- Covers RF-79, RF-84, RF-85, RF-86 / TC-000-127. Test first (red), then the workflow: the checks
+  matrix gets `include: - task: spec:check, args: -- --summary` and runs
+  `npm run ${{ matrix.task }} ${{ matrix.args }}`; only that leg scans and uploads `summary-checks`.
+  `unit-tests` runs `npm run test:unit:ci` and summarizes results and coverage. Every Playwright job
+  runs `report:summary` with its stage title (`"API @smoke"`, `"UI chromium @regression"`, …), and
+  the manual job uses `"Manual run"`. Each job uploads `reports/summary.json` as `summary-<job>`
+  after a clean `check:secrets`, for the results page (T39, T40).
+- Quality gates: CI tests 24 passed; 2 mutations caught; lint 0 errors; typecheck exit 0;
+  test-reviewer PASS.
+
+### T39 — Implement the results page builder
+- Covers RF-88 / TC-000-128, 129, 131, 134. The test file and the script were written in the same
+  step, so no separate red run was recorded for this task (the test file imports the new module).
+- `scripts/results-page.ts`: `stagesOf(branch)` (chain order of RF-83), `readSummaries()`,
+  `branchEntry()`, `mergeResults()`, `fetchPrevious()` (injected fetcher), `escapeHtml()`,
+  `renderPage()`, `buildResultsPage()`. Stage status comes from the publish job's
+  `toJSON(needs)` (`NEEDS_JSON`), not from the summaries, so a spec:check failure marks the checks
+  stage failed even though its summary exists. Results URL: `RESULTS_URL` or
+  `https://<owner>.github.io/<repo>/results.json`.
+- Quality gates: 4 tests passed; local run with real summaries passed and the output passed
+  `check:secrets`; lint 0 errors; typecheck exit 0; test-reviewer PASS.
+
+### T40 — Add the publish-results job
+- Covers RF-81, RF-88 / TC-000-130. Tests first (TC-000-119 and TC-000-130 red), then the job.
+- `publish-results` runs `if: ${{ always() && github.event_name == 'push' }}` after the 14 test jobs
+  and gets their results through `NEEDS_JSON: ${{ toJSON(needs) }}`. Only this job has
+  `pages: write` and `id-token: write`; the top-level permissions stay `contents: read`. `promote`
+  now also needs it, so a failed publication stops the promotion (spec edge case: Pages not enabled).
+- A mutation adding `pages: write` at the top level was not caught at first (TC-000-116 matches only
+  the first permission line); TC-000-130 now requires the top-level block to be exactly
+  `contents: read`.
+- Requires the one-time maintainer setup of clarification 17 before the first push: repository
+  public, Pages source GitHub Actions, `github-pages` environment allowing the four branches.
+- Quality gates: CI tests 25 passed; 3 mutations caught; lint 0 errors; typecheck exit 0;
+  test-reviewer PASS.
+
+### T41 — Publish results and the manual-testing guide in the README
+- Covers RF-89 / TC-000-132. Test first (red), then README.md ("Test results", "Running tests
+  manually", CI/CD section, Pages setup), AGENTS.md (commands, CI table) and docs/test-plan.md (§6,
+  §10). Badges link to each branch's runs; the results page link is
+  https://eyter-higuera.github.io/ecommerce-playwright-claude-code-sdd/.
+- Quality gates: unit 119 passed; CI 25 passed; lint 0 errors; typecheck exit 0;
+  `spec:check -- --write` passed (5 specs); smoke 11 passed; check:secrets passed; test-reviewer PASS.
+- Pending at validation: TC-000-136 (history scan, before the repository is made public), then the
+  maintainer setup (public, Pages source GitHub Actions, `github-pages` environment branches), then
+  TC-000-118, TC-000-133 and TC-000-110 on real runs.
