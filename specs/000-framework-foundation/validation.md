@@ -203,3 +203,12 @@ removes GitLab.
 - Manual: TC-000-88, 89, 93, 94, 109, 110 and 118 are re-run against GitHub Actions. The earlier
   GitLab results no longer apply.
 - Spec 000 stays `validated`: 82 RFs, 114 TCs (103 automated, 11 manual).
+- Live, PASS (2026-10-09), commit `83ba6e7`:
+  - TC-000-118 / TC-000-88: eyter_dev run 37925874939 green (4 min 30 s).
+  - TC-000-109: the promotion chain reached production with every run green:
+    - release run 37926325361 (regression on api, chromium, firefox and webkit, 29 min);
+    - main run 37929397499;
+    - production run 37930026405, where `promote` was skipped (RF-73).
+  - All four branches still exist and contain `83ba6e7`: release `85cca1b`, main `232b1d4`,
+    production `eb880bf`.
+- Still to observe: TC-000-89, 94 and 110 (manual).
