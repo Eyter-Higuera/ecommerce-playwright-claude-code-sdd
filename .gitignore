@@ -8,3 +8,4 @@ blob-report/
 playwright/.auth/
 coverage/
 dist/
+/reports/

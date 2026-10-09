@@ -1,0 +1,35 @@
+{
+  "name": "ecommerce-playwright-sdd",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Spec-driven Playwright + TypeScript test automation framework for a demo e-commerce site",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "postinstall": "playwright install chromium firefox webkit",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:unit": "vitest run",
+    "lint": "eslint .",
+    "build:scripts": "tsc -p tsconfig.scripts.json",
+    "report:flaky": "npm run build:scripts --silent && node dist/scripts/flaky-summary.js",
+    "spec:check": "npm run build:scripts --silent && node dist/scripts/spec-check/run.js",
+    "check:secrets": "npm run build:scripts --silent && node dist/scripts/check-secrets.js",
+    "ci:run-suite": "npm run build:scripts --silent && node dist/scripts/ci-run-suite.js",
+    "ci:promote": "npm run build:scripts --silent && node dist/scripts/ci-promote.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^20.19.43",
+    "eslint": "^10.12.0",
+    "eslint-plugin-playwright": "^2.12.1",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.6",
+    "zod": "^4.6.5"
+  }
+}
