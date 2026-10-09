@@ -1,0 +1,27 @@
+{
+  "branches": {
+    "release": {
+      "branch": "release",
+      "commit": "1111111111111111111111111111111111111111",
+      "commitUrl": "https://github.com/TEST_owner/TEST_repo/commit/1111111111111111111111111111111111111111",
+      "runUrl": "https://github.com/TEST_owner/TEST_repo/actions/runs/101",
+      "date": "2026-10-08T09:00:00.000Z",
+      "result": "passed",
+      "stages": [
+        { "job": "checks", "stage": "Requirements coverage", "status": "passed" },
+        { "job": "unit-tests", "stage": "Unit tests", "status": "passed", "passed": 111, "failed": 0, "skipped": 0, "flaky": 0, "durationMs": 58000 }
+      ]
+    },
+    "main": {
+      "branch": "main",
+      "commit": "2222222222222222222222222222222222222222",
+      "commitUrl": "https://github.com/TEST_owner/TEST_repo/commit/2222222222222222222222222222222222222222",
+      "runUrl": "https://github.com/TEST_owner/TEST_repo/actions/runs/102",
+      "date": "2026-10-08T10:00:00.000Z",
+      "result": "failed",
+      "stages": [
+        { "job": "checks", "stage": "Requirements coverage", "status": "failed" }
+      ]
+    }
+  }
+}

@@ -40,10 +40,13 @@ Suites are selected with `--grep`. Browsers: chromium, firefox, webkit, msedge, 
 ## 6. Environments and promotion
 | Branch | Gate before promotion |
 |---|---|
-| `eyter_dev` | spec:check + lint + unit + API + smoke UI (chromium) |
-| `release` | full regression on all browsers |
-| `main` | smoke on all browsers |
-| `production` | smoke on api and chromium (sanity after the last promotion; never promotes) |
+| `eyter_dev` | spec:check + lint + typecheck → unit → API smoke → UI smoke (chromium) |
+| `release` | spec:check + lint + typecheck → unit → API regression → UI regression on chromium → firefox → webkit |
+| `main` | spec:check + lint + typecheck → unit → API smoke → UI smoke on chromium → firefox → webkit |
+| `production` | spec:check + lint + typecheck → unit → API smoke → UI smoke (chromium) (sanity after the last promotion; never promotes) |
+
+Each arrow is a separate job that starts only after the previous one passed; a failure stops every
+later job and the promotion (Spec 000 RF-83).
 
 When every job of a push run on `eyter_dev`, `release` or `main` passes, the workflow's last job
 merges the tested commit into the next branch (`.github/workflows/ci.yml`, Spec 000 RF-72 to RF-77).
@@ -75,3 +78,7 @@ Manual runs: "Run workflow" (workflow_dispatch) with the inputs SUITE (smoke/reg
 ## 10. Reporting
 Playwright HTML report and JUnit XML, traces/screenshots/videos on failure, JUnit `reports/junit.xml`
 and the reports kept 7 days as GitHub Actions artifacts after a clean secrets scan; traceability matrix in `docs/traceability.md`.
+Every CI test job adds a summary to the run's Summary page (passed, failed, skipped, flaky, total,
+duration, failed titles); the unit job adds code coverage and the checks job the requirements
+coverage per spec (Spec 000 RF-84 to RF-87). Each push run updates the GitHub Pages results page
+with the latest results of every branch, linked from the README (RF-88, RF-89).

@@ -1,19 +1,26 @@
-# GitHub Actions — Spec 000 RF-58 to RF-82: branch gates and automatic promotion
-# eyter_dev → release → main → production.
+# GitHub Actions — Spec 000 RF-58 to RF-88: branch gates as chained jobs, test summaries, results
+# page and automatic promotion eyter_dev → release → main → production.
 #
-# Every push to a promotion branch runs the checks (spec:check, lint, typecheck, unit tests), then
-# that branch's Playwright gate (docs/test-plan.md §6):
-#   eyter_dev  → smoke on api and chromium
-#   release    → regression on api, chromium, firefox and webkit
-#   main       → smoke on api, chromium, firefox and webkit
-#   production → smoke on api and chromium (sanity after the last promotion)
-# Each Playwright job runs check:secrets on its own reports, passed or failed, and uploads them only
-# when that scan passes (RF-79). When every job of a push run on eyter_dev, release or main passes,
-# the last job `promote` merges the tested commit into the next branch (scripts/ci-promote.ts,
-# RF-72 to RF-77) with the PROMOTION_TOKEN secret: merges made with the default GITHUB_TOKEN would
-# not start the next branch's run. A manual run (workflow_dispatch) selects SUITE and BROWSER
-# through npm run ci:run-suite (RF-60 to RF-63) and never promotes. Credentials come only from
-# GitHub encrypted secrets; nothing prints the environment (RF-64, RF-65, RF-81).
+# Every push to a promotion branch runs one job per stage, each starting only after the previous one
+# passed (RF-83): checks (spec:check, lint, typecheck; a failing check cancels the others) → unit-tests
+# → the branch's API job → one UI job per browser, in the order chromium, firefox, webkit
+# (docs/test-plan.md §6):
+#   eyter_dev  → @smoke on api, then chromium
+#   release    → @regression on api, then chromium, firefox and webkit
+#   main       → @smoke on api, then chromium, firefox and webkit
+#   production → @smoke on api, then chromium (sanity after the last promotion)
+# A failed or canceled job skips every later job, and the run does not promote. Every test job adds a
+# summary (passed, failed, skipped, flaky, total, duration, failed titles) to the run's Summary page;
+# the unit job adds its code coverage and the spec:check leg the requirements coverage (RF-84 to
+# RF-87). Each job runs check:secrets on its own reports, passed or failed, and uploads them only when
+# that scan passes (RF-79). After the test jobs of a push run, publish-results updates the GitHub
+# Pages results page with this branch's latest results (RF-88). When every job of a push run on eyter_dev, release
+# or main passes, the last job `promote` merges the tested commit into the next branch
+# (scripts/ci-promote.ts, RF-72 to RF-77) with the PROMOTION_TOKEN secret: merges made with the
+# default GITHUB_TOKEN would not start the next branch's run. A manual run (workflow_dispatch) runs
+# checks and unit-tests, then selects SUITE and BROWSER through npm run ci:run-suite (RF-60 to RF-63,
+# RF-80) and never promotes or publishes. Credentials come only from GitHub encrypted secrets; nothing
+# prints the environment (RF-64, RF-65, RF-81).
 # tests/unit/ci/github-actions.test.ts checks this file.
 
 name: CI
@@ -45,25 +52,74 @@ env:
   CI: 'true'
 
 jobs:
+  # --- Stage 1 and 2, shared by every run (RF-83) -------------------------------------------------
+
   checks:
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.63.0-noble
     strategy:
-      fail-fast: false
+      # A failing check cancels the other checks (RF-83).
+      fail-fast: true
       matrix:
-        task: [spec:check, lint, typecheck, test:unit]
+        task: [spec:check, lint, typecheck]
+        # RF-86: the spec:check leg also reports the requirements coverage.
+        include:
+          - task: spec:check
+            args: -- --summary
     steps:
       - uses: actions/checkout@v5
       # The container user differs from the checkout owner; without this, git commands exit 128.
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
-      - run: npm run ${{ matrix.task }}
+      - run: npm run ${{ matrix.task }} ${{ matrix.args }}
+      - id: secrets
+        if: always() && matrix.task == 'spec:check'
+        run: npm run check:secrets
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
 
-  # --- eyter_dev gate (RF-58) --------------------------------------------------------------------
-
-  smoke-api:
-    if: github.event_name == 'push' && github.ref_name == 'eyter_dev'
+  unit-tests:
     needs: checks
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.63.0-noble
+    steps:
+      - uses: actions/checkout@v5
+      # The container user differs from the checkout owner; without this, git commands exit 128.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      # RF-85: JSON results and code coverage, reported also when tests fail.
+      - run: npm run test:unit:ci
+      - if: always()
+        run: npm run report:summary -- --title "Unit tests" --report reports/unit-results.json --coverage reports/coverage/coverage-summary.json
+      - id: secrets
+        if: always()
+        run: npm run check:secrets
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ github.job }}-reports
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            reports/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
+
+  # --- eyter_dev gate (RF-58) ------------------------------------------------------------------------
+
+  eyter-dev-api:
+    if: github.event_name == 'push' && github.ref_name == 'eyter_dev'
+    needs: unit-tests
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.63.0-noble
     env:
@@ -82,6 +138,8 @@ jobs:
       - run: npx playwright test --grep @smoke --project=api
       - if: always()
         run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "API @smoke"
       - id: secrets
         if: always()
         run: npm run check:secrets
@@ -95,10 +153,17 @@ jobs:
             playwright-report/
             reports/
             test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
 
-  smoke-ui-chromium:
+  eyter-dev-ui-chromium:
     if: github.event_name == 'push' && github.ref_name == 'eyter_dev'
-    needs: checks
+    needs: eyter-dev-api
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.63.0-noble
     env:
@@ -117,6 +182,8 @@ jobs:
       - run: npx playwright test --grep @smoke --project=chromium
       - if: always()
         run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "UI chromium @smoke"
       - id: secrets
         if: always()
         run: npm run check:secrets
@@ -130,18 +197,23 @@ jobs:
             playwright-report/
             reports/
             test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
 
-  # --- release gate: full regression on every browser (RF-69) -------------------------------------
+  # --- release gate: regression, one job per browser (RF-69) -----------------------------------------
 
-  release-regression:
+  release-api:
     if: github.event_name == 'push' && github.ref_name == 'release'
-    needs: checks
+    needs: unit-tests
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.63.0-noble
     env:
       HOME: /root
-      SUITE: regression
-      BROWSER: all
       BASE_URL: ${{ secrets.BASE_URL }}
       API_BASE_URL: ${{ secrets.API_BASE_URL }}
       TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
@@ -153,9 +225,11 @@ jobs:
       # The container user differs from the checkout owner; without this, git commands exit 128.
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
-      - run: npm run ci:run-suite
+      - run: npx playwright test --grep @regression --project=api
       - if: always()
         run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "API @regression"
       - id: secrets
         if: always()
         run: npm run check:secrets
@@ -169,18 +243,155 @@ jobs:
             playwright-report/
             reports/
             test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
 
-  # --- main gate: smoke on every browser (RF-70) --------------------------------------------------
+  release-ui-chromium:
+    if: github.event_name == 'push' && github.ref_name == 'release'
+    needs: release-api
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.63.0-noble
+    env:
+      HOME: /root
+      BASE_URL: ${{ secrets.BASE_URL }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      TEST_USER_2_EMAIL: ${{ secrets.TEST_USER_2_EMAIL }}
+      TEST_USER_2_PASSWORD: ${{ secrets.TEST_USER_2_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      # The container user differs from the checkout owner; without this, git commands exit 128.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: npx playwright test --grep @regression --project=chromium
+      - if: always()
+        run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "UI chromium @regression"
+      - id: secrets
+        if: always()
+        run: npm run check:secrets
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ github.job }}-reports
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            playwright-report/
+            reports/
+            test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
 
-  main-smoke:
+  release-ui-firefox:
+    if: github.event_name == 'push' && github.ref_name == 'release'
+    needs: release-ui-chromium
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.63.0-noble
+    env:
+      HOME: /root
+      BASE_URL: ${{ secrets.BASE_URL }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      TEST_USER_2_EMAIL: ${{ secrets.TEST_USER_2_EMAIL }}
+      TEST_USER_2_PASSWORD: ${{ secrets.TEST_USER_2_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      # The container user differs from the checkout owner; without this, git commands exit 128.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: npx playwright test --grep @regression --project=firefox
+      - if: always()
+        run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "UI firefox @regression"
+      - id: secrets
+        if: always()
+        run: npm run check:secrets
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ github.job }}-reports
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            playwright-report/
+            reports/
+            test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
+
+  release-ui-webkit:
+    if: github.event_name == 'push' && github.ref_name == 'release'
+    needs: release-ui-firefox
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.63.0-noble
+    env:
+      HOME: /root
+      BASE_URL: ${{ secrets.BASE_URL }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      TEST_USER_2_EMAIL: ${{ secrets.TEST_USER_2_EMAIL }}
+      TEST_USER_2_PASSWORD: ${{ secrets.TEST_USER_2_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      # The container user differs from the checkout owner; without this, git commands exit 128.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: npx playwright test --grep @regression --project=webkit
+      - if: always()
+        run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "UI webkit @regression"
+      - id: secrets
+        if: always()
+        run: npm run check:secrets
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ github.job }}-reports
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            playwright-report/
+            reports/
+            test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
+
+  # --- main gate: smoke, one job per browser (RF-70) -------------------------------------------------
+
+  main-api:
     if: github.event_name == 'push' && github.ref_name == 'main'
-    needs: checks
+    needs: unit-tests
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.63.0-noble
     env:
       HOME: /root
-      SUITE: smoke
-      BROWSER: all
       BASE_URL: ${{ secrets.BASE_URL }}
       API_BASE_URL: ${{ secrets.API_BASE_URL }}
       TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
@@ -192,9 +403,11 @@ jobs:
       # The container user differs from the checkout owner; without this, git commands exit 128.
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
-      - run: npm run ci:run-suite
+      - run: npx playwright test --grep @smoke --project=api
       - if: always()
         run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "API @smoke"
       - id: secrets
         if: always()
         run: npm run check:secrets
@@ -208,18 +421,155 @@ jobs:
             playwright-report/
             reports/
             test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
 
-  # --- production sanity gate (RF-71) -------------------------------------------------------------
+  main-ui-chromium:
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    needs: main-api
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.63.0-noble
+    env:
+      HOME: /root
+      BASE_URL: ${{ secrets.BASE_URL }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      TEST_USER_2_EMAIL: ${{ secrets.TEST_USER_2_EMAIL }}
+      TEST_USER_2_PASSWORD: ${{ secrets.TEST_USER_2_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      # The container user differs from the checkout owner; without this, git commands exit 128.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: npx playwright test --grep @smoke --project=chromium
+      - if: always()
+        run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "UI chromium @smoke"
+      - id: secrets
+        if: always()
+        run: npm run check:secrets
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ github.job }}-reports
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            playwright-report/
+            reports/
+            test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
 
-  production-smoke:
+  main-ui-firefox:
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    needs: main-ui-chromium
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.63.0-noble
+    env:
+      HOME: /root
+      BASE_URL: ${{ secrets.BASE_URL }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      TEST_USER_2_EMAIL: ${{ secrets.TEST_USER_2_EMAIL }}
+      TEST_USER_2_PASSWORD: ${{ secrets.TEST_USER_2_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      # The container user differs from the checkout owner; without this, git commands exit 128.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: npx playwright test --grep @smoke --project=firefox
+      - if: always()
+        run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "UI firefox @smoke"
+      - id: secrets
+        if: always()
+        run: npm run check:secrets
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ github.job }}-reports
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            playwright-report/
+            reports/
+            test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
+
+  main-ui-webkit:
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    needs: main-ui-firefox
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.63.0-noble
+    env:
+      HOME: /root
+      BASE_URL: ${{ secrets.BASE_URL }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      TEST_USER_2_EMAIL: ${{ secrets.TEST_USER_2_EMAIL }}
+      TEST_USER_2_PASSWORD: ${{ secrets.TEST_USER_2_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      # The container user differs from the checkout owner; without this, git commands exit 128.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: npx playwright test --grep @smoke --project=webkit
+      - if: always()
+        run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "UI webkit @smoke"
+      - id: secrets
+        if: always()
+        run: npm run check:secrets
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ github.job }}-reports
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            playwright-report/
+            reports/
+            test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
+
+  # --- production sanity gate (RF-71) ----------------------------------------------------------------
+
+  production-api:
     if: github.event_name == 'push' && github.ref_name == 'production'
-    needs: checks
+    needs: unit-tests
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.63.0-noble
     env:
       HOME: /root
-      SUITE: smoke
-      BROWSER: chromium
       BASE_URL: ${{ secrets.BASE_URL }}
       API_BASE_URL: ${{ secrets.API_BASE_URL }}
       TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
@@ -231,9 +581,11 @@ jobs:
       # The container user differs from the checkout owner; without this, git commands exit 128.
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
-      - run: npm run ci:run-suite
+      - run: npx playwright test --grep @smoke --project=api
       - if: always()
         run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "API @smoke"
       - id: secrets
         if: always()
         run: npm run check:secrets
@@ -247,12 +599,63 @@ jobs:
             playwright-report/
             reports/
             test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
+
+  production-ui-chromium:
+    if: github.event_name == 'push' && github.ref_name == 'production'
+    needs: production-api
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.63.0-noble
+    env:
+      HOME: /root
+      BASE_URL: ${{ secrets.BASE_URL }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      TEST_USER_2_EMAIL: ${{ secrets.TEST_USER_2_EMAIL }}
+      TEST_USER_2_PASSWORD: ${{ secrets.TEST_USER_2_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      # The container user differs from the checkout owner; without this, git commands exit 128.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: npx playwright test --grep @smoke --project=chromium
+      - if: always()
+        run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "UI chromium @smoke"
+      - id: secrets
+        if: always()
+        run: npm run check:secrets
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ github.job }}-reports
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            playwright-report/
+            reports/
+            test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
 
   # --- Manual run (RF-80) -------------------------------------------------------------------------
 
   run-suite:
     if: github.event_name == 'workflow_dispatch'
-    needs: checks
+    needs: unit-tests
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.63.0-noble
     env:
@@ -273,6 +676,8 @@ jobs:
       - run: npm run ci:run-suite
       - if: always()
         run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "Manual run"
       - id: secrets
         if: always()
         run: npm run check:secrets
@@ -286,6 +691,55 @@ jobs:
             playwright-report/
             reports/
             test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
+
+  # --- Results page (RF-88) ------------------------------------------------------------------------
+
+  # Runs after every test job of a push run, passed, failed or skipped, and replaces this branch's
+  # entry on the GitHub Pages results page, keeping the other branches' latest entries. Only this
+  # job may write to Pages. Manual runs never publish.
+  publish-results:
+    if: ${{ always() && github.event_name == 'push' }}
+    needs: [checks, unit-tests, eyter-dev-api, eyter-dev-ui-chromium, release-api, release-ui-chromium, release-ui-firefox, release-ui-webkit, main-api, main-ui-chromium, main-ui-firefox, main-ui-webkit, production-api, production-ui-chromium]
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.63.0-noble
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    env:
+      # The result of every test job (success, failure, cancelled, skipped); no secret is involved.
+      NEEDS_JSON: ${{ toJSON(needs) }}
+    steps:
+      - uses: actions/checkout@v5
+      # The container user differs from the checkout owner; without this, git commands exit 128.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - uses: actions/download-artifact@v5
+        with:
+          pattern: summary-*
+          path: reports/summaries
+      - run: npm run report:pages
+      - id: secrets
+        if: always()
+        run: npm run check:secrets
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: reports/pages
+      - id: deployment
+        uses: actions/deploy-pages@v4
 
   # --- Promotion (RF-72 to RF-77) ---------------------------------------------------------------
 
@@ -294,7 +748,7 @@ jobs:
   # One promotion at a time.
   promote:
     if: ${{ !cancelled() && !failure() && github.event_name == 'push' && (github.ref_name == 'eyter_dev' || github.ref_name == 'release' || github.ref_name == 'main') }}
-    needs: [checks, smoke-api, smoke-ui-chromium, release-regression, main-smoke, production-smoke, run-suite]
+    needs: [checks, unit-tests, eyter-dev-api, eyter-dev-ui-chromium, release-api, release-ui-chromium, release-ui-firefox, release-ui-webkit, main-api, main-ui-chromium, main-ui-firefox, main-ui-webkit, production-api, production-ui-chromium, run-suite, publish-results]
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.63.0-noble
     concurrency:

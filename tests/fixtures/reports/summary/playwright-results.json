@@ -1,0 +1,35 @@
+{
+  "config": {},
+  "suites": [
+    {
+      "title": "tests/api/example.spec.ts",
+      "specs": [
+        { "title": "TC-900-01 passes", "tests": [{ "projectName": "api", "status": "expected" }] },
+        { "title": "TC-900-02 passes", "tests": [{ "projectName": "api", "status": "expected" }] },
+        { "title": "TC-900-03 fails on the status code", "tests": [{ "projectName": "api", "status": "unexpected" }] }
+      ],
+      "suites": [
+        {
+          "title": "negative",
+          "specs": [
+            { "title": "TC-900-04 passes", "tests": [{ "projectName": "api", "status": "expected" }] },
+            { "title": "TC-900-05 fails on the message", "tests": [{ "projectName": "api", "status": "unexpected" }] },
+            { "title": "TC-900-06 is skipped", "tests": [{ "projectName": "api", "status": "skipped" }] },
+            { "title": "TC-900-07 passes on retry", "tests": [{ "projectName": "api", "status": "flaky" }] },
+            { "title": "TC-900-08 passes", "tests": [{ "projectName": "api", "status": "expected" }] },
+            { "title": "TC-900-09 passes", "tests": [{ "projectName": "api", "status": "expected" }] }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-09T10:00:00.000Z",
+    "duration": 83400,
+    "expected": 5,
+    "skipped": 1,
+    "unexpected": 2,
+    "flaky": 1
+  }
+}
