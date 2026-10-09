@@ -25,6 +25,16 @@ export class ProductList {
     return card.getByRole('button', { name: CATALOG.VIEW_NAME });
   }
 
+  /** The card whose heading is exactly this stored product name (Spec 003 plan D-4). */
+  cardNamed(name: string): Locator {
+    return this.cards.filter({ has: this.page.getByRole('heading', { name, exact: true }) });
+  }
+
+  /** Activates "View" on the card of this product (Spec 003 RF-1). */
+  async view(name: string): Promise<void> {
+    await this.viewButtonOf(this.cardNamed(name)).click();
+  }
+
   addToCartButtonOf(card: Locator): Locator {
     return card.getByRole('button', { name: CATALOG.ADD_TO_CART_NAME });
   }

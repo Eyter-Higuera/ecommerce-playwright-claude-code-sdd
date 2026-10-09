@@ -10,6 +10,7 @@ import { catalogUnavailableMessage, traceMustBeOffMessage } from '../errors/mess
 import { NavBar } from '../components/nav-bar';
 import { DashboardPage, SESSION_STORAGE_KEY } from '../pages/dashboard-page';
 import { LoginPage } from '../pages/login-page';
+import { ProductDetailPage } from '../pages/product-detail-page';
 
 // Playwright fixtures (Spec 000). Tests receive ready Page Objects, clients and accounts;
 // configuration is read inside each fixture, so a missing variable fails only the tests that use
@@ -38,6 +39,8 @@ function requireTraceOff(trace: TraceOption, fixture: string): void {
 interface Fixtures {
   loginPage: LoginPage;
   dashboardPage: DashboardPage;
+  /** The product detail page (Spec 003). */
+  productDetailPage: ProductDetailPage;
   /** Header controls of the current page (Sign Out), whichever page is open. */
   navBar: NavBar;
   authClient: AuthClient;
@@ -76,6 +79,9 @@ export const test = base.extend<Fixtures & AutoFixtures>({
   },
   dashboardPage: async ({ page }, use) => {
     await use(new DashboardPage(page, requireEnv('BASE_URL')));
+  },
+  productDetailPage: async ({ page }, use) => {
+    await use(new ProductDetailPage(page, requireEnv('BASE_URL')));
   },
   navBar: async ({ page }, use) => {
     await use(new NavBar(page));

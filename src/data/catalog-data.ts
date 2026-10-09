@@ -151,3 +151,65 @@ export function conflictingCriterion(catalog: readonly CatalogProduct[], product
   const price = catalog.map((other) => other.productPrice).find((candidate) => candidate !== product.productPrice);
   return price === undefined ? undefined : { label: `price range ${String(price)} to ${String(price)}`, kind: 'price', price };
 }
+
+/** The six product fields the detail API must share with the catalog (Spec 003 RF-12). */
+export function detailFields(product: Product): Pick<Product, 'productName' | 'productPrice' | 'productCategory' | 'productSubCategory' | 'productFor' | 'productDescription'> {
+  return {
+    productName: product.productName,
+    productPrice: product.productPrice,
+    productCategory: product.productCategory,
+    productSubCategory: product.productSubCategory,
+    productFor: product.productFor,
+    productDescription: product.productDescription,
+  };
+}
+
+/** Length of a well-formed product id: 24 hexadecimal characters (Spec 003 shared definitions). */
+export const PRODUCT_ID_LENGTH = 24;
+
+/** A well-formed id of no product (TC-003-11, TC-003-15). */
+export const UNKNOWN_PRODUCT_ID = '0'.repeat(PRODUCT_ID_LENGTH);
+
+/** A malformed product id (TC-003-12, TC-003-16). */
+export const MALFORMED_PRODUCT_ID = 'TEST_not_an_id';
+
+/** Last characters replaced to forge an unknown id from a catalog id. */
+const FORGED_ID_SUFFIXES = ['ffff', 'eeee', 'dddd'] as const;
+const FORGED_SUFFIX_LENGTH = 4;
+
+/** A catalog id with its last 4 hex characters changed, so it is well-formed and matches no product. */
+export function unknownIdLike(catalog: readonly Product[]): string {
+  const ids = new Set(catalog.map((product) => product._id));
+  const head = anyProduct(catalog)._id.slice(0, -FORGED_SUFFIX_LENGTH);
+  const forged = FORGED_ID_SUFFIXES.map((suffix) => head + suffix).find((id) => !ids.has(id));
+  return forged ?? UNKNOWN_PRODUCT_ID;
+}
+
+/** A product id cut or zero-padded to `length` hexadecimal characters (around the 24-character format). */
+export function idOfLength(id: string, length: number): string {
+  return id.length >= length ? id.slice(0, length) : id.padEnd(length, '0');
+}
+
+/** The dashboard shows at most this many products on a page (observed, Spec 003 edge cases). */
+export const MAX_PRODUCTS_PER_PAGE = 9;
+
+/** The catalog products the dashboard's first page can show (Spec 003 TC-003-01). */
+export function productsOnFirstPage<T extends CatalogProduct>(catalog: readonly T[]): T[] {
+  return catalog.slice(0, MAX_PRODUCTS_PER_PAGE);
+}
+
+/** Two catalog products with the same price (Spec 003 TC-003-04), or `undefined` (plan D-6). */
+export function productsWithSamePrice<T extends CatalogProduct>(catalog: readonly T[]): readonly [T, T] | undefined {
+  for (const [index, product] of catalog.entries()) {
+    const twin = catalog.slice(index + 1).find((other) => other.productPrice === product.productPrice);
+    if (twin !== undefined) return [product, twin];
+  }
+  return undefined;
+}
+
+/** Two catalog products with different names (Spec 003 TC-003-06), or `undefined` (plan D-6). */
+export function twoNamedProducts<T extends CatalogProduct>(catalog: readonly T[]): readonly [T, T] | undefined {
+  const first = catalog[0];
+  const other = catalog.find((product) => first !== undefined && product.productName !== first.productName);
+  return first === undefined || other === undefined ? undefined : [first, other];
+}

@@ -1,6 +1,6 @@
 # Spec 002 — Catalog and search
 
-Status: implemented
+Status: validated
 <!-- Allowed values: draft | approved | test-cases-approved | implemented | validated -->
 Source: interview
 

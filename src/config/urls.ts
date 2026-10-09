@@ -54,3 +54,29 @@ export const PRODUCT_LIST_PATH = 'product/get-all-products';
 export function buildProductListUrl(apiBaseUrl: string): string {
   return joinUrl(apiBaseUrl, PRODUCT_LIST_PATH);
 }
+
+/** Path of the product detail API, relative to API_BASE_URL (Spec 003 shared definitions). */
+export const PRODUCT_DETAIL_PATH = 'product/get-product-detail';
+
+/** API_BASE_URL + `/product/get-product-detail/<id>`; the id is URL-encoded, since tests send malformed ids. */
+export function buildProductDetailUrl(apiBaseUrl: string, id: string): string {
+  return joinUrl(apiBaseUrl, `${PRODUCT_DETAIL_PATH}/${encodeURIComponent(id)}`);
+}
+
+/** Hash route of the product detail page, relative to BASE_URL (Spec 003 shared definitions). */
+export const PRODUCT_DETAIL_ROUTE = '#/dashboard/product-details';
+
+/** BASE_URL + `/#/dashboard/product-details/<id>`; the id is URL-encoded, since tests open malformed ids. */
+export function buildProductDetailRoute(baseUrl: string, id: string): string {
+  return joinUrl(baseUrl, `${PRODUCT_DETAIL_ROUTE}/${encodeURIComponent(id)}`);
+}
+
+/** Spec 003 "product detail route" of one product: a URL ending in `#/dashboard/product-details/<id>`. */
+export function productDetailRoutePattern(id: string): RegExp {
+  return new RegExp(`#/dashboard/product-details/${escapeRegExp(encodeURIComponent(id))}$`);
+}
+
+/** The text with every regular-expression special character escaped. */
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

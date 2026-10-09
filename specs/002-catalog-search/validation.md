@@ -1,6 +1,6 @@
 # Validation — Spec 002 Catalog and search
 
-Date: 2026-10-09 · Branch: eyter_dev · Commit: working tree on top of ad4a2a0 (Spec 002 not committed yet)
+Date: 2026-10-09 · Branch: eyter_dev · Commit: 7bb6514
 Spec: specs/002-catalog-search/spec.md
 
 ## Requirement coverage
@@ -55,15 +55,15 @@ its ID (spec:check: 0 warnings).
 | `npm run typecheck` | PASS | |
 | `npm run spec:check` | PASS | 3 specs, 0 warnings; docs/traceability.md regenerated in T15 (314 rows) |
 | Test review checklist | PASS | Applied per task (T1 to T15). Findings fixed: helper assertions (`expect-expect`, T2), a conditional in TC-002-23 (T14). One justified CSS fallback (`.card-body`); the filter panel is scoped by the `form` element because it has no role or label |
-| CI pipeline on `eyter_dev` | PENDING | Spec 002 is not committed or pushed yet |
+| CI pipelines for 7bb6514 | PASS | eyter_dev 2929094410 · release 2929111456 (full regression on api, chromium, firefox, webkit) · main 2929146822 · production 2929159443: all success. Automatic promotion merged each stage |
 
 ## Done criteria
 - [x] Every RF has approved test cases.
 - [x] All automated TCs are green on chromium and in the `api` project, and the UI TCs are green on firefox and webkit (TC-002-31 is the approved expected failure, D-5).
 - [x] test-reviewer PASS.
 - [x] `npm run lint`, `npm run typecheck`, `npm run spec:check` and `npm run check:secrets` PASS.
-- [ ] The pipeline on `eyter_dev` is green. Pending: needs a commit and push to `eyter_dev`.
-- [ ] User validation.
+- [x] The pipeline on `eyter_dev` is green (2929094410; the chain continued green up to production 2929159443).
+- [x] User validation (confirmed by the user on 2026-10-09).
 
 ## Issues found
 - **Known defect (RF-21, spec Known issues).** The product API answers HTTP 500 for a name with an
@@ -88,7 +88,8 @@ its ID (spec:check: 0 warnings).
   open `[NEEDS CLARIFICATION]`.
 
 ## Verdict
-The spec IS fulfilled locally, but two Done criteria are open. All 25 RFs are covered and every
-check passes on api, chromium, firefox and webkit: 82 tests, with TC-002-31 the approved expected
-failure. Unit tests, lint (0 errors), typecheck, spec:check and check:secrets all pass. Still open:
-the `eyter_dev` pipeline (Spec 002 is not pushed yet) and the user's confirmation.
+The spec IS fulfilled. All 25 RFs are covered and every check passes on api, chromium, firefox and
+webkit: 82 tests, with TC-002-31 the approved expected failure. Unit tests, lint (0 errors),
+typecheck, spec:check and check:secrets all pass. In CI, commit 7bb6514 went green through
+eyter_dev, release (full regression), main and production. The user confirmed it as validated on
+2026-10-09.
