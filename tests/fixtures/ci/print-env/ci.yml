@@ -1,0 +1,13 @@
+# Fixture for TC-000-95: a CI definition that prints the environment in three ways.
+# Each offending command is on its own line; `env:` keys and ${{ github.environment }} are fine.
+jobs:
+  debug-job:
+    runs-on: ubuntu-latest
+    env:
+      TARGET: TEST_review
+    steps:
+      - run: echo "deploying to ${{ github.environment }}"
+      - run: printenv
+      - run: env | sort
+      - run: set -x
+      - run: npm run test:unit

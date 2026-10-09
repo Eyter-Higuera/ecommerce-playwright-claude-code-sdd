@@ -3,7 +3,7 @@
 ## 1. Objective
 Verify the critical shopping workflows of the target e-commerce web application (a third-party
 demo site) through automated unit, API, integration and UI tests, executed in a GitHub Actions
-pipeline that gates promotion `eyter_dev → release → main → production`.
+workflow that gates promotion `eyter_dev → release → main → production`.
 
 ## 2. Scope
 **In scope:** authentication, catalog and search, product detail, cart, checkout, orders and
@@ -17,7 +17,7 @@ the application's own source code (third-party site — not owned by this projec
 | Level | Tool | Purpose | Network |
 |---|---|---|---|
 | Unit | Vitest | Framework code: helpers, data factories, price math, schemas, env loader, spec:check | None (mocked) |
-| API | Playwright `request` | Status codes, contracts (zod schemas), auth, invalid payloads | Real environment |
+| API | Playwright Test with Node `fetch` (`FetchRequestContext`) | Status codes, contracts (zod schemas), auth, invalid payloads | Real environment |
 | Integration | Playwright (API + UI) | Cross-layer consistency: data created via API visible in UI and vice versa | Real environment |
 | Mocked UI | Playwright `page.route()` | Error and edge states hard to reproduce (500, timeouts, payment decline) | Mocked responses |
 | UI E2E | Playwright | Critical user journeys through the browser | Real environment |
@@ -42,9 +42,13 @@ Suites are selected with `--grep`. Browsers: chromium, firefox, webkit, msedge, 
 |---|---|
 | `eyter_dev` | spec:check + lint + unit + API + smoke UI (chromium) |
 | `release` | full regression on all browsers |
-| `main` | smoke on all browsers → production deploy (publish validated framework + report) |
+| `main` | smoke on all browsers |
+| `production` | smoke on api and chromium (sanity after the last promotion; never promotes) |
 
-Manual runs: `workflow_dispatch` with inputs branch, suite (smoke/regression) and browser.
+When every job of a push run on `eyter_dev`, `release` or `main` passes, the workflow's last job
+merges the tested commit into the next branch (`.github/workflows/ci.yml`, Spec 000 RF-72 to RF-77).
+
+Manual runs: "Run workflow" (workflow_dispatch) with the inputs SUITE (smoke/regression) and BROWSER, on the selected branch; they never promote.
 
 ## 7. Entry and exit criteria
 - **Entry:** spec in `test-cases-approved` status; environment reachable; secrets configured.
@@ -56,7 +60,7 @@ Manual runs: `workflow_dispatch` with inputs branch, suite (smoke/regression) an
 ## 8. Test data strategy
 - All created data uses the `TEST_` prefix; factories generate unique values per run.
 - Two fixed accounts (for authorization tests) + dynamically registered `TEST_` users.
-- Credentials only via `.env` (local, gitignored) and GitHub Secrets (CI).
+- Credentials only via `.env` (local, gitignored) and GitHub encrypted secrets (CI).
 - Data created by a test is cleaned up in `afterEach`/`afterAll`.
 
 ## 9. Risks and mitigations
@@ -69,5 +73,5 @@ Manual runs: `workflow_dispatch` with inputs branch, suite (smoke/regression) an
 | Site layout changes | Role/label-based locators, Page Objects isolate changes |
 
 ## 10. Reporting
-Playwright HTML report and JUnit XML, traces/screenshots/videos on failure, GitHub job summary,
-artifacts retained in CI; traceability matrix in `docs/traceability.md`.
+Playwright HTML report and JUnit XML, traces/screenshots/videos on failure, JUnit `reports/junit.xml`
+and the reports kept 7 days as GitHub Actions artifacts after a clean secrets scan; traceability matrix in `docs/traceability.md`.

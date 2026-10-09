@@ -2,7 +2,7 @@
 
 Test automation framework for an e-commerce web application, built with **Spec-Driven
 Development (SDD)** and Claude Code skills. Playwright + TypeScript for API, integration and UI
-tests; Vitest for unit tests; GitHub Actions for the promotion pipeline.
+tests; Vitest for unit tests; GitHub Actions for the branch gates and the automatic promotion.
 
 ## SDD flow
 Constitution → Spec → Clarification → Test cases → Plan → Tasks → Implementation (one task at a
@@ -39,5 +39,93 @@ Status flow of a spec: `draft → approved → test-cases-approved → implement
 Prompts for every phase: [samples/prompts.md](samples/prompts.md).
 
 ## Setup
-Commands (install, test, lint) are added in Spec 000 — framework-foundation.
-Credentials go in a local `.env` (never committed) and in GitHub Secrets for CI.
+Requirements: Node 20 or later (in practice 20.19+, the minimum of ESLint 10 and Vite) and npm.
+
+```bash
+npm ci                  # installs dependencies and the chromium, firefox and webkit browsers
+cp .env.example .env    # then fill in the TEST_USER_* values (never commit .env)
+```
+
+Credentials go only in the local `.env` and, for CI, in GitHub encrypted secrets.
+Process environment variables take precedence over `.env`.
+
+## Commands
+| Command | What it does |
+|---|---|
+| `npm run test:unit` | Vitest unit tests of the framework (no network, no variables needed) |
+| `npx playwright test --grep @smoke --project=api --project=chromium` | Sanity smoke tests against the demo site |
+| `npx playwright test` | All Playwright tests on `api`, chromium, firefox and webkit |
+| `npx playwright test --project=msedge` | UI tests on Microsoft Edge (local only, Edge must be installed) |
+| `npm run lint` / `npm run typecheck` | ESLint rules and TypeScript strict check |
+| `npm run spec:check` | SDD traceability gate; `npm run spec:check -- --write` regenerates `docs/traceability.md` |
+| `npm run check:secrets` | Scans `reports/`, `playwright-report/` and `test-results/` for passwords and tokens |
+| `npm run report:flaky` | Prints the number of flaky tests of the last run |
+
+Reports: HTML in `playwright-report/`, JUnit in `reports/junit.xml`, traces of first retries in
+`test-results/`.
+
+### Good to know
+- **`CI=true` set locally** makes the run behave like CI: 2 retries and `test.only` forbidden.
+  Unset it for normal local runs.
+- **Test account recovery (account A or B locked, or its password changed):** the shop is a
+  shared public demo, so a third party can change an account. Symptoms:
+  - The API smoke test fails with "Login API returned status <code> for the account in
+    TEST_USER_EMAIL".
+  - Every auth test that logs in fails at once: the form logins, the API logins and the
+    logged-in session tests (their sessions fail with "API login for a test session failed").
+  To recover:
+  1. Register a new test account on the site, or reset the password.
+  2. Update `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` (account A) or `TEST_USER_2_EMAIL` /
+     `TEST_USER_2_PASSWORD` (account B) in `.env` and in the GitHub secrets
+     (`gh secret set <NAME> -R Eyter-Higuera/ecommerce-playwright-claude-code-sdd`).
+
+  To keep the accounts safe, a run sends at most one wrong password for account A and none for
+  account B (Spec 001 RF-28; the unit test `wrong-password-limit.test.ts` enforces it).
+- **Real secrets in the browser (Spec 001 RF-27):**
+  - Test files that type a real password or hold the API token declare `test.use(NO_TRACE)` at
+    file level. The `formAccountA`, `formAccountB` and `loggedInTest` fixtures refuse to run
+    otherwise.
+  - Real passwords go in through `LoginPage` (`enterSecret`), never with `fill` or
+    `keyboard.type`. Playwright names those steps after the typed text, and the HTML report
+    keeps the step titles even without a trace.
+- **Windows with Volta:** `npx` passes through `cmd.exe`, so a Vitest `-t` or Playwright `--grep`
+  pattern that contains `|` breaks. Run the CLI with the real Node binary instead:
+  `node node_modules/vitest/vitest.mjs run <file> -t "<pattern>"` or
+  `node node_modules/@playwright/test/cli.js test --grep "<pattern>"`.
+
+## CI/CD (GitHub Actions)
+The repository lives on GitHub (`origin`: https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd)
+and `.github/workflows/ci.yml` is its only CI (Spec 000 RF-58 to RF-82). Every push to a
+promotion branch runs spec:check, lint, typecheck and the unit tests, then the branch's Playwright
+gate. Each Playwright job then runs `check:secrets` on its own reports:
+
+| Branch | Playwright gate | On success |
+|---|---|---|
+| `eyter_dev` | smoke on api and chromium | merged into `release` |
+| `release` | regression on api, chromium, firefox and webkit | merged into `main` |
+| `main` | smoke on api, chromium, firefox and webkit | merged into `production` |
+| `production` | smoke on api and chromium | — (last branch) |
+
+- **Promotion is automatic.** The last job (`promote`, `npm run ci:promote`) starts only when no
+  other job of the run failed or was canceled. It merges exactly the tested commit into the next
+  branch through the GitHub merges API. That merge starts the next branch's run, and so on up to
+  `production`.
+- **A failed or canceled job stops the chain.** If a newer commit reached the source branch in the
+  meantime, the promotion fails, and that commit is promoted by its own run instead.
+- **Reports.** Each Playwright job runs `check:secrets` whether it passed or failed. It uploads
+  `playwright-report/`, `reports/` (JUnit included) and `test-results/` for 7 days only when that
+  scan passes.
+- **Manual run.** Actions → CI → Run workflow takes `suite` (`smoke` | `regression`) and
+  `browser` (`chromium` | `firefox` | `webkit` | `all`), and never promotes.
+
+One-time setup, done by a maintainer and never committed. These are the repository secrets
+(Settings → Secrets and variables → Actions):
+- `BASE_URL`, `API_BASE_URL`, `TEST_USER_EMAIL`, `TEST_USER_PASSWORD`, `TEST_USER_2_EMAIL`
+  and `TEST_USER_2_PASSWORD`. For example:
+  `gh secret set -f .env -R Eyter-Higuera/ecommerce-playwright-claude-code-sdd`.
+- `PROMOTION_TOKEN`: a fine-grained personal access token for this repository only, with
+  *Contents: read and write*. It is needed because merges made with the default `GITHUB_TOKEN` do
+  not start the next branch's run.
+
+Push changes with `git push origin eyter_dev` only. `release`, `main` and `production` are
+updated by the promotion, never by hand. Never force-push and never delete a branch.
