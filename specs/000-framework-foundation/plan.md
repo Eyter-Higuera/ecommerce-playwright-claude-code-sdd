@@ -160,7 +160,7 @@ The target is the third-party page https://rahulshettyacademy.com/client/#/auth/
   - Scripts: `typecheck`, `lint`, `test:unit`, `build:scripts`, `spec:check`, `check:secrets`, `report:flaky`, `ci:run-suite`, and `postinstall: playwright install chromium firefox webkit` (RF-1).
 - **`.npmrc`** has `engine-strict=true` (RF-3).
 - **`tsconfig.json`** is strict, NodeNext, no emit. **`tsconfig.scripts.json`** emits `scripts/` and `src/` to `dist/`.
-- **Config files:** `eslint.config.mjs`, `vitest.config.ts`, `playwright.config.ts`.
+- **Config files:** `eslint.config.mjs`, `vitest.config.mts`, `playwright.config.ts`.
 - **`.env.example`** lists the six RF-13 variables with placeholders (RF-18).
 - **`.gitignore`** adds `reports/`.
 - **`.gitlab-ci.yml`** defines the CI pipeline (see below).
@@ -243,3 +243,60 @@ Each script exports a pure function that the unit tests call in-process.
 - Data cleanup, since Spec 000 creates no data.
 - Manual TCs TC-000-01, TC-000-02, TC-000-36, TC-000-37, TC-000-88, TC-000-89, TC-000-93 and
   TC-000-94 are executed and recorded during validation, not automated.
+
+## Change after validation: staged jobs, test summaries and results page (clarifications 15 to 17)
+
+### Workflow (`.github/workflows/ci.yml`)
+| Stage | Job | needs | Runs |
+|---|---|---|---|
+| 1 | `checks` (matrix spec:check, lint, typecheck; `fail-fast: true`) | — | spec:check with `--summary` on its leg (RF-86) |
+| 2 | `unit-tests` | checks | `npm run test:unit:ci` (results + coverage), `report:summary` (RF-84, RF-85) |
+| 3 | `eyter-dev-api`, `release-api`, `main-api`, `production-api` | unit-tests | `npx playwright test --grep <tag> --project=api` |
+| 4 | `<branch>-ui-chromium` → `<branch>-ui-firefox` → `<branch>-ui-webkit` (firefox and webkit on release and main only) | the previous job | `npx playwright test --grep <tag> --project=<browser>` |
+| manual | `run-suite` | unit-tests | `npm run ci:run-suite` (unchanged) |
+| publish | `publish-results` (`always()`, push only, `pages: write`, `id-token: write`, environment `github-pages`, concurrency `pages`) | every test job | download `summary-*`, `report:pages`, `check:secrets`, upload-pages-artifact, deploy-pages (RF-88) |
+| last | `promote` (unchanged rules) | every other job | `npm run ci:promote` |
+
+Each test job: checkout → safe.directory → `npm ci` → tests → `report:flaky` (Playwright) →
+`report:summary` (`if: always()`) → `check:secrets` (`if: always()`, `id: secrets`) → upload of
+`playwright-report/`, `reports/`, `test-results/` and of `summary-<job>` (`reports/summary.json`)
+only when the scan passed (RF-79).
+
+### Scripts (NEW)
+- **`scripts/test-summary.ts`** (`npm run report:summary -- --title <stage> [--report <file>]`):
+  pure `summarize(resultsText)` detects Playwright JSON (`stats`, `suites`) or Vitest JSON
+  (`numTotalTests`), `renderSummary()` builds the Markdown table (failed titles capped at 50),
+  `renderCoverage()` reads `reports/coverage/coverage-summary.json`; `main()` prints, appends to
+  `GITHUB_STEP_SUMMARY` when set and writes `reports/summary.json` (stage, counts, duration,
+  coverage, failed titles). Missing file → "Results unknown (no report at <path>)", exit 0 (RF-87).
+  Same structure as `scripts/flaky-summary.ts`.
+- **`scripts/spec-check/summary.ts`**: `requirementsSummary(specs, rows)` from the `TraceRow[]` of
+  `checkTraceability`; `run.ts` gets a `--summary` option that prints it, appends it to
+  `GITHUB_STEP_SUMMARY` and writes `reports/summary.json` (stage "Requirements coverage").
+- **`scripts/results-page.ts`** (`npm run report:pages`): pure `mergeResults(previous, branch,
+  run, summaries)` and `renderPage(results)` (HTML-escaped, no scripts, no dependency); `main()`
+  reads the published `results.json` through an injected fetcher (404 → empty, other failure →
+  exit 1 naming URL and reason, RF-88), reads the downloaded `summary-*/summary.json` files and
+  writes `reports/pages/index.html` and `reports/pages/results.json`. Branch, commit, run URL and
+  date come from `GITHUB_REF_NAME`, `GITHUB_SHA`, `GITHUB_SERVER_URL`/`GITHUB_REPOSITORY`/`GITHUB_RUN_ID`.
+
+### Tooling
+- `@vitest/coverage-v8` pinned to the installed vitest version (approved, clarification 16).
+- `vitest.config.mts`: `coverage: { provider: 'v8', include: ['src/**', 'scripts/**'], reporter:
+  ['text', 'json-summary', 'html'], reportsDirectory: 'reports/coverage', reportOnFailure: true }`, no thresholds.
+- `package.json`: `test:unit:ci`, `report:summary`, `report:pages`.
+- Unit tests never make real HTTP calls: `results-page` tests inject a stub fetcher (constitution #5).
+
+### Technical decisions
+| Decision | Reason | Discarded alternative |
+|----------|--------|-----------------------|
+| One job per stage and per browser, chained with `needs` | A failure skips every later job (RF-83) | Matrix per browser (siblings keep running) |
+| Results page on GitHub Pages, previous state read from the published `results.json` | The workflow cannot commit (RF-81); Pages keeps one site, so other branches must be carried over | Committing a results table to README (breaks RF-81, loops runs) |
+| Summary data passed between jobs as small `summary-<job>` artifacts | Jobs run on separate machines | Re-running tests in the publish job |
+| Plain HTML page, escaped text | No dependency; titles are data (TC-000-131) | A static-site generator |
+
+### Risks
+- Pages and the `github-pages` environment must be configured by the user (repository public,
+  Source: GitHub Actions, four branches allowed); until then `publish-results` fails and blocks
+  promotion (spec edge case).
+- Coverage with `reportOnFailure` adds a few seconds to the unit job.

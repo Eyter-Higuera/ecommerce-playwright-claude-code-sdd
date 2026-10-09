@@ -7,12 +7,14 @@ Spec-Driven Development (SDD). Playwright + TypeScript for API, integration and 
 `eyter_dev → release → main → production`.
 
 ## Commands
-- Unit tests: `npm run test:unit`
+- Unit tests: `npm run test:unit` (with coverage, as in CI: `npm run test:unit:ci`)
 - Playwright smoke tests: `npx playwright test --grep @smoke --project=api --project=chromium`
 - Lint: `npm run lint`
 - Typecheck: `npm run typecheck`
 - SDD traceability gate: `npm run spec:check`
 - Secrets scan of reports and traces: `npm run check:secrets`
+- Test summary table: `npm run report:summary -- --title <stage>`; requirements coverage:
+  `npm run spec:check -- --summary`; results page (CI only): `npm run report:pages`
 - CI definition and promotion checks: `npm run test:unit -- tests/unit/ci`
   (`github-actions.test.ts`: branch gates, safe.directory, scan before upload, `promote` last and
   only on success, no `continue-on-error`, no force push or branch deletion, no environment
@@ -44,17 +46,22 @@ Spec-Driven Development (SDD). Playwright + TypeScript for API, integration and 
 
 ## CI/CD and promotion
 GitHub is the only remote (`origin`) and CI platform; GitLab is no longer used. The workflow is
-`.github/workflows/ci.yml` (Spec 000, RF-58 to RF-82). Every push to a promotion branch runs
-spec:check, lint, typecheck and the unit tests, then the branch's Playwright gate, then
-`check:secrets` in each Playwright job before its artifacts are uploaded:
+`.github/workflows/ci.yml` (Spec 000, RF-58 to RF-89). Every push to a promotion branch runs one
+job per stage, each only after the previous one passed (RF-83): `checks` (spec:check with the
+requirements coverage, lint, typecheck) → `unit-tests` (with code coverage) → the branch's API job →
+one UI job per browser. Every test job writes its summary (passed, failed, skipped, flaky,
+duration) to the run's Summary page and runs `check:secrets` before its artifacts are uploaded;
+`publish-results` then updates the GitHub Pages results page (RF-88):
 
-| Branch | Playwright gate | On success |
+| Branch | Jobs after `checks` → `unit-tests` | On success |
 |---|---|---|
-| `eyter_dev` | smoke on api and chromium | merged into `release` |
-| `release` | regression on api, chromium, firefox and webkit | merged into `main` |
-| `main` | smoke on api, chromium, firefox and webkit | merged into `production` |
-| `production` | smoke on api and chromium | — (last branch, never promotes) |
+| `eyter_dev` | @smoke: api → chromium | merged into `release` |
+| `release` | @regression: api → chromium → firefox → webkit | merged into `main` |
+| `main` | @smoke: api → chromium → firefox → webkit | merged into `production` |
+| `production` | @smoke: api → chromium | — (last branch, never promotes) |
 
+- A failed or canceled job skips every later job. Only `publish-results` uses `always()`, and it is
+  the only job with `pages: write` / `id-token: write`.
 - Only the `promote` job merges between these branches, and only after every other job of the run
   passed. Never add `continue-on-error`. Push by hand only to `eyter_dev`
   (`git push origin eyter_dev`). Never merge or push to `release`, `main` or `production` by hand.

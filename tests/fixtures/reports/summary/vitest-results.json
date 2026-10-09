@@ -1,0 +1,40 @@
+{
+  "numTotalTests": 13,
+  "numPassedTests": 10,
+  "numFailedTests": 1,
+  "numPendingTests": 1,
+  "numTodoTests": 1,
+  "startTime": 1791540000000,
+  "success": false,
+  "testResults": [
+    {
+      "name": "tests/unit/a.test.ts",
+      "startTime": 1791540000100,
+      "endTime": 1791540030000,
+      "status": "failed",
+      "assertionResults": [
+        { "title": "TC-900-10 passes", "fullName": "a TC-900-10 passes", "status": "passed" },
+        { "title": "TC-900-11 fails on the exit code", "fullName": "a TC-900-11 fails on the exit code", "status": "failed" },
+        { "title": "TC-900-12 is pending", "fullName": "a TC-900-12 is pending", "status": "pending" },
+        { "title": "TC-900-13 is todo", "fullName": "a TC-900-13 is todo", "status": "todo" }
+      ]
+    },
+    {
+      "name": "tests/unit/b.test.ts",
+      "startTime": 1791540000200,
+      "endTime": 1791540065500,
+      "status": "passed",
+      "assertionResults": [
+        { "title": "TC-900-14 passes", "status": "passed" },
+        { "title": "TC-900-15 passes", "status": "passed" },
+        { "title": "TC-900-16 passes", "status": "passed" },
+        { "title": "TC-900-17 passes", "status": "passed" },
+        { "title": "TC-900-18 passes", "status": "passed" },
+        { "title": "TC-900-19 passes", "status": "passed" },
+        { "title": "TC-900-20 passes", "status": "passed" },
+        { "title": "TC-900-21 passes", "status": "passed" },
+        { "title": "TC-900-22 passes", "status": "passed" }
+      ]
+    }
+  ]
+}

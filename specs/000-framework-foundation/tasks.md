@@ -26,7 +26,7 @@ own TCs pass and the earlier tasks' tests still pass. Manual TCs (TC-000-01, 02,
 - [x] T3 — Block outbound network access in unit tests
   - Covers: RF-6 / TC-000-10, TC-000-11
   - Depends on: T1
-  - Files: tests/unit/setup/block-network.ts, vitest.config.ts (setupFiles), tests/unit/setup/network-guard.test.ts
+  - Files: tests/unit/setup/block-network.ts, vitest.config.mts (setupFiles), tests/unit/setup/network-guard.test.ts
   - Done when: `npx vitest run tests/unit/setup/network-guard.test.ts -t "TC-000-1[01]"` passes (2 tests)
 
 - [x] T4 — Enforce strict type checking
@@ -223,6 +223,59 @@ own TCs pass and the earlier tasks' tests still pass. Manual TCs (TC-000-01, 02,
   - Files: README.md (setup, account A recovery, `CI=true` locally), docs/traceability.md (regenerated)
   - Done when: `npm run lint`, `npm run typecheck`, `npm run test:unit` and `npm run spec:check` exit 0; `npm run spec:check -- --write` lists no `missing` row for spec 000; `npx playwright test --grep @smoke --project=api --project=chromium` passes; `npm run check:secrets` exits 0
 
+## Change after validation: staged jobs, test summaries and results page (clarifications 15 to 17)
+
+- [x] T34 — Split the workflow into chained stage jobs
+  - Covers: RF-58, RF-69, RF-70, RF-71, RF-78, RF-80, RF-83 / TC-000-86, TC-000-87, TC-000-98, TC-000-99, TC-000-100, TC-000-101, TC-000-114, TC-000-115, TC-000-116, TC-000-119
+  - Depends on: —
+  - Files: .github/workflows/ci.yml, tests/unit/ci/github-actions.test.ts
+  - Done when: `npm run test:unit -- tests/unit/ci` passes
+
+- [x] T35 — Implement the test summary script
+  - Covers: RF-84, RF-87 / TC-000-120, TC-000-121, TC-000-122, TC-000-125, TC-000-135
+  - Depends on: —
+  - Files: scripts/test-summary.ts, package.json (`report:summary`), tests/fixtures/reports/summary/, tests/unit/reporting/test-summary.test.ts
+  - Done when: `npx vitest run tests/unit/reporting/test-summary.test.ts` passes (5 tests)
+
+- [x] T36 — Add unit-test code coverage
+  - Covers: RF-85 / TC-000-123, TC-000-124
+  - Depends on: T35
+  - Files: package.json (`@vitest/coverage-v8`, `test:unit:ci`), package-lock.json, vitest.config.mts, scripts/test-summary.ts, tests/unit/reporting/unit-coverage.test.ts
+  - Done when: `npx vitest run tests/unit/reporting -t "TC-000-12[34]"` passes (2 tests) and `npm run test:unit:ci` writes `reports/unit-results.json` and `reports/coverage/coverage-summary.json`
+
+- [x] T37 — Add spec:check --summary
+  - Covers: RF-86 / TC-000-126
+  - Depends on: —
+  - Files: scripts/spec-check/summary.ts, scripts/spec-check/run.ts, tests/fixtures/spec-check/summary/, tests/unit/spec-check/spec-check-summary.test.ts
+  - Done when: `npx vitest run tests/unit/spec-check/spec-check-summary.test.ts` passes
+
+- [x] T38 — Wire the summaries into the workflow
+  - Covers: RF-79, RF-84, RF-85, RF-86 / TC-000-127
+  - Depends on: T34, T35, T36, T37
+  - Files: .github/workflows/ci.yml, tests/unit/ci/github-actions.test.ts
+  - Done when: `npm run test:unit -- tests/unit/ci` passes
+
+- [x] T39 — Implement the results page builder
+  - Covers: RF-88 / TC-000-128, TC-000-129, TC-000-131, TC-000-134
+  - Depends on: T35, T37
+  - Files: scripts/results-page.ts, package.json (`report:pages`), tests/fixtures/reports/pages/, tests/unit/reporting/results-page.test.ts
+  - Done when: `npx vitest run tests/unit/reporting/results-page.test.ts` passes (4 tests)
+
+- [x] T40 — Add the publish-results job
+  - Covers: RF-81, RF-88 / TC-000-130
+  - Depends on: T38, T39
+  - Files: .github/workflows/ci.yml, tests/unit/ci/github-actions.test.ts
+  - Done when: `npm run test:unit -- tests/unit/ci` passes
+
+- [x] T41 — Publish results and the manual-testing guide in the README
+  - Covers: RF-89 / TC-000-132
+  - Depends on: T40
+  - Files: README.md, AGENTS.md (commands, CI table), docs/test-plan.md (§6, §10), tests/unit/docs/readme.test.ts
+  - Done when: `npx vitest run tests/unit/docs/readme.test.ts` passes; lint, typecheck, test:unit and spec:check exit 0
+
+Manual TCs of this change (TC-000-110, TC-000-118, TC-000-133, TC-000-136) are executed at validation;
+TC-000-136 runs before the repository is made public.
+
 ## Coverage check
 | Test case (Automate: Y) | Task |
 |-------------------------|------|
@@ -307,9 +360,32 @@ own TCs pass and the earlier tasks' tests still pass. Manual TCs (TC-000-01, 02,
 | TC-000-83 | T13 |
 | TC-000-84 | T13 |
 | TC-000-85 | T13 |
-| TC-000-86 | T32 |
-| TC-000-87 | T32 |
+| TC-000-86 | T32, T34 |
+| TC-000-87 | T32, T34 |
 | TC-000-90 | T30 |
 | TC-000-91 | T30 |
 | TC-000-92 | T30 |
 | TC-000-95 | T31 |
+| TC-000-98 | T34 |
+| TC-000-99 | T34 |
+| TC-000-100 | T34 |
+| TC-000-101 | T34 |
+| TC-000-114 | T34 |
+| TC-000-115 | T34 |
+| TC-000-116 | T34 |
+| TC-000-119 | T34 |
+| TC-000-120 | T35 |
+| TC-000-121 | T35 |
+| TC-000-122 | T35 |
+| TC-000-125 | T35 |
+| TC-000-135 | T35 |
+| TC-000-123 | T36 |
+| TC-000-124 | T36 |
+| TC-000-126 | T37 |
+| TC-000-127 | T38 |
+| TC-000-128 | T39 |
+| TC-000-129 | T39 |
+| TC-000-131 | T39 |
+| TC-000-134 | T39 |
+| TC-000-130 | T40 |
+| TC-000-132 | T41 |

@@ -212,3 +212,22 @@ removes GitLab.
   - All four branches still exist and contain `83ba6e7`: release `85cca1b`, main `232b1d4`,
     production `eb880bf`.
 - Still to observe: TC-000-89, 94 and 110 (manual).
+
+### Change after validation: staged jobs, test summaries and results page (2026-10-09)
+Spec clarifications 15 to 17 (Mode C, approved by the user): chained stage jobs (RF-83), test
+summaries and coverage (RF-84 to RF-87), GitHub Pages results page and README guide (RF-88, RF-89).
+- Automated, PASS: TC-000-119 to 132, 134 and 135 (tasks T34 to T41); unit suite 119 passed.
+- Spec 000 stays `validated`: 89 RFs, 132 TCs (119 automated, 13 manual).
+- **TC-000-136 git history has no secrets before the repository is made public — PASS (2026-10-09).**
+  - Scope: `git log --all --full-history -p` plus commit messages; 24 commits on every local and
+    remote branch (`origin` fetched first).
+  - Searched for the `.env` values of TEST_USER_PASSWORD and TEST_USER_2_PASSWORD, plain and
+    URL-encoded, and for the two account emails. Also searched for JWT-shaped tokens, GitHub tokens
+    (`ghp_`, `gho_`, `ghs_`, `github_pat_`) and private keys, and checked whether `.env` was ever
+    committed. Counts only; no value was printed.
+  - Result: passwords 0, emails 0, GitHub tokens 0, private keys 0, `.env` commits 0. One
+    JWT-shaped match: the fake fixture token in `tests/unit/security/check-secrets.test.ts`
+    (commit `aad82099`; header `{"alg":"TEST"}`, payload `{"sub":"TEST_user"}`), not a real token.
+- Next, by the maintainer: make the repository public, set Pages source GitHub Actions, and allow
+  the four branches in the `github-pages` environment. Then TC-000-118, TC-000-133 and TC-000-110
+  run on real GitHub Actions runs.
