@@ -13,9 +13,9 @@ import { NAVIGATION_TIMEOUT_MS } from '../config/timeouts';
 /** Local-storage key under which the shop keeps the session token (verified 2026-10-08). */
 export const SESSION_STORAGE_KEY = 'token';
 
-/** The browser global used by `clearStoredSession`; tsconfig has no DOM lib, the code runs in the page. */
+/** The browser global used by `clearStoredSession` and `startSession`; tsconfig has no DOM lib, the code runs in the page. */
 interface BrowserGlobal {
-  localStorage: { removeItem(key: string): void };
+  localStorage: { removeItem(key: string): void; setItem(key: string, value: string): void };
 }
 
 export class DashboardPage {
@@ -59,5 +59,22 @@ export class DashboardPage {
     await this.page.evaluate((key) => {
       (globalThis as unknown as BrowserGlobal).localStorage.removeItem(key);
     }, SESSION_STORAGE_KEY);
+  }
+
+  /**
+   * Spec 004 plan D-4: stores a session token from an API login in the page, as a login would, then
+   * reloads the app on the dashboard, so it starts with the new token as after a real login. The
+   * token goes through an `evaluate` step, which reports never print, and the caller's file records
+   * no trace (Spec 001 RF-27).
+   */
+  async startSession(token: string): Promise<void> {
+    await this.page.evaluate(
+      ({ key, value }) => {
+        (globalThis as unknown as BrowserGlobal).localStorage.setItem(key, value);
+      },
+      { key: SESSION_STORAGE_KEY, value: token },
+    );
+    await this.open();
+    await this.page.reload({ timeout: NAVIGATION_TIMEOUT_MS });
   }
 }

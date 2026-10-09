@@ -1,7 +1,7 @@
 import { buildProductDetailUrl, buildProductListUrl } from '../config/urls';
 import { API_TIMEOUT_MS } from '../config/timeouts';
 import type { ProductCriteria } from '../data/catalog-oracle';
-import { toApiResult, type ApiRequestContext, type ApiResult } from './api-result';
+import { sendSafely, type ApiRequestContext, type ApiResult } from './api-result';
 
 // API client for the shop's product API (Spec 002, RF-17 to RF-24) and product detail API (Spec 003,
 // RF-11 to RF-17). As for the user endpoint (Spec 001), the token goes in `Authorization` exactly as
@@ -22,8 +22,7 @@ export class ProductClient {
    */
   async getAllProducts(criteria: ProductCriteria, authorization?: string): Promise<ApiResult> {
     const headers: Record<string, string> = authorization === undefined ? {} : { [AUTHORIZATION_HEADER]: authorization };
-    const response = await this.request.post(buildProductListUrl(this.apiBaseUrl), { data: criteria, headers, timeout: API_TIMEOUT_MS });
-    return toApiResult(response);
+    return sendSafely(async () => this.request.post(buildProductListUrl(this.apiBaseUrl), { data: criteria, headers, timeout: API_TIMEOUT_MS }));
   }
 
   /**
@@ -32,7 +31,6 @@ export class ProductClient {
    */
   async getProductDetail(id: string, authorization?: string): Promise<ApiResult> {
     const headers: Record<string, string> = authorization === undefined ? {} : { [AUTHORIZATION_HEADER]: authorization };
-    const response = await this.request.get(buildProductDetailUrl(this.apiBaseUrl, id), { headers, timeout: API_TIMEOUT_MS });
-    return toApiResult(response);
+    return sendSafely(async () => this.request.get(buildProductDetailUrl(this.apiBaseUrl, id), { headers, timeout: API_TIMEOUT_MS }));
   }
 }

@@ -17,7 +17,7 @@ the application's own source code (third-party site — not owned by this projec
 | Level | Tool | Purpose | Network |
 |---|---|---|---|
 | Unit | Vitest | Framework code: helpers, data factories, price math, schemas, env loader, spec:check | None (mocked) |
-| API | Playwright `request` | Status codes, contracts (zod schemas), auth, invalid payloads | Real environment |
+| API | Playwright Test with Node `fetch` (`FetchRequestContext`) | Status codes, contracts (zod schemas), auth, invalid payloads | Real environment |
 | Integration | Playwright (API + UI) | Cross-layer consistency: data created via API visible in UI and vice versa | Real environment |
 | Mocked UI | Playwright `page.route()` | Error and edge states hard to reproduce (500, timeouts, payment decline) | Mocked responses |
 | UI E2E | Playwright | Critical user journeys through the browser | Real environment |

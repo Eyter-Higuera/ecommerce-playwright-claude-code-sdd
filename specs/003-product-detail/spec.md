@@ -1,6 +1,6 @@
 # Spec 003 — Product detail
 
-Status: implemented
+Status: validated
 <!-- Allowed values: draft | approved | test-cases-approved | implemented | validated -->
 Source: interview
 

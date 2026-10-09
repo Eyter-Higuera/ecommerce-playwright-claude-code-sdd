@@ -21,6 +21,8 @@ export interface ApiRequestContext {
   /** `headers` is optional so callers without headers stay unchanged (Spec 002, plan D-2). */
   post(url: string, options: { data: unknown; headers?: Record<string, string>; timeout: number }): Promise<ApiHttpResponse>;
   get(url: string, options: { headers: Record<string, string>; timeout: number }): Promise<ApiHttpResponse>;
+  /** Spec 004: removing a product from the cart. */
+  delete(url: string, options: { headers: Record<string, string>; timeout: number }): Promise<ApiHttpResponse>;
 }
 
 export interface ApiResult {
@@ -39,4 +41,25 @@ function parseJson(text: string): unknown {
 
 export async function toApiResult(response: ApiHttpResponse): Promise<ApiResult> {
   return { status: response.status(), json: parseJson(await response.text()) };
+}
+
+/**
+ * Spec 001 RF-27 (found in Spec 004 T11): when a request fails before an answer (e.g. "socket hang
+ * up"), Playwright's error message carries a call log that lists the request headers, Authorization
+ * included, and that message ends up in the reports. The error is rethrown with its first line only.
+ */
+export async function sendSafely(call: () => Promise<ApiHttpResponse>): Promise<ApiResult> {
+  let response: ApiHttpResponse;
+  try {
+    response = await call();
+  } catch (error) {
+    throw new Error(`API request failed: ${firstLine(error)}`);
+  }
+  return toApiResult(response);
+}
+
+/** The first line of an error message (the part without Playwright's call log). */
+function firstLine(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.split('\n')[0] ?? '';
 }

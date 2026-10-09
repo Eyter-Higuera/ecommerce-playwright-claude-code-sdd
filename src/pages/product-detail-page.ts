@@ -46,6 +46,11 @@ export class ProductDetailPage {
     return this.page.getByRole('alert', { name: text, exact: true });
   }
 
+  /** Activates "Add to Cart" on the detail page (Spec 004 RF-4). */
+  async addToCart(): Promise<void> {
+    await this.addToCartButton.click();
+  }
+
   /** Returns to the catalog with the "Continue Shopping" link (RF-6). */
   async continueShopping(): Promise<void> {
     await this.continueShoppingLink.click();

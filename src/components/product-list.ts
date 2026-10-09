@@ -35,6 +35,11 @@ export class ProductList {
     await this.viewButtonOf(this.cardNamed(name)).click();
   }
 
+  /** Activates "Add To Cart" on the card of this product (Spec 004 RF-1). */
+  async addToCart(name: string): Promise<void> {
+    await this.addToCartButtonOf(this.cardNamed(name)).click();
+  }
+
   addToCartButtonOf(card: Locator): Locator {
     return card.getByRole('button', { name: CATALOG.ADD_TO_CART_NAME });
   }

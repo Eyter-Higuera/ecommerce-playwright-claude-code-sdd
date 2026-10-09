@@ -1,6 +1,6 @@
 # Validation — Spec 003 Product detail
 
-Date: 2026-10-09 · Branch: eyter_dev · Commit: working tree on top of 7bb6514 (Spec 003 not committed yet)
+Date: 2026-10-09 · Branch: eyter_dev · Commit: f31dc8f
 Spec: specs/003-product-detail/spec.md
 
 ## Requirement coverage
@@ -47,15 +47,15 @@ its ID (spec:check: 0 warnings).
 | `npm run typecheck` | PASS | |
 | `npm run spec:check` | PASS | 4 specs, 0 warnings; docs/traceability.md regenerated in T9 (31 Spec 003 rows, all automated) |
 | Test review checklist | PASS | Applied per task (T1 to T9); findings fixed: a lost regex backslash in TC-003-12 (T7), and TC-003-10 unseen by spec:check (T9). No CSS selector in Spec 003 code; every locator is role-based |
-| CI pipeline on `eyter_dev` | PENDING | Spec 003 is not committed or pushed yet |
+| CI pipelines for f31dc8f | PASS | eyter_dev 2929304712 · release 2929316144 (full regression on api, chromium, firefox, webkit) · main 2929370020 · production 2929400663: all success. Automatic promotion merged each stage |
 
 ## Done criteria
 - [x] Every RF has approved test cases.
 - [x] All automated TCs are green on chromium and in the `api` project, and the UI TCs are green on firefox and webkit (TC-003-12 and TC-003-16 are the approved expected failures, D-5).
 - [x] test-reviewer PASS.
 - [x] `npm run lint`, `npm run typecheck`, `npm run spec:check` and `npm run check:secrets` PASS.
-- [ ] The pipeline on `eyter_dev` is green. Pending: needs a commit and push to `eyter_dev`.
-- [ ] User validation.
+- [x] The pipeline on `eyter_dev` is green (2929304712; the chain continued green up to production 2929400663).
+- [x] User validation (confirmed by the user on 2026-10-09).
 
 ## Issues found
 - **Known defect (RF-14, spec Known issues).** A malformed id makes the product detail API expose
@@ -77,7 +77,8 @@ its ID (spec:check: 0 warnings).
   open `[NEEDS CLARIFICATION]`.
 
 ## Verdict
-The spec IS fulfilled locally, but two Done criteria are open. All 17 RFs are covered and every
-check passes on api, chromium, firefox and webkit: 43 tests, with TC-003-12 and TC-003-16 the
-approved expected failures. Unit tests, lint (0 errors), typecheck, spec:check and check:secrets all
-pass. Still open: the `eyter_dev` pipeline (Spec 003 is not pushed yet) and the user's confirmation.
+The spec IS fulfilled. All 17 RFs are covered and every check passes on api, chromium, firefox and
+webkit: 43 tests, with TC-003-12 and TC-003-16 the approved expected failures. Unit tests, lint
+(0 errors), typecheck, spec:check and check:secrets all pass. In CI, commit f31dc8f went green
+through eyter_dev, release (full regression), main and production. The user confirmed it as
+validated on 2026-10-09.

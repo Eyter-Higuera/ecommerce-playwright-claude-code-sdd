@@ -1,7 +1,7 @@
-import { buildAuthLoginUrl } from '../config/urls';
+import { buildAuthLoginUrl, buildAuthRegisterUrl } from '../config/urls';
 import { API_TIMEOUT_MS } from '../config/timeouts';
 import { loginSessionFailedMessage } from '../errors/messages';
-import { HTTP_STATUS, toApiResult, type ApiResult } from './api-result';
+import { sendSafely, HTTP_STATUS, type ApiResult } from './api-result';
 import { assertLoginResponse, classifyNetworkError, type LoginHttpResponse } from './login-response';
 import { authLoginSuccessSchema } from './schemas/auth-login.schema';
 
@@ -53,8 +53,15 @@ export class AuthClient {
 
   /** Sends any body to the login endpoint and returns status and body without throwing (plan D-4). */
   async postLogin(body: unknown): Promise<ApiResult> {
-    const response = await this.request.post(buildAuthLoginUrl(this.apiBaseUrl), { data: body, timeout: API_TIMEOUT_MS });
-    return toApiResult(response);
+    return sendSafely(async () => this.request.post(buildAuthLoginUrl(this.apiBaseUrl), { data: body, timeout: API_TIMEOUT_MS }));
+  }
+
+  /**
+   * Spec 004: registers a customer with `POST {API_BASE_URL}/auth/register` and returns status and
+   * body without throwing. The body holds a password, so it is never logged or attached.
+   */
+  async register(body: unknown): Promise<ApiResult> {
+    return sendSafely(async () => this.request.post(buildAuthRegisterUrl(this.apiBaseUrl), { data: body, timeout: API_TIMEOUT_MS }));
   }
 
   /** Logs in and returns `{ token, userId }`; throws naming only the status when the login fails. */

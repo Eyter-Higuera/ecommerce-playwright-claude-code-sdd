@@ -1,16 +1,19 @@
 import { test as base, expect, type PlaywrightWorkerOptions } from '@playwright/test';
 import { AuthClient, type AuthSession, type LoginCredentials } from '../api/auth-client';
 import { UserClient } from '../api/user-client';
+import { FetchRequestContext } from '../api/fetch-request-context';
 import { ProductClient } from '../api/product-client';
 import { HTTP_STATUS } from '../api/api-result';
 import { productListSchema, type Product } from '../api/schemas/product.schema';
 import { EMPTY_CRITERIA } from '../data/catalog-oracle';
+import { emptyCart, registerCustomer, type TestCustomer } from './customer';
 import { requireEnv } from '../config/env';
 import { catalogUnavailableMessage, traceMustBeOffMessage } from '../errors/messages';
 import { NavBar } from '../components/nav-bar';
 import { DashboardPage, SESSION_STORAGE_KEY } from '../pages/dashboard-page';
 import { LoginPage } from '../pages/login-page';
 import { ProductDetailPage } from '../pages/product-detail-page';
+import { CartPage } from '../pages/cart-page';
 
 // Playwright fixtures (Spec 000). Tests receive ready Page Objects, clients and accounts;
 // configuration is read inside each fixture, so a missing variable fails only the tests that use
@@ -37,10 +40,17 @@ function requireTraceOff(trace: TraceOption, fixture: string): void {
 }
 
 interface Fixtures {
+  /**
+   * The HTTP transport of every API client: Node's fetch instead of Playwright's `request`, so no
+   * call log with an Authorization header can reach a report (Spec 004 T11; Spec 001 RF-27).
+   */
+  apiRequest: FetchRequestContext;
   loginPage: LoginPage;
   dashboardPage: DashboardPage;
   /** The product detail page (Spec 003). */
   productDetailPage: ProductDetailPage;
+  /** The cart page (Spec 004). */
+  cartPage: CartPage;
   /** Header controls of the current page (Sign Out), whichever page is open. */
   navBar: NavBar;
   authClient: AuthClient;
@@ -58,6 +68,13 @@ interface Fixtures {
    * is not a valid, non-empty product list (RF-1, RF-17).
    */
   catalog: readonly Product[];
+  /**
+   * A freshly registered TEST_ customer for this test only (Spec 004, plan D-1); its cart is
+   * emptied after the test, also when the test fails. It never exposes its password.
+   */
+  customer: TestCustomer;
+  /** A second, independent TEST_ customer for isolation tests (Spec 004, plan D-8). */
+  secondCustomer: TestCustomer;
   /** Account A credentials to TYPE into the browser; only with tracing off (Spec 001 RF-27). */
   formAccountA: LoginCredentials;
   /** Account B credentials to TYPE into the browser; only with tracing off (Spec 001 RF-27). */
@@ -74,6 +91,9 @@ interface AutoFixtures {
 }
 
 export const test = base.extend<Fixtures & AutoFixtures>({
+  apiRequest: async ({}, use) => {
+    await use(new FetchRequestContext());
+  },
   loginPage: async ({ page }, use) => {
     await use(new LoginPage(page, requireEnv('BASE_URL')));
   },
@@ -83,11 +103,14 @@ export const test = base.extend<Fixtures & AutoFixtures>({
   productDetailPage: async ({ page }, use) => {
     await use(new ProductDetailPage(page, requireEnv('BASE_URL')));
   },
+  cartPage: async ({ page }, use) => {
+    await use(new CartPage(page, requireEnv('BASE_URL')));
+  },
   navBar: async ({ page }, use) => {
     await use(new NavBar(page));
   },
-  authClient: async ({ request }, use) => {
-    await use(new AuthClient(request, requireEnv('API_BASE_URL')));
+  authClient: async ({ apiRequest }, use) => {
+    await use(new AuthClient(apiRequest, requireEnv('API_BASE_URL')));
   },
   accountA: async ({}, use) => {
     await use({ email: requireEnv('TEST_USER_EMAIL'), password: requireEnv('TEST_USER_PASSWORD') });
@@ -95,20 +118,30 @@ export const test = base.extend<Fixtures & AutoFixtures>({
   accountB: async ({}, use) => {
     await use({ email: requireEnv('TEST_USER_2_EMAIL'), password: requireEnv('TEST_USER_2_PASSWORD') });
   },
-  userClient: async ({ request }, use) => {
-    await use(new UserClient(request, requireEnv('API_BASE_URL')));
+  userClient: async ({ apiRequest }, use) => {
+    await use(new UserClient(apiRequest, requireEnv('API_BASE_URL')));
   },
   apiSession: async ({ authClient, accountA }, use) => {
     await use(await authClient.loginSession(accountA));
   },
-  productClient: async ({ request }, use) => {
-    await use(new ProductClient(request, requireEnv('API_BASE_URL')));
+  productClient: async ({ apiRequest }, use) => {
+    await use(new ProductClient(apiRequest, requireEnv('API_BASE_URL')));
   },
   catalog: async ({ productClient, apiSession }, use) => {
     const result = await productClient.getAllProducts(EMPTY_CRITERIA, apiSession.token);
     const parsed = productListSchema.safeParse(result.json);
     if (result.status !== HTTP_STATUS.OK || !parsed.success) throw new Error(catalogUnavailableMessage(result.status));
     await use(parsed.data.data);
+  },
+  customer: async ({ authClient, userClient }, use, testInfo) => {
+    const customer = await registerCustomer(authClient, testInfo.workerIndex);
+    await use(customer);
+    await emptyCart(userClient, customer);
+  },
+  secondCustomer: async ({ authClient, userClient }, use, testInfo) => {
+    const customer = await registerCustomer(authClient, testInfo.workerIndex);
+    await use(customer);
+    await emptyCart(userClient, customer);
   },
   formAccountA: async ({ trace, accountA }, use) => {
     requireTraceOff(trace, 'formAccountA');
@@ -141,6 +174,19 @@ export const loggedInTest = test.extend({
     requireTraceOff(trace, 'loggedInTest');
     const origin = new URL(requireEnv('BASE_URL')).origin;
     await use({ cookies: [], origins: [{ origin, localStorage: [{ name: SESSION_STORAGE_KEY, value: apiSession.token }] }] });
+  },
+});
+
+/**
+ * Spec 004 plan D-1: like `loggedInTest`, but the browser session belongs to the test's own TEST_
+ * customer (the `customer` fixture), registered and logged in through the API. No password is typed;
+ * the browser holds the auth token, so the test file must declare `test.use(NO_TRACE)` (Spec 001 RF-27).
+ */
+export const cartTest = test.extend({
+  storageState: async ({ trace, customer }, use) => {
+    requireTraceOff(trace, 'cartTest');
+    const origin = new URL(requireEnv('BASE_URL')).origin;
+    await use({ cookies: [], origins: [{ origin, localStorage: [{ name: SESSION_STORAGE_KEY, value: customer.token }] }] });
   },
 });
 

@@ -37,6 +37,11 @@ export function catalogUnavailableMessage(status: number): string {
   return `Catalog read through the product API failed or is empty (status ${String(status)})`;
 }
 
+/** Spec 004: a test customer could not be set up or cleaned up; names the step only, never the email or password. */
+export function customerSetupFailedMessage(step: string, status: number): string {
+  return `Test customer ${step} failed (status ${String(status)})`;
+}
+
 /** Spec 001 RF-27: a fixture that puts a secret into the browser was used while tracing is on. */
 export function traceMustBeOffMessage(fixture: string, traceMode: string): string {
   return `Fixture "${fixture}" puts a secret into the browser and requires trace off (Spec 001 RF-27); trace is "${traceMode}". Add test.use(NO_TRACE).`;

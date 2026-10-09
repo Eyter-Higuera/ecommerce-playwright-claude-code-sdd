@@ -16,6 +16,14 @@ export const DASHBOARD_ROUTE_PATTERN = /#\/dashboard/;
 /** The cart page, a second protected route (TC-001-30): `#/dashboard/cart` (verified 2026-10-08). */
 export const CART_ROUTE_PATTERN = /#\/dashboard\/cart/;
 
+/** Hash route of the cart page, relative to BASE_URL (Spec 004 shared definitions). */
+export const CART_ROUTE = '#/dashboard/cart';
+
+/** BASE_URL + `/#/dashboard/cart`. */
+export function buildCartUrl(baseUrl: string): string {
+  return joinUrl(baseUrl, CART_ROUTE);
+}
+
 /** Path of the login endpoint, relative to API_BASE_URL. */
 export const AUTH_LOGIN_PATH = 'auth/login';
 
@@ -79,4 +87,34 @@ export function productDetailRoutePattern(id: string): RegExp {
 /** The text with every regular-expression special character escaped. */
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Path of the registration endpoint, relative to API_BASE_URL (Spec 004 test customers). */
+export const AUTH_REGISTER_PATH = 'auth/register';
+
+/** API_BASE_URL + `/auth/register`. */
+export function buildAuthRegisterUrl(apiBaseUrl: string): string {
+  return joinUrl(apiBaseUrl, AUTH_REGISTER_PATH);
+}
+
+/** Cart API paths, relative to API_BASE_URL (Spec 004 shared definitions, observed 2026-10-09). */
+export const CART_API_PATHS = {
+  ADD: 'user/add-to-cart',
+  PRODUCTS: 'user/get-cart-products',
+  REMOVE: 'user/remove-from-cart',
+} as const;
+
+/** API_BASE_URL + `/user/add-to-cart`. */
+export function buildAddToCartUrl(apiBaseUrl: string): string {
+  return joinUrl(apiBaseUrl, CART_API_PATHS.ADD);
+}
+
+/** API_BASE_URL + `/user/get-cart-products/<userId>`. */
+export function buildCartProductsUrl(apiBaseUrl: string, userId: string): string {
+  return joinUrl(apiBaseUrl, `${CART_API_PATHS.PRODUCTS}/${encodeURIComponent(userId)}`);
+}
+
+/** API_BASE_URL + `/user/remove-from-cart/<userId>/<productId>`. */
+export function buildRemoveFromCartUrl(apiBaseUrl: string, userId: string, productId: string): string {
+  return joinUrl(apiBaseUrl, `${CART_API_PATHS.REMOVE}/${encodeURIComponent(userId)}/${encodeURIComponent(productId)}`);
 }
