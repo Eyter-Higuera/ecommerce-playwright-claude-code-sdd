@@ -203,3 +203,4 @@ Legend: ✅ = passed · ❌ = failed
 | `npm run spec:check -- --write` | passed (5 specs) | ✅ | |
 | Workflow mutations (4, reverted) | each caught by TC-000-86 or TC-000-101 | ✅ | |
 | GitHub run 37918960715 (before the fix) | `checks (test:unit)` failed on TC-000-30 (git exit 128 in the container) | | ❌ |
+| GitHub runs for `83ba6e7`: eyter_dev 37925874939, release 37926325361, main 37929397499, production 37930026405 | all green; promoted up to production; production did not promote | ✅ | |
