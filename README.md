@@ -119,3 +119,24 @@ One-time GitLab setup for promotion (done by a maintainer, never committed):
    branches), with Maintainers allowed to merge.
 2. Create a Project Access Token (Settings → Access tokens) with role Maintainer and scope `api`.
 3. Store it as the CI/CD variable `PROMOTION_TOKEN`, masked and protected.
+
+## GitHub mirror (GitHub Actions)
+The repository is mirrored on GitHub (`origin`: https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd);
+GitLab is the `gitlab` remote. `.github/workflows/ci.yml` runs the same checks and branch gates as
+the table above (Spec 000 RF-78 to RF-82), but **never promotes**: only GitLab merges between
+branches, and only `eyter_dev` is pushed to GitHub by hand.
+
+- Each Playwright job runs `check:secrets` on its reports, passed or failed, and uploads them
+  (7 days) only when the scan passes.
+- A manual run (Actions → CI → Run workflow) takes `suite` and `browser`, like the GitLab "Run
+  pipeline".
+- Secrets (Settings → Secrets and variables → Actions, set by a maintainer, never committed):
+  `BASE_URL`, `API_BASE_URL`, `TEST_USER_EMAIL`, `TEST_USER_PASSWORD`, `TEST_USER_2_EMAIL`,
+  `TEST_USER_2_PASSWORD`. For example `gh secret set -f .env -R Eyter-Higuera/ecommerce-playwright-claude-code-sdd`.
+
+Pushing a change of `eyter_dev` to both remotes:
+
+```
+git push origin eyter_dev
+git -c credential.helper= -c "credential.helper=!glab auth git-credential" push gitlab eyter_dev
+```

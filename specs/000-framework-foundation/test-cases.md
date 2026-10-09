@@ -4,10 +4,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 <!-- Allowed values: draft | approved -->
 
 ## Summary
-- 110 test cases for 77 RFs. Several TCs cover more than one RF when one scenario proves
+- 118 test cases for 82 RFs. Several TCs cover more than one RF when one scenario proves
   the positive case of one RF and the negative case of another (decision tables and partitions).
-- Layers: unit 96, api 1, mocked 2, ui 1, integration 10.
-- Automated: 100; manual: 10.
+- Layers: unit 103, api 1, mocked 2, ui 1, integration 11.
+- Automated: 107; manual: 11.
 - Smoke: 2 TCs (2%), both P1.
 - "unit" TCs run in Vitest with no real network: they inspect config, run CLIs (tsc, ESLint,
   Playwright `--list`, spec:check, check:secrets) on local fixtures, or test helpers with stubs.
@@ -94,6 +94,11 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-75 | TC-000-105 | TC-000-103 | TC-000-105 | — | 2 |
 | RF-76 | TC-000-103, TC-000-109 | TC-000-101 | — | TC-000-101 | 3 |
 | RF-77 | TC-000-103, TC-000-109 | TC-000-108 | — | TC-000-108 | 3 |
+| RF-78 | TC-000-111, TC-000-112, TC-000-118 | TC-000-113 | — | — | 4 |
+| RF-79 | TC-000-114, TC-000-118 | TC-000-116 | — | TC-000-114 | 3 |
+| RF-80 | TC-000-115 | TC-000-113 | — | — | 2 |
+| RF-81 | TC-000-116 | TC-000-113 | — | TC-000-116 | 2 |
+| RF-82 | TC-000-117 | TC-000-05 | — | — | 2 |
 
 ## Test cases
 
@@ -1856,6 +1861,134 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Steps           | **Given** a failed job **When** the pipeline ends **Then** nothing is promoted |
 | Expected result | Pipeline failed; `promote` job not run; no new merge request; the next branch unchanged |
 | Automate        | N — requires a real failing GitLab pipeline; executed at validation |
+
+### TC-000-111 — GitHub workflow runs the checks and the eyter_dev gate
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-78 |
+| Priority        | P1 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** the jobs of an `eyter_dev` push are inspected **Then** they mirror the GitLab eyter_dev gate |
+| Expected result | Push trigger on the four promotion branches; the checks job runs spec:check, lint, typecheck and test:unit; `smoke-api` and `smoke-ui-chromium` run the @smoke suite on `api` and chromium only for `eyter_dev`, after the checks |
+| Automate        | Y |
+
+### TC-000-112 — GitHub workflow runs the release, main and production gates
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-78 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | Decision table |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** the jobs of each later branch are inspected **Then** each runs its gate |
+| Expected result | `release-regression` (SUITE=regression, BROWSER=all), `main-smoke` (smoke, all) and `production-smoke` (smoke, chromium) run `npm run ci:run-suite`, each only on its branch, after the checks |
+| Automate        | Y |
+
+### TC-000-113 — each GitHub gate runs only on its own branch or event
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-78, RF-80, RF-81 |
+| Priority        | P1 |
+| Type            | Negative |
+| Technique       | Decision table |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** the triggers and job conditions are inspected **Then** no gate runs elsewhere |
+| Expected result | Only `push` (the four branches) and `workflow_dispatch` trigger the workflow; each gate job is conditioned on exactly one branch and on a push; `run-suite` only on `workflow_dispatch`; no job named or doing `promote` |
+| Automate        | Y |
+
+### TC-000-114 — GitHub workflow scans secrets after every Playwright job and uploads only after a clean scan
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-79 |
+| Priority        | P1 |
+| Type            | Security |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** each Playwright job **When** its steps are inspected **Then** the scan comes first and gates the upload |
+| Expected result | Every Playwright job runs `npm run check:secrets` with `if: always()` after its tests, then uploads playwright-report/, reports/ and test-results/ with a 7-day retention only if that scan step succeeded |
+| Automate        | Y |
+
+### TC-000-115 — GitHub manual run selects the suite through ci:run-suite
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-80 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** the manual run is inspected **Then** it reuses the GitLab selector |
+| Expected result | `workflow_dispatch` has `suite` (smoke, regression) and `browser` (chromium, firefox, webkit, all) choice inputs; `run-suite` passes them as SUITE and BROWSER to `npm run ci:run-suite` |
+| Automate        | Y |
+
+### TC-000-116 — GitHub workflow is read-only, never ignores a failure, prints no environment and never pushes
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-81, RF-79 |
+| Priority        | P1 |
+| Type            | Security |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** it is scanned **Then** none of the forbidden patterns appears |
+| Expected result | `permissions: contents: read`; no `continue-on-error`; no environment printing (RF-65 check); no `git push`, merge or force/delete command; the six variables come only from `${{ secrets.* }}` |
+| Automate        | Y |
+
+### TC-000-117 — GitHub container image version equals installed @playwright/test version
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-82 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml`, `package-lock.json` |
+| Steps           | **Given** the workflow and the lockfile **When** the container images are read **Then** they match the library |
+| Expected result | At least one Playwright image; every image version equals the locked `@playwright/test` version |
+| Automate        | Y |
+
+### TC-000-118 — GitHub mirror run on eyter_dev passes
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-78, RF-79 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | integration |
+| Tags            | n/a (manual check) |
+| Browsers        | n/a (pipeline level) |
+| Preconditions   | GitHub secrets set by the user |
+| Test data       | A push of `eyter_dev` to GitHub |
+| Steps           | **Given** a push to `eyter_dev` on GitHub **When** the workflow finishes **Then** every job passed |
+| Expected result | Checks, `smoke-api` and `smoke-ui-chromium` pass; each check:secrets step passes; artifacts are uploaded |
+| Automate        | N — requires a real GitHub Actions run; executed at validation |
 
 ## Out of scope for testing
 - Business flows (catalog, cart, checkout, orders) and login scenarios beyond RF-54 — later specs.

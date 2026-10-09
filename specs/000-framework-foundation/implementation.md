@@ -1315,3 +1315,42 @@ Date: 2026-10-08 · Spec change: Mode C approved by the user during Spec 001 T16
   (the plain `--list` output has no tags). It asserts that every listed test carries `smoke`, that
   both sanity tests are present, and that the mocked tests are absent.
 - `npm run test:unit` → 100 passed, 0 failed.
+
+## Change after validation: GitHub mirror with GitHub Actions gates
+
+Date: 2026-10-09 · Spec change: clarification 13 (Mode C, approved by the user with the plan) ·
+RF-78 to RF-82 · TC-000-111 to 118
+
+- Context: `origin` was switched to GitHub by the user; GitLab keeps the pipelines and the
+  promotion. The user chose a mirror with tests: GitHub runs the same gates and never promotes;
+  only `eyter_dev` is pushed there by hand; the user sets the GitHub secrets.
+- Spec: RF-78 (same branch gates on GitHub), RF-79 (check:secrets after every Playwright job,
+  upload only after a clean scan), RF-80 (manual run through `ci:run-suite`), RF-81 (secrets only,
+  read-only permissions, no `continue-on-error`, no environment printing, no merge or push),
+  RF-82 (Playwright image = locked version).
+- Code: `.github/workflows/ci.yml` (new): `checks` matrix (spec:check, lint, typecheck,
+  test:unit), then `smoke-api` and `smoke-ui-chromium` (eyter_dev), `release-regression`,
+  `main-smoke`, `production-smoke` and `run-suite` (workflow_dispatch). Every job runs in
+  `mcr.microsoft.com/playwright:v1.63.0-noble`; Playwright jobs set `HOME: /root` (Firefox in the
+  container) and read the six variables from `${{ secrets.* }}`; no promote job.
+- Tests: `tests/unit/ci/github-actions.test.ts` (new, TC-000-111 to 117), reading the workflow as
+  text and reusing `findEnvPrinting` and `playwrightImages`/`lockedPlaywrightVersion`.
+  Order note: the workflow was written before its tests (unlike clarification 12). To show the
+  tests are not vacuous, three temporary mutations were applied and reverted: `continue-on-error`
+  and `printenv` each failed TC-000-116, and an upload not gated on the scan failed TC-000-114.
+- Verified before choosing where secrets go: `npm run test:unit` passes with no `.env` and none of
+  the six variables (RF-7), so the `checks` job gets no secrets.
+- The YAML parses (PyYAML `safe_load`: 7 jobs; triggers push and workflow_dispatch).
+- Docs: README "GitHub mirror (GitHub Actions)"; AGENTS.md (CI checks list, mirror rules, CI
+  change scope now includes the workflow).
+
+### Files changed
+- `specs/000-framework-foundation/spec.md`, `specs/000-framework-foundation/test-cases.md`
+- `.github/workflows/ci.yml` (new), `tests/unit/ci/github-actions.test.ts` (new)
+- `README.md`, `AGENTS.md`
+
+### Quality gates
+- `npm run test:unit -- tests/unit/ci` → 26 passed (19 earlier + 7 new); `npm run test:unit` → 107 passed.
+- `npm run lint` (0 errors) and `npm run typecheck` → exit 0; `npm run spec:check` → passed (5 specs).
+- test-reviewer on `github-actions.test.ts`: PASS (Arrange / Act / Assert, describes by scenario type).
+- Not yet run: TC-000-118 (manual, live GitHub Actions run after the push).

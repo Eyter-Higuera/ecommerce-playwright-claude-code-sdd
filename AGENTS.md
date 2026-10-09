@@ -14,7 +14,8 @@ Spec-Driven Development (SDD). Playwright + TypeScript for API, integration and 
 - SDD traceability gate: `npm run spec:check`
 - Secrets scan of reports and traces: `npm run check:secrets`
 - CI definition and promotion checks: `npm run test:unit -- tests/unit/ci`
-  (`gitlab-ci.test.ts`: branch gates, `promote` last with `when: on_success`, no `allow_failure`,
+  (`github-actions.test.ts`: GitHub mirror gates, scan-before-upload, read-only, no promotion;
+  `gitlab-ci.test.ts`: branch gates, `promote` last with `when: on_success`, no `allow_failure`,
   no force push or branch deletion, no environment printing, Playwright image version;
   `ci-promote.test.ts`: promotion script against a stub GitLab API; `ci-run-suite.test.ts`:
   SUITE/BROWSER selection)
@@ -62,7 +63,11 @@ spec:check, lint, typecheck and the unit tests, then the branch's Playwright gat
 - `PROMOTION_TOKEN` lives only in a masked, protected GitLab CI/CD variable; never print or
   commit it.
 - If a promotion fails, fix the cause on `eyter_dev` and let a new green pipeline promote it.
-- Any change to `.gitlab-ci.yml`, `scripts/ci-*.ts` or `scripts/check-ci-scripts.ts` starts in
+- GitHub mirror (Spec 000 RF-78 to RF-82): `origin` is GitHub, `gitlab` is GitLab. Push `eyter_dev`
+  to both; `.github/workflows/ci.yml` runs the same gates there but never merges, pushes or
+  promotes. Never push `release`, `main` or `production` to either remote by hand. GitHub secrets
+  (`BASE_URL`, `API_BASE_URL`, `TEST_USER_*`) are set by a maintainer and never printed.
+- Any change to `.gitlab-ci.yml`, `.github/workflows/ci.yml`, `scripts/ci-*.ts` or `scripts/check-ci-scripts.ts` starts in
   Spec 000 (Mode C) and must keep `npm run test:unit -- tests/unit/ci` green: those tests are the
   executable form of the pipeline rules.
 

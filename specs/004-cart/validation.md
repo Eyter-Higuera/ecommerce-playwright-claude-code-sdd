@@ -1,6 +1,6 @@
 # Validation — Spec 004 Cart
 
-Date: 2026-10-09 · Branch: eyter_dev · Commit: working tree on top of f31dc8f (Spec 004 not committed yet)
+Date: 2026-10-09 · Branch: eyter_dev · Commit: 793e4d5
 Spec: specs/004-cart/spec.md
 
 ## Requirement coverage
@@ -58,15 +58,15 @@ its ID (spec:check: 0 warnings).
 | `npm run typecheck` | PASS | |
 | `npm run spec:check` | PASS | 5 specs, 0 warnings; docs/traceability.md regenerated in T11 (67 Spec 004 rows, all automated) |
 | Test review checklist | PASS | Applied per task (T1 to T11); findings fixed: helper-only assertions, a conditional in a test body, a schema check that could never fail (T1). One justified CSS fallback: the nameless remove control (plan D-6) |
-| CI pipeline on `eyter_dev` | PENDING | Spec 004 is not committed or pushed yet |
+| CI pipelines for 793e4d5 | PASS | eyter_dev 2929700319 · release 2929719481 (full regression of Specs 000 to 004 on api, chromium, firefox, webkit, on the fetch transport) · main 2929835324 · production 2929865697: all success. Automatic promotion merged each stage |
 
 ## Done criteria
 - [x] Every RF has approved test cases.
 - [x] All automated TCs are green on chromium and in the `api` project, and the UI TCs are green on firefox and webkit (TC-004-13, 15, 21, 22, 23 and 30 are the approved expected failures, D-5).
 - [x] test-reviewer PASS.
 - [x] `npm run lint`, `npm run typecheck`, `npm run spec:check` and `npm run check:secrets` PASS.
-- [ ] The pipeline on `eyter_dev` is green. Pending: needs a commit and push to `eyter_dev`.
-- [ ] User validation.
+- [x] The pipeline on `eyter_dev` is green (2929700319; the chain continued green up to production 2929865697).
+- [x] User validation (confirmed by the user on 2026-10-09).
 
 ## Issues found
 - **Known defects of the shop (expected failures, plan D-5):**
@@ -91,8 +91,8 @@ its ID (spec:check: 0 warnings).
   `[NEEDS CLARIFICATION]`.
 
 ## Verdict
-The spec IS fulfilled locally, but two Done criteria are open. All 28 RFs are covered and every
-check passes on api, chromium, firefox and webkit: 64 tests, with the six approved expected failures
-for the shop's known defects. Unit tests, lint (0 errors), typecheck, spec:check and check:secrets
-all pass. Still open: the `eyter_dev` pipeline (Spec 004 is not pushed yet) and the user's
-confirmation.
+The spec IS fulfilled. All 28 RFs are covered and every check passes on api, chromium, firefox
+and webkit: 64 tests, with the six approved expected failures for the shop's known defects. Unit
+tests, lint (0 errors), typecheck, spec:check and check:secrets all pass. In CI, commit 793e4d5 went
+green through eyter_dev, release (full regression on the fetch transport), main and production. The
+user confirmed it as validated on 2026-10-09.

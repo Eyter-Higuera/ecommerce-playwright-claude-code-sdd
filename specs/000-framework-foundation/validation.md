@@ -185,3 +185,10 @@ let RF-31 accept TC IDs with two or more digits.
 - `npm run test:unit` 96/96, lint and typecheck PASS, `spec:check` passed (2 specs).
 Spec 000 stays `validated`: 77 RFs, 110 TCs (100 automated, 10 manual). RF-69 to RF-72, RF-76 and
 RF-77 are validated by TC-000-109; RF-73 still awaits its live negative case (TC-000-110).
+
+### Change after validation: GitHub mirror (2026-10-09)
+Spec clarification 13 (Mode C, approved by the user) added RF-78 to RF-82.
+- Automated, PASS: TC-000-111 to 117 (`tests/unit/ci/github-actions.test.ts`).
+- Manual, pending: TC-000-118 (GitHub mirror run on eyter_dev), recorded after the first push
+  once the user has set the GitHub secrets.
+Spec 000 stays `validated`: 82 RFs, 118 TCs (107 automated, 11 manual).
