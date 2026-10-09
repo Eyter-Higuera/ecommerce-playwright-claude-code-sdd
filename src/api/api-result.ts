@@ -18,7 +18,8 @@ export interface ApiHttpResponse {
 
 /** The subset of Playwright's APIRequestContext the API clients use. */
 export interface ApiRequestContext {
-  post(url: string, options: { data: unknown; timeout: number }): Promise<ApiHttpResponse>;
+  /** `headers` is optional so callers without headers stay unchanged (Spec 002, plan D-2). */
+  post(url: string, options: { data: unknown; headers?: Record<string, string>; timeout: number }): Promise<ApiHttpResponse>;
   get(url: string, options: { headers: Record<string, string>; timeout: number }): Promise<ApiHttpResponse>;
 }
 

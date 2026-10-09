@@ -32,6 +32,11 @@ export function loginSessionFailedMessage(status: number): string {
   return `API login for a test session failed (status ${String(status)})`;
 }
 
+/** Spec 002: the catalog read for a test was not a valid, non-empty product list (RF-1, RF-17). */
+export function catalogUnavailableMessage(status: number): string {
+  return `Catalog read through the product API failed or is empty (status ${String(status)})`;
+}
+
 /** Spec 001 RF-27: a fixture that puts a secret into the browser was used while tracing is on. */
 export function traceMustBeOffMessage(fixture: string, traceMode: string): string {
   return `Fixture "${fixture}" puts a secret into the browser and requires trace off (Spec 001 RF-27); trace is "${traceMode}". Add test.use(NO_TRACE).`;

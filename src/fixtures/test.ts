@@ -1,8 +1,12 @@
 import { test as base, expect, type PlaywrightWorkerOptions } from '@playwright/test';
 import { AuthClient, type AuthSession, type LoginCredentials } from '../api/auth-client';
 import { UserClient } from '../api/user-client';
+import { ProductClient } from '../api/product-client';
+import { HTTP_STATUS } from '../api/api-result';
+import { productListSchema, type Product } from '../api/schemas/product.schema';
+import { EMPTY_CRITERIA } from '../data/catalog-oracle';
 import { requireEnv } from '../config/env';
-import { traceMustBeOffMessage } from '../errors/messages';
+import { catalogUnavailableMessage, traceMustBeOffMessage } from '../errors/messages';
 import { NavBar } from '../components/nav-bar';
 import { DashboardPage, SESSION_STORAGE_KEY } from '../pages/dashboard-page';
 import { LoginPage } from '../pages/login-page';
@@ -44,6 +48,13 @@ interface Fixtures {
   userClient: UserClient;
   /** Token and userId of account A from a fresh API login, one per test (Spec 001, plan D-6). */
   apiSession: AuthSession;
+  productClient: ProductClient;
+  /**
+   * The current catalog: every product of the product API with no criteria, read with the
+   * account A token right before the test acts (Spec 002, plan D-1, D-9). Fails when the answer
+   * is not a valid, non-empty product list (RF-1, RF-17).
+   */
+  catalog: readonly Product[];
   /** Account A credentials to TYPE into the browser; only with tracing off (Spec 001 RF-27). */
   formAccountA: LoginCredentials;
   /** Account B credentials to TYPE into the browser; only with tracing off (Spec 001 RF-27). */
@@ -83,6 +94,15 @@ export const test = base.extend<Fixtures & AutoFixtures>({
   },
   apiSession: async ({ authClient, accountA }, use) => {
     await use(await authClient.loginSession(accountA));
+  },
+  productClient: async ({ request }, use) => {
+    await use(new ProductClient(request, requireEnv('API_BASE_URL')));
+  },
+  catalog: async ({ productClient, apiSession }, use) => {
+    const result = await productClient.getAllProducts(EMPTY_CRITERIA, apiSession.token);
+    const parsed = productListSchema.safeParse(result.json);
+    if (result.status !== HTTP_STATUS.OK || !parsed.success) throw new Error(catalogUnavailableMessage(result.status));
+    await use(parsed.data.data);
   },
   formAccountA: async ({ trace, accountA }, use) => {
     requireTraceOff(trace, 'formAccountA');

@@ -46,3 +46,11 @@ export const USER_CART_COUNT_PATH = 'user/get-cart-count';
 export function buildCartCountUrl(apiBaseUrl: string, userId: string): string {
   return joinUrl(apiBaseUrl, `${USER_CART_COUNT_PATH}/${encodeURIComponent(userId)}`);
 }
+
+/** Path of the product API, relative to API_BASE_URL (Spec 002 shared definitions). */
+export const PRODUCT_LIST_PATH = 'product/get-all-products';
+
+/** API_BASE_URL + `/product/get-all-products`. */
+export function buildProductListUrl(apiBaseUrl: string): string {
+  return joinUrl(apiBaseUrl, PRODUCT_LIST_PATH);
+}

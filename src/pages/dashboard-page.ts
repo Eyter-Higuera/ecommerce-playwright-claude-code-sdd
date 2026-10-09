@@ -1,10 +1,14 @@
 import type { Page } from '@playwright/test';
 import { NavBar } from '../components/nav-bar';
+import { DialogRecorder } from '../components/dialog-recorder';
+import { FilterPanel } from '../components/filter-panel';
+import { ProductList } from '../components/product-list';
 import { buildDashboardUrl } from '../config/urls';
 import { NAVIGATION_TIMEOUT_MS } from '../config/timeouts';
 
-// Page Object of the dashboard (Spec 001, RF-3, RF-12, RF-20 to RF-23): navigation and the header
-// controls only, no assertions. The shop redirects `#/dashboard` to `#/dashboard/dash` (observed).
+// Page Object of the dashboard (Spec 001, RF-3, RF-12, RF-20 to RF-23; Spec 002, plan D-7):
+// navigation, the header controls, and the product list and filter panel of the catalog; no
+// assertions. The shop redirects `#/dashboard` to `#/dashboard/dash` (observed).
 
 /** Local-storage key under which the shop keeps the session token (verified 2026-10-08). */
 export const SESSION_STORAGE_KEY = 'token';
@@ -16,6 +20,10 @@ interface BrowserGlobal {
 
 export class DashboardPage {
   readonly navBar: NavBar;
+  /** The catalog shown on the dashboard (Spec 002, RF-1 to RF-4). */
+  readonly products: ProductList;
+  /** The visible filter panel: search, price range and option groups (Spec 002, RF-5 to RF-16). */
+  readonly filters: FilterPanel;
   readonly url: string;
 
   constructor(
@@ -24,11 +32,26 @@ export class DashboardPage {
   ) {
     this.url = buildDashboardUrl(baseUrl);
     this.navBar = new NavBar(page);
+    this.products = new ProductList(page);
+    this.filters = new FilterPanel(page);
   }
 
   /** Opens the dashboard route; without a session the shop redirects to the login route (RF-23). */
   async open(): Promise<void> {
     await this.page.goto(this.url, { timeout: NAVIGATION_TIMEOUT_MS });
+  }
+
+  /**
+   * Opens the dashboard and waits for the answer to its unfiltered product request, so a later
+   * filter action cannot race with the initial list (Spec 002, plan D-4).
+   */
+  async openCatalog(): Promise<void> {
+    await this.filters.load(async () => this.open());
+  }
+
+  /** Spec 002 RF-8: starts recording browser dialogs; each is dismissed and its type returned. */
+  recordDialogs(): string[] {
+    return new DialogRecorder(this.page).types;
   }
 
   /** Removes the stored session token from the page, as clearing site data would (TC-001-32). */

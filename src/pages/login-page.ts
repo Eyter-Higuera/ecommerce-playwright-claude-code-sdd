@@ -3,6 +3,7 @@ import { buildLoginUrl } from '../config/urls';
 import { NAVIGATION_TIMEOUT_MS } from '../config/timeouts';
 import { loginPageUnavailableMessage } from '../errors/messages';
 import type { LoginCredentials } from '../api/auth-client';
+import { DialogRecorder } from '../components/dialog-recorder';
 import { LOGIN_FORM, LOGIN_MESSAGES } from './login-page.constants';
 
 // Page Object of the login page (Spec 000, RF-52 / RF-53; Spec 001, RF-1 to RF-10): locators and
@@ -73,15 +74,11 @@ export class LoginPage {
 
   /**
    * RF-8: starts recording browser dialogs (alert, confirm, prompt, beforeunload). Each dialog is
-   * dismissed so the page never hangs, and its type is pushed to the returned array.
+   * dismissed so the page never hangs, and its type is pushed to the returned array
+   * (`DialogRecorder`, shared with the dashboard; Spec 002 plan D-8).
    */
   recordDialogs(): string[] {
-    const dialogs: string[] = [];
-    this.page.on('dialog', (dialog) => {
-      dialogs.push(dialog.type());
-      dialog.dismiss().catch(() => undefined);
-    });
-    return dialogs;
+    return new DialogRecorder(this.page).types;
   }
 
   async submit(): Promise<void> {
