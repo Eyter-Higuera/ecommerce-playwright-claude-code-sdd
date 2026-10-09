@@ -4,6 +4,22 @@ Test automation framework for an e-commerce web application, built with **Spec-D
 Development (SDD)** and Claude Code skills. Playwright + TypeScript for API, integration and UI
 tests; Vitest for unit tests; GitHub Actions for the branch gates and the automatic promotion.
 
+## Test results
+Live status of the latest run of each promotion branch (click a badge for its runs):
+
+| Branch | CI status |
+|---|---|
+| `eyter_dev` | [![CI eyter_dev](https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd/actions/workflows/ci.yml/badge.svg?branch=eyter_dev)](https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd/actions/workflows/ci.yml?query=branch%3Aeyter_dev) |
+| `release` | [![CI release](https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd/actions/workflows/ci.yml/badge.svg?branch=release)](https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd/actions/workflows/ci.yml?query=branch%3Arelease) |
+| `main` | [![CI main](https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd/actions/workflows/ci.yml?query=branch%3Amain) |
+| `production` | [![CI production](https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd/actions/workflows/ci.yml/badge.svg?branch=production)](https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd/actions/workflows/ci.yml?query=branch%3Aproduction) |
+
+**Detailed results of all tests: [results page](https://eyter-higuera.github.io/ecommerce-playwright-claude-code-sdd/).**
+For each branch it shows the commit, the workflow run, the date (UTC) and, per stage
+(requirements coverage, unit tests with code coverage, API, UI per browser), the passed, failed,
+skipped and flaky tests and the duration. Every push run updates it (Spec 000 RF-88). The same
+tables are on the **Summary** page of each workflow run.
+
 ## SDD flow
 Constitution → Spec → Clarification → Test cases → Plan → Tasks → Implementation (one task at a
 time, tests first) → Validation → Change (spec first, then code).
@@ -53,6 +69,7 @@ Process environment variables take precedence over `.env`.
 | Command | What it does |
 |---|---|
 | `npm run test:unit` | Vitest unit tests of the framework (no network, no variables needed) |
+| `npm run test:unit:ci` | The same with code coverage (`reports/coverage/index.html`) and JSON results (`reports/unit-results.json`), as in CI |
 | `npx playwright test --grep @smoke --project=api --project=chromium` | Sanity smoke tests against the demo site |
 | `npx playwright test` | All Playwright tests on `api`, chromium, firefox and webkit |
 | `npx playwright test --project=msedge` | UI tests on Microsoft Edge (local only, Edge must be installed) |
@@ -60,9 +77,53 @@ Process environment variables take precedence over `.env`.
 | `npm run spec:check` | SDD traceability gate; `npm run spec:check -- --write` regenerates `docs/traceability.md` |
 | `npm run check:secrets` | Scans `reports/`, `playwright-report/` and `test-results/` for passwords and tokens |
 | `npm run report:flaky` | Prints the number of flaky tests of the last run |
+| `npm run report:summary -- --title <stage>` | Prints the passed / failed / skipped / flaky / duration table of the last Playwright run (`--report reports/unit-results.json --coverage reports/coverage/coverage-summary.json` for the unit run) |
+| `npm run spec:check -- --summary` | Adds the requirements coverage per spec (RFs, test cases automated / manual / skipped / missing) |
+| `npm run report:pages` | Builds the results page in `reports/pages/` (CI only: it needs the run's job results) |
 
 Reports: HTML in `playwright-report/`, JUnit in `reports/junit.xml`, traces of first retries in
 `test-results/`.
+
+## Running tests manually
+
+### Locally
+Set up `.env` first (see [Setup](#setup)). Unit tests need no variables; API and UI tests run
+against the real demo site.
+
+| What | Command |
+|---|---|
+| Unit tests | `npm run test:unit` |
+| Unit tests with code coverage | `npm run test:unit:ci`, then open `reports/coverage/index.html` |
+| API tests (all) | `npx playwright test --project=api` |
+| UI tests on one browser | `npx playwright test --project=chromium`, `npx playwright test --project=firefox` or `npx playwright test --project=webkit` |
+| UI tests on all browsers | `npx playwright test --project=chromium --project=firefox --project=webkit` |
+| Smoke suite (API + UI) | `npx playwright test --grep @smoke --project=api --project=chromium` (add `--project=firefox --project=webkit` for every browser) |
+| Regression suite (API + UI) | `npx playwright test --grep @regression --project=api --project=chromium --project=firefox --project=webkit` |
+| Smoke or regression on one layer | `npx playwright test --grep @smoke --project=api`, `npx playwright test --grep @regression --project=webkit`, … |
+| The same selection as a manual CI run | `SUITE=regression BROWSER=all npm run ci:run-suite` (`SUITE`: smoke, regression · `BROWSER`: chromium, firefox, webkit, all) |
+| Results of the last run | `npx playwright show-report` (HTML) · `npm run report:summary -- --title Local` (table) |
+
+The branch gates run the same commands in CI: `eyter_dev` and `production` run `@smoke` on `api`
+then chromium; `main` runs `@smoke` and `release` runs `@regression` on `api`, then chromium,
+firefox and webkit.
+
+### In GitHub Actions, on any branch
+A manual run uses the code of the branch you pick. It runs the checks and the unit tests, then
+the selected suite through `npm run ci:run-suite`. It never promotes and never updates the
+results page.
+
+- **Web:** Actions → CI → **Run workflow** → choose the branch, `suite` (smoke | regression) and
+  `browser` (chromium | firefox | webkit | all; the API tests always run once).
+- **CLI** (GitHub CLI logged in to this repository):
+
+| Branch | Smoke | Regression |
+|---|---|---|
+| `eyter_dev` | `gh workflow run ci.yml --ref eyter_dev -f suite=smoke -f browser=chromium` | `gh workflow run ci.yml --ref eyter_dev -f suite=regression -f browser=all` |
+| `release` | `gh workflow run ci.yml --ref release -f suite=smoke -f browser=all` | `gh workflow run ci.yml --ref release -f suite=regression -f browser=all` |
+| `main` | `gh workflow run ci.yml --ref main -f suite=smoke -f browser=all` | `gh workflow run ci.yml --ref main -f suite=regression -f browser=all` |
+| `production` | `gh workflow run ci.yml --ref production -f suite=smoke -f browser=chromium` | `gh workflow run ci.yml --ref production -f suite=regression -f browser=all` |
+
+Then follow it with `gh run watch` and open its **Summary** page for the result tables.
 
 ### Good to know
 - **`CI=true` set locally** makes the run behave like CI: 2 retries and `test.only` forbidden.
@@ -95,28 +156,40 @@ Reports: HTML in `playwright-report/`, JUnit in `reports/junit.xml`, traces of f
 
 ## CI/CD (GitHub Actions)
 The repository lives on GitHub (`origin`: https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd)
-and `.github/workflows/ci.yml` is its only CI (Spec 000 RF-58 to RF-82). Every push to a
-promotion branch runs spec:check, lint, typecheck and the unit tests, then the branch's Playwright
-gate. Each Playwright job then runs `check:secrets` on its own reports:
+and `.github/workflows/ci.yml` is its only CI (Spec 000 RF-58 to RF-89). Every push to a
+promotion branch runs each stage as a separate job, and a job starts only after the previous one
+passed (RF-83):
 
-| Branch | Playwright gate | On success |
+| Branch | Jobs, in order | On success |
 |---|---|---|
-| `eyter_dev` | smoke on api and chromium | merged into `release` |
-| `release` | regression on api, chromium, firefox and webkit | merged into `main` |
-| `main` | smoke on api, chromium, firefox and webkit | merged into `production` |
-| `production` | smoke on api and chromium | — (last branch) |
+| `eyter_dev` | `checks` → `unit-tests` → `eyter-dev-api` (@smoke) → `eyter-dev-ui-chromium` | merged into `release` |
+| `release` | `checks` → `unit-tests` → `release-api` (@regression) → `release-ui-chromium` → `release-ui-firefox` → `release-ui-webkit` | merged into `main` |
+| `main` | `checks` → `unit-tests` → `main-api` (@smoke) → `main-ui-chromium` → `main-ui-firefox` → `main-ui-webkit` | merged into `production` |
+| `production` | `checks` → `unit-tests` → `production-api` (@smoke) → `production-ui-chromium` | — (last branch) |
 
+`checks` runs spec:check, lint and typecheck in parallel; a failing check cancels the other two.
+
+- **A failed or canceled job stops everything after it.** The later jobs are skipped and the run
+  does not promote.
+- **Summaries (RF-84 to RF-87).** Every test job adds a table to the run's **Summary** page:
+  passed, failed, skipped and flaky tests, the total, the duration and the failed titles. The unit
+  job adds its code coverage (lines, branches, functions, statements; reported, never a gate), and
+  the spec:check job adds the requirements coverage per spec.
+- **Results page (RF-88).** After the test jobs of a push run, `publish-results` updates the
+  [results page](https://eyter-higuera.github.io/ecommerce-playwright-claude-code-sdd/) with this
+  branch's latest results and keeps the other branches'. It is the only job allowed to write to
+  GitHub Pages, and the page passes `check:secrets` before it is deployed.
 - **Promotion is automatic.** The last job (`promote`, `npm run ci:promote`) starts only when no
   other job of the run failed or was canceled. It merges exactly the tested commit into the next
   branch through the GitHub merges API. That merge starts the next branch's run, and so on up to
   `production`.
 - **A failed or canceled job stops the chain.** If a newer commit reached the source branch in the
   meantime, the promotion fails, and that commit is promoted by its own run instead.
-- **Reports.** Each Playwright job runs `check:secrets` whether it passed or failed. It uploads
-  `playwright-report/`, `reports/` (JUnit included) and `test-results/` for 7 days only when that
-  scan passes.
-- **Manual run.** Actions → CI → Run workflow takes `suite` (`smoke` | `regression`) and
-  `browser` (`chromium` | `firefox` | `webkit` | `all`), and never promotes.
+- **Reports.** Each test job runs `check:secrets` whether it passed or failed. It uploads
+  `playwright-report/`, `reports/` (JUnit and coverage included) and `test-results/` for 7 days
+  only when that scan passes.
+- **Manual run.** See [In GitHub Actions, on any branch](#in-github-actions-on-any-branch). It never
+  promotes and never publishes.
 
 One-time setup, done by a maintainer and never committed. These are the repository secrets
 (Settings → Secrets and variables → Actions):
@@ -126,6 +199,11 @@ One-time setup, done by a maintainer and never committed. These are the reposito
 - `PROMOTION_TOKEN`: a fine-grained personal access token for this repository only, with
   *Contents: read and write*. It is needed because merges made with the default `GITHUB_TOKEN` do
   not start the next branch's run.
+- **GitHub Pages for the results page.** The repository must be public (Pages is not available for
+  private repositories on the free plan). Before making it public, scan the whole git history for
+  secrets (Spec 000 TC-000-136). Then set Settings → Pages → Source: **GitHub Actions**, and in
+  Settings → Environments → `github-pages` allow the branches `eyter_dev`, `release`, `main` and
+  `production`. Without this setup, `publish-results` fails and the run does not promote.
 
 Push changes with `git push origin eyter_dev` only. `release`, `main` and `production` are
 updated by the promotion, never by hand. Never force-push and never delete a branch.
