@@ -23,7 +23,8 @@
     "check:secrets": "npm run build:scripts --silent && node dist/scripts/check-secrets.js",
     "ci:run-suite": "npm run build:scripts --silent && node dist/scripts/ci-run-suite.js",
     "ci:promote": "npm run build:scripts --silent && node dist/scripts/ci-promote.js",
-    "ci:chain": "npm run build:scripts --silent && node dist/scripts/ci-chain.js"
+    "ci:chain": "npm run build:scripts --silent && node dist/scripts/ci-chain.js",
+    "test:branch": "npm run build:scripts --silent && node dist/scripts/run-branch.js"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

@@ -11,7 +11,7 @@ Legend: ✅ = passed · ❌ = failed
 ## Summary
 | Tasks completed | Passed | Failed |
 |-----------------|--------|--------|
-| 49 / 49 | ✅ 49 | ❌ 0 |
+| 54 / 54 | ✅ 54 | ❌ 0 |
 
 ## Results
 | Task / File | Purpose | Passed | Failed |
@@ -331,3 +331,48 @@ Legend: ✅ = passed · ❌ = failed
 | .github/workflows/ci.yml | guard `run:` value single-quoted (it contained `: `); YAML parsed by a real parser: valid, 19 jobs | ✅ | |
 | tests/unit/ci/github-actions.test.ts | TC-000-162 new (red on the old file, naming line 82), TC-000-146 updated — CI tests 35 passed | ✅ | |
 | `npm run test:unit` / lint / typecheck / spec:check | 141 passed / 0 errors / exit 0 / passed (5 specs) | ✅ | |
+
+## Change after validation: local-only VS Code tasks and test:branch (clarifications 22 and 23)
+| Task / File | Purpose | Passed | Failed |
+|-------------|---------|:------:|:------:|
+| **T50 — Implement test:branch with worktrees outside the repository** | Done when: `npx vitest run tests/unit/ci/run-branch.test.ts` passes | ✅ | |
+| scripts/run-branch.ts, package.json (`test:branch`) | Checked-out branch in place; other branch: fetch, detached worktree in `%LOCALAPPDATA%/ecommerce-playwright-sdd/worktrees/<branch>` (created once, moved later), `.env` copied only if ignored, `npm ci` only when the lock file changed, selection run there, failure report on red; invalid BRANCH refused; no branch created, deleted or pushed | ✅ | |
+| tests/unit/ci/run-branch.test.ts | TC-000-163 to 169, 172, 174 — 9 passed (stubbed git, npm, tests and files) | ✅ | |
+| `BRANCH=release LAYER=api SUITE=smoke BROWSER=chromium npm run test:branch` (real) | worktree created at `9c80fbc` (detached), `npm ci` once, 5 passed in the console, no GitHub run started; re-run skipped the install; forced reinstall worked | ✅ | |
+| **T51 — Make the VS Code tasks local only and add report:failures --branch** | Done when: `npx vitest run tests/unit/docs tests/unit/reporting` passes (TC-000-150 waits for T52) | ✅ | |
+| .vscode/tasks.json | "GitHub: start manual run" and "GitHub: watch run" removed; "Tests: run locally on a branch (branch, layer, suite, browser)" → `npm run test:branch`; no task runs `gh` | ✅ | |
+| scripts/failure-report.ts, scripts/lib/worktrees.ts, .claude/skills/fix-failure/SKILL.md | `--branch <name>` reads that worktree's results; `worktreesDir` shared (no circular import); the skill fixes in the main repository on eyter_dev | ✅ | |
+| tests | TC-000-148 and 158 updated, TC-000-170 new — reporting 9 passed, docs 4 of 5 (TC-000-150 → T52) | ✅ | |
+| **T52 — Document local manual tests and the GitHub manual run separately** | Done when: `npm run test:unit`, lint, typecheck and spec:check exit 0 | ✅ | |
+| README.md, AGENTS.md, docs/bug-log.md | "In VS Code" local only (never starts a pipeline), branch task and worktree location/cleanup; "In GitHub Actions" says it starts a pipeline and is run from Actions or a terminal; `/fix-failure <branch>`; bug-log rows Passed filled | ✅ | |
+| tests/unit/docs/readme.test.ts | TC-000-150 extended — docs tests 5 passed | ✅ | |
+| **T53 — Limit local Playwright runs to 2 workers** | Done when: `npx vitest run tests/unit/reporting/reporters.test.ts` passes | ✅ | |
+| src/config/playwright-options.ts, README.md | `LOCAL_WORKERS = 2` and `resolveWorkers()`: 2 workers when `CI` is not `true`, Playwright's default in CI; real API smoke run "using 2 workers" | ✅ | |
+| tests/unit/reporting/reporters.test.ts | TC-000-175, TC-000-176 new — 6 passed (TC-000-175 red before the fix) | ✅ | |
+| **T54 — Add the Date column and the Cause and Solution columns to the bug log** | Done when: `npx vitest run tests/unit/docs` passes; lint, typecheck and spec:check exit 0 | ✅ | |
+| docs/bug-log.md, AGENTS.md, .claude/skills/fix-failure/SKILL.md, README.md | Columns `Date | Bug / failure | Passed ✅ | Failed ❌ | Cause | Solution`; marks only in Passed and Failed; 11 rows moved, 1 added | ✅ | |
+| tests/unit/docs/bug-log.test.ts | TC-000-151 updated (red on the old header) — docs tests 5 passed | ✅ | |
+
+### Last full run (after T54)
+| Command | Result | Passed | Failed |
+|---------|--------|:------:|:------:|
+| `npm run test:unit` | 153 passed · 0 failed (37 files) | ✅ | |
+| `npm run typecheck` / `npm run lint` | exit 0 / 0 errors (10 pre-existing warnings in tests/api) | ✅ | |
+| `npm run spec:check -- --write` | passed (5 specs) | ✅ | |
+
+### Last full run (after T53)
+| Command | Result | Passed | Failed |
+|---------|--------|:------:|:------:|
+| `npm run test:unit` | 153 passed · 0 failed (37 files) | ✅ | |
+| `npm run typecheck` / `npm run lint` | exit 0 / 0 errors (10 pre-existing warnings in tests/api) | ✅ | |
+| `npm run spec:check -- --write` | passed (5 specs) | ✅ | |
+
+### Last full run (after T52)
+| Command | Result | Passed | Failed |
+|---------|--------|:------:|:------:|
+| `npm run test:unit` | 151 passed · 0 failed (37 files) | ✅ | |
+| `npm run test:unit -- tests/unit/ci` | 44 passed · 0 failed | ✅ | |
+| `npm run typecheck` / `npm run lint` | exit 0 / 0 errors (10 pre-existing warnings in tests/api) | ✅ | |
+| `npm run spec:check -- --write` | passed (5 specs) | ✅ | |
+| `npm run check:secrets` | passed | ✅ | |
+| Manual TCs TC-000-145, 147, 159, 171 | Pending (TC-000-171 partly shown by the real `test:branch` run on release) | | |
