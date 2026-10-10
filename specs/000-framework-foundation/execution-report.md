@@ -11,7 +11,7 @@ Legend: ✅ = passed · ❌ = failed
 ## Summary
 | Tasks completed | Passed | Failed |
 |-----------------|--------|--------|
-| 56 / 56 | ✅ 56 | ❌ 0 |
+| 57 / 57 | ✅ 57 | ❌ 0 |
 
 ## Results
 | Task / File | Purpose | Passed | Failed |
@@ -358,6 +358,22 @@ Legend: ✅ = passed · ❌ = failed
 | **T56 — Point the VS Code run tasks to test:local and document it** | Done when: `npm run test:unit`, lint, typecheck and spec:check exit 0 | ✅ | |
 | .vscode/tasks.json, README.md, AGENTS.md, docs/bug-log.md | Run tasks call test:local; README "After a run task finishes"; worktree paths in the README repaired; two bug-log rows | ✅ | |
 | tests/unit/docs/vscode-tasks.test.ts, tests/unit/docs/readme.test.ts | TC-000-148 (test:local commands, gh pattern repaired) and TC-000-150 (real worktree path, no control character) — red first, docs 5 passed | ✅ | |
+
+| **T57 — Make page object navigations wait for the document only** | Done when: unit smoke tests and `tests/mocked/login-page-unavailable.spec.ts` pass on chromium, firefox and webkit; lint, typecheck and spec:check exit 0 | ✅ | |
+| src/config/timeouts.ts, src/pages/login-page.ts, dashboard-page.ts, cart-page.ts, product-detail-page.ts | `NAVIGATION_WAIT_UNTIL = 'domcontentloaded'` passed to every `page.goto` and the dashboard `page.reload` (RF-53, RF-101) | ✅ | |
+| tests/unit/smoke/navigation-wait.test.ts | TC-000-186 new (red before: constant missing) — 7 smoke unit tests passed | ✅ | |
+| tests/mocked/login-page-unavailable.spec.ts | TC-000-185 new (red before: `page.goto` timed out waiting until "load") — 5 passed on chromium, firefox and webkit | ✅ | |
+| tests/mocked/auth-login-api-failure.spec.ts (unchanged) | TC-001-14 and TC-001-15 on firefox, `--repeat-each=3` — 6 passed | ✅ | |
+
+### Last full run (after T57)
+| Command | Result | Passed | Failed |
+|---------|--------|:------:|:------:|
+| `npm run test:unit` | 161 passed · 0 failed (39 files) | ✅ | |
+| `npx playwright test tests/ui tests/mocked --project=chromium` | 79 passed · 0 failed | ✅ | |
+| `npx playwright test --grep @smoke --project=api --project=chromium` | 11 passed · 0 failed | ✅ | |
+| `npx playwright test tests/mocked/login-page-unavailable.spec.ts tests/mocked/auth-login-api-failure.spec.ts --project=webkit` | 2 passed · 3 failed (browser closed in `newPage`, 0.3 GB free memory); re-run with `--workers=1`: 5 passed | ✅ | ❌ |
+| `npm run typecheck` / `npm run lint` | exit 0 / 0 errors (10 pre-existing warnings in tests/api) | ✅ | |
+| `npm run spec:check -- --write` | passed (5 specs) | ✅ | |
 
 ### Last full run (after T56)
 | Command | Result | Passed | Failed |

@@ -1657,3 +1657,15 @@ RF-58 to RF-82 · TC-000-04, 86 to 89, 93, 94, 98 to 110, 114 to 116, 118
   Text with backslashes is written with the file-editing tools, not through shell scripts.
 - Quality gates: unit 160 passed; CI 51 passed; lint 0 errors; typecheck exit 0;
   `spec:check -- --write` passed (5 specs); test-reviewer PASS.
+
+## Change after validation: page navigations wait for the document only (clarification 26)
+
+### T57 — Make page object navigations wait for the document only
+- Covers RF-53, RF-101 / TC-000-185, TC-000-186. Tests first: TC-000-186 red (constant missing),
+  TC-000-185 red (`page.goto` timed out after 10 s waiting until "load" with the images held).
+- `NAVIGATION_WAIT_UNTIL = 'domcontentloaded'` in `src/config/timeouts.ts`, passed as `waitUntil`
+  to every `page.goto` of the page objects and to the dashboard `page.reload`. `LoginPage.open()`
+  keeps its RF-53 errors.
+- Proof on the original failure: TC-001-14 and TC-001-15 on firefox with `--repeat-each=3`, 6 passed.
+- Quality gates: unit 161 passed; UI and mocked on chromium 79 passed; smoke 11 passed; lint 0
+  errors; typecheck exit 0; `spec:check -- --write` passed (5 specs); test-reviewer PASS.

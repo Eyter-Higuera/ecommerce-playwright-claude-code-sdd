@@ -1,6 +1,6 @@
 import type { Locator, Page, Response } from '@playwright/test';
 import { PRODUCT_DETAIL_PATH, buildProductDetailRoute } from '../config/urls';
-import { API_TIMEOUT_MS, NAVIGATION_TIMEOUT_MS } from '../config/timeouts';
+import { API_TIMEOUT_MS, NAVIGATION_TIMEOUT_MS, NAVIGATION_WAIT_UNTIL } from '../config/timeouts';
 import { PRODUCT_DETAIL } from './product-detail.constants';
 
 // Page Object of the product detail page (Spec 003, RF-1 to RF-10): locators and actions only, no
@@ -62,7 +62,7 @@ export class ProductDetailPage {
    * lives in local storage and survives (verified on chromium, firefox and webkit, 2026-10-09).
    */
   async open(id: string): Promise<void> {
-    await this.page.goto(BLANK_PAGE);
-    await this.page.goto(buildProductDetailRoute(this.baseUrl, id), { timeout: NAVIGATION_TIMEOUT_MS });
+    await this.page.goto(BLANK_PAGE, { waitUntil: NAVIGATION_WAIT_UNTIL });
+    await this.page.goto(buildProductDetailRoute(this.baseUrl, id), { timeout: NAVIGATION_TIMEOUT_MS, waitUntil: NAVIGATION_WAIT_UNTIL });
   }
 }
