@@ -1669,3 +1669,14 @@ RF-58 to RF-82 · TC-000-04, 86 to 89, 93, 94, 98 to 110, 114 to 116, 118
 - Proof on the original failure: TC-001-14 and TC-001-15 on firefox with `--repeat-each=3`, 6 passed.
 - Quality gates: unit 161 passed; UI and mocked on chromium 79 passed; smoke 11 passed; lint 0
   errors; typecheck exit 0; `spec:check -- --write` passed (5 specs); test-reviewer PASS.
+
+## Change after validation: unit test files run one at a time (clarification 27)
+
+### T58 — Run the unit test files one at a time
+- Covers RF-102 / TC-000-187. Test first: TC-000-187 red (the config had no `fileParallelism`).
+- `fileParallelism: false` in `vitest.config.mts`; the test reads the config source text, because
+  Vitest cannot load its own `vitest/config` module inside a test.
+- Proof on the original failure: TC-001-37 took 4.7 s in the full run in series (60.3 s and killed
+  in the parallel run); the full unit run takes 111 s instead of 72 s.
+- Quality gates: unit 162 passed; lint 0 errors; typecheck exit 0; `spec:check -- --write` passed
+  (5 specs); test-reviewer PASS.
