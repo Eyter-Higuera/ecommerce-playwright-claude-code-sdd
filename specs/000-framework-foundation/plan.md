@@ -300,3 +300,56 @@ only when the scan passed (RF-79).
   Source: GitHub Actions, four branches allowed); until then `publish-results` fails and blocks
   promotion (spec edge case).
 - Coverage with `reportOnFailure` adds a few seconds to the unit job.
+
+## Change after validation: manual runs by layer, regression chain, VS Code tasks, bug log (clarifications 18 and 19)
+
+### Manual run (`.github/workflows/ci.yml`)
+| Job | needs | Runs when | Does |
+|---|---|---|---|
+| `checks` (first step: RF-92 guard) | — | always | guard step before checkout fails a direct regression on release, main or production unless `inputs.chained` |
+| `unit-tests` | checks | always | unchanged |
+| `manual-api` | unit-tests | dispatch and layer ∈ {all, api} | `npm run ci:run-suite` with LAYER=api |
+| `manual-ui` | unit-tests, manual-api | dispatch and layer ∈ {all, ui}, `!cancelled() && !failure()` (runs when manual-api was skipped) | `npm run ci:run-suite` with LAYER=ui |
+| `chain-next` | checks, unit-tests, manual-api, manual-ui | dispatch, suite=regression, branch ≠ production, `!cancelled() && !failure()`; `permissions: actions: write` | `npm run ci:chain` |
+Inputs: `suite`, `browser`, `layer` (all, unit, api, ui; default all), `chained` (boolean, default false).
+`run-suite` is removed; `promote` and `publish-results` keep ignoring manual runs.
+
+### Scripts
+- **`scripts/ci-run-suite.ts`**: `selectRun(env)` validates LAYER too and returns a plan:
+  `{ unit: boolean, playwrightArgs?: string[] }`; `runSuite()` runs the unit tests first (stub
+  runner `runUnit()` → `vitest run`), stops on failure, then lists and runs Playwright as before.
+- **`scripts/ci-chain.ts`** (`npm run ci:chain`): same structure as `scripts/ci-promote.ts`
+  (reuses `nextBranch()`; injected `GitHubHttp`; required variables `GITHUB_TOKEN`,
+  `GITHUB_API_URL`, `GITHUB_REPOSITORY`, `GITHUB_REF_NAME`, `SUITE`, `BROWSER`, `LAYER`);
+  `POST /repos/{repo}/actions/workflows/ci.yml/dispatches` with `{ ref, inputs }`, 204 = success.
+
+### VS Code and docs
+- `.vscode/tasks.json`: inputs `layer`, `suite`, `browser`, `branch` (pickString); tasks
+  "Tests: run locally (layer, suite, browser)", "Tests: unit with coverage", "Tests: open Playwright
+  report", "GitHub: start manual run (branch, suite, browser, layer)", "GitHub: watch run".
+  `.vscode/extensions.json`: `ms-playwright.playwright`, `vitest.explorer`.
+- `docs/bug-log.md`: header, column legend, rows; AGENTS.md rule under "When finishing any task".
+- README: VS Code section, manual GitHub run table with `-f layer=`, regression chain section.
+
+### Technical decisions
+| Decision | Reason | Discarded alternative |
+|----------|--------|-----------------------|
+| Chain through `workflow_dispatch` with the job's `GITHUB_TOKEN` and `actions: write` | Dispatch events sent with GITHUB_TOKEN start runs; no extra secret | `PROMOTION_TOKEN` (Contents write is not needed to dispatch) |
+| RF-92 guard as the first step of `checks` | Every later job needs checks, push runs are untouched, no extra job in TC-000-119's chain | A separate guard job (would have to be needed by checks, also in push runs) |
+| LAYER inside `ci:run-suite` | One selector for CI and the VS Code tasks | Separate scripts per layer |
+
+## Change after validation: failure report and /fix-failure (clarifications 20 and 21)
+- **`scripts/failure-report.ts`** (`npm run report:failures [-- --run <id>]`): pure
+  `playwrightFailures(text)` (walks suites → specs → tests whose status is `unexpected`; first
+  result with an error: title, project, `file:line`, first error line, `trace` / `screenshot`
+  attachment paths), `vitestFailures(text)` (assertion results with status `failed`; title, file,
+  first failure-message line), `githubRunFailures(jobsJson, logText)` (failed jobs and steps, last
+  40 log lines), `renderFailures()`. Redaction: `redact()` + `getSensitiveValues(loadEnv())` from
+  `src/security/redact.ts` and `src/config/env.ts`, plus the check:secrets JWT shape. `gh` is called
+  through an injected runner (stubbed in tests). Always exit 0.
+- **Local unit results**: `UNIT_RUN_ARGS` exported by `scripts/ci-run-suite.ts`
+  (`run --reporter=default --reporter=json --outputFile.json=reports/unit-results.json`) and the new
+  `test:unit:report` script; the VS Code task "Tests: unit tests" uses it.
+- **`.claude/skills/fix-failure/SKILL.md`**: the RF-97 steps; VS Code tasks "Tests: list last
+  failures" and "Claude: analyze and fix last failure" (`claude "/fix-failure"`); README "When a
+  test fails"; AGENTS.md command.
