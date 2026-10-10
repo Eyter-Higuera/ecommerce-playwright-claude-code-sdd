@@ -8,6 +8,8 @@ description: Explains why the last local test run or a GitHub Actions run failed
 ## Input
 - No argument: the latest local results (`reports/results.json`, `reports/unit-results.json`).
 - A GitHub Actions run id (`/fix-failure <run-id>`): that run.
+- A promotion branch tested locally with `npm run test:branch` (`/fix-failure <branch>`): the results of its
+  worktree, read with `npm run report:failures -- --branch <branch>`.
 - A test title or TC ID: only that failure.
 
 ## Rules
@@ -36,9 +38,10 @@ description: Explains why the last local test run or a GitHub Actions run failed
    - **Behavior change** (the spec itself no longer matches what is wanted).
 4. **Fix.**
    - Test bug or framework bug: write or adjust the regression test first, see it red, fix the
-     code, see it green.
+     code, see it green. Always fix in the main repository on `eyter_dev`, never inside a
+     `test:branch` worktree: the fix reaches release, main and production through promotion.
    - Behavior change: do not change code; propose the spec change (Mode C) and STOP for approval.
-   - Site outage: no code change; record it with `Passed ✅` empty and how to retry.
+   - Site outage: no code change; record it with `Passed ✅` empty and how to retry in `Solution`.
    - Real shop defect: no code change unless the spec says how to handle known defects; record it.
 5. **Re-run the failed tests** on the projects shown in the report, e.g.
    `npx playwright test <file> --project=<project> -g "<TC ID>"` or
@@ -46,9 +49,10 @@ description: Explains why the last local test run or a GitHub Actions run failed
    `npm run typecheck` and `npm run spec:check` (and `npm run test:unit -- tests/unit/ci` if CI
    files changed). Show the results. If it is still red, go back to step 3.
 6. **Record it** in `docs/bug-log.md`: add or update one row per failure with
-   `Bug / failure | Passed ✅ | Failed ❌ | How it is fixed | Solution` (Failed = where it failed,
-   Passed = where it passed after the fix or empty, How = cause and approach, Solution = files changed
-   and "not committed yet" until the user commits). If the failure belongs to a task, also update
+   `Date | Bug / failure | Passed ✅ | Failed ❌ | Cause | Solution` (Date = the day it was found,
+   `YYYY-MM-DD`; Passed = only ✅ once the re-run passed, else empty; Failed = only ❌; Cause = why
+   and where it failed; Solution = the fix or why no code changed, the re-run that proved it, the
+   files changed and "not committed yet" until the user commits). If the failure belongs to a task, also update
    that spec's `execution-report.md`.
 7. **Report and STOP**: the cause, the fix, the re-run result and the bug-log row; ask whether to
    commit and push.

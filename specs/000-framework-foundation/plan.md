@@ -353,3 +353,33 @@ Inputs: `suite`, `browser`, `layer` (all, unit, api, ui; default all), `chained`
 - **`.claude/skills/fix-failure/SKILL.md`**: the RF-97 steps; VS Code tasks "Tests: list last
   failures" and "Claude: analyze and fix last failure" (`claude "/fix-failure"`); README "When a
   test fails"; AGENTS.md command.
+
+## Change after validation: local-only VS Code tasks and test:branch (clarifications 22 and 23)
+- **`scripts/run-branch.ts`** (`npm run test:branch`): `worktreesDir(env)` (`TEST_BRANCH_WORKTREES`,
+  else `%LOCALAPPDATA%`, else `~/.cache`, + `ecommerce-playwright-sdd/worktrees`); `runBranch(env, deps)`
+  with injected `git`, `npm`, `runSelection(cwd)`, `files` (exists/read/copy/write) and
+  `failureReport` dependencies (all stubbed in tests). Current branch from `git branch --show-current`.
+  Other branch: `git fetch origin <b>` → `git worktree add --detach <dir> origin/<b>` or
+  `git -C <dir> checkout --detach origin/<b>` → `git -C <dir> check-ignore -q .env` → copy `.env`
+  → compare `package-lock.json` with `<dir>/.test-branch-lock.json` → `npm ci` (+ record) →
+  selection with cwd `<dir>` (the main repo's compiled `dist/scripts/ci-run-suite.js`) →
+  on red, `failureReport({ rootDir: <dir> })`. Reuses `selectRun` validation messages style.
+- **`report:failures -- --branch <b>`**: `rootDir = worktreesDir()/<b>`.
+- **VS Code**: GitHub tasks removed; "Tests: run locally on a branch (branch, layer, suite,
+  browser)" → `npm run test:branch` with BRANCH/SUITE/BROWSER/LAYER.
+- **Docs**: README "In VS Code" (local only, worktree location, manual cleanup with
+  `git worktree remove <dir>`), "Manual pipeline run in GitHub" (web and CLI); AGENTS.md; skill note.
+
+## Change after validation: local workers and bug-log columns (clarification 24)
+- **`src/config/playwright-options.ts`**: `LOCAL_WORKERS = 2` and `resolveWorkers(env)` (`undefined`
+  when `CI=true`, else 2), next to `resolveRetries()`; `buildPlaywrightConfig()` sets `workers` only
+  when it is defined. Playwright's own `--workers` flag overrides the config, so no extra parsing.
+- **`docs/bug-log.md`**: header `| Date | Bug / failure | Passed ✅ | Failed ❌ | Cause | Solution |`,
+  legend rewritten, existing rows moved (where it failed → `Cause`, where it passed → `Solution`;
+  dates from the run or commit of each row). AGENTS.md, the `/fix-failure` skill and the README
+  name the new columns.
+
+| Decision | Reason | Discarded alternative |
+|----------|--------|-----------------------|
+| Fixed limit of 2 local workers | The failing PC has 7.6 GB RAM; the failed tests passed with 2 workers; simple and predictable | A limit computed from free memory (varies between runs, hard to test) |
+| CI unchanged | CI runners are sized for Playwright's default and all CI runs were green | One limit everywhere (slower CI for no reason) |

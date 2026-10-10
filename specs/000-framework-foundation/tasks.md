@@ -332,6 +332,42 @@ Manual TCs of this change (TC-000-145, TC-000-147, TC-000-149) are executed at v
 
 Manual TC of this change (TC-000-159) is executed at validation.
 
+## Change after validation: local-only VS Code tasks and test:branch (clarifications 22 and 23)
+
+- [x] T50 — Implement test:branch with worktrees outside the repository
+  - Covers: RF-98 / TC-000-163, TC-000-164, TC-000-165, TC-000-166, TC-000-167, TC-000-168, TC-000-169, TC-000-172, TC-000-174
+  - Depends on: —
+  - Files: scripts/run-branch.ts, package.json (`test:branch`), tests/unit/ci/run-branch.test.ts
+  - Done when: `npx vitest run tests/unit/ci/run-branch.test.ts` passes
+
+- [x] T51 — Make the VS Code tasks local only and add report:failures --branch
+  - Covers: RF-93, RF-96, RF-97 / TC-000-148, TC-000-170, TC-000-158
+  - Depends on: T50
+  - Files: .vscode/tasks.json, scripts/failure-report.ts, .claude/skills/fix-failure/SKILL.md, tests/unit/docs/vscode-tasks.test.ts, tests/unit/reporting/failure-report.test.ts, tests/unit/docs/fix-failure.test.ts
+  - Done when: `npx vitest run tests/unit/docs tests/unit/reporting` passes
+
+- [x] T52 — Document local manual tests and the GitHub manual run separately
+  - Covers: RF-94 / TC-000-150
+  - Depends on: T51
+  - Files: README.md, AGENTS.md, docs/bug-log.md, tests/unit/docs/readme.test.ts
+  - Done when: `npm run test:unit`, lint, typecheck and spec:check exit 0
+
+Manual TC of this change (TC-000-171) is executed at validation.
+
+## Change after validation: local workers and bug-log columns (clarification 24)
+
+- [x] T53 — Limit local Playwright runs to 2 workers
+  - Covers: RF-99 / TC-000-175, TC-000-176
+  - Depends on: —
+  - Files: src/config/playwright-options.ts, tests/unit/reporting/reporters.test.ts, README.md
+  - Done when: `npx vitest run tests/unit/reporting/reporters.test.ts` passes
+
+- [x] T54 — Add the Date column and the Cause and Solution columns to the bug log
+  - Covers: RF-95 / TC-000-151
+  - Depends on: —
+  - Files: docs/bug-log.md, AGENTS.md, .claude/skills/fix-failure/SKILL.md, README.md, tests/unit/docs/bug-log.test.ts
+  - Done when: `npx vitest run tests/unit/docs` passes; lint, typecheck and spec:check exit 0
+
 ## Coverage check
 | Test case (Automate: Y) | Task |
 |-------------------------|------|
@@ -454,9 +490,9 @@ Manual TC of this change (TC-000-159) is executed at validation.
 | TC-000-142 | T44 |
 | TC-000-143 | T44 |
 | TC-000-144 | T44 |
-| TC-000-148 | T45, T49 |
-| TC-000-151 | T46 |
-| TC-000-150 | T47 |
+| TC-000-148 | T45, T49, T51 |
+| TC-000-151 | T46, T54 |
+| TC-000-150 | T47, T52 |
 | TC-000-152 | T48 |
 | TC-000-153 | T48 |
 | TC-000-154 | T48 |
@@ -465,4 +501,16 @@ Manual TC of this change (TC-000-159) is executed at validation.
 | TC-000-157 | T48 |
 | TC-000-160 | T48 |
 | TC-000-161 | T48 |
-| TC-000-158 | T49 |
+| TC-000-158 | T49, T51 |
+| TC-000-163 | T50 |
+| TC-000-164 | T50 |
+| TC-000-165 | T50 |
+| TC-000-166 | T50 |
+| TC-000-167 | T50 |
+| TC-000-168 | T50 |
+| TC-000-169 | T50 |
+| TC-000-172 | T50 |
+| TC-000-174 | T50 |
+| TC-000-170 | T51 |
+| TC-000-175 | T53 |
+| TC-000-176 | T53 |

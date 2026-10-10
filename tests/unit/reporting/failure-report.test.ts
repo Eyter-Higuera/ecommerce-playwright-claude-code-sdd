@@ -133,6 +133,27 @@ describe('Failure report — positive', () => {
   });
 });
 
+describe('Failure report — branches', () => {
+  it("TC-000-170 report:failures --branch reads the results of that branch's worktree", () => {
+    // Arrange: a worktrees folder holding release results with one failure, and no main worktree.
+    const worktrees = makeEmptyDir('TEST_worktrees_');
+    mkdirSync(join(worktrees, 'release', 'reports'), { recursive: true });
+    writeFileSync(join(worktrees, 'release', 'reports', 'results.json'), read(PLAYWRIGHT_FIXTURE));
+    const processEnv = { TEST_BRANCH_WORKTREES: worktrees };
+
+    // Act
+    const release = failureReport({ rootDir: repoWith(), processEnv, branch: 'release' });
+    const main = failureReport({ rootDir: repoWith(), processEnv, branch: 'main' });
+
+    // Assert: each branch reads its own worktree; a branch never tested locally has no results.
+    expect(release.output).toContain(`Worktree of release: ${join(worktrees, 'release')}`);
+    expect(release.output).toContain('TC-900-31 shows the error message');
+    expect(main.output).toContain(NO_FAILURES);
+    expect(main.output).toContain('Missing: reports/results.json, reports/unit-results.json');
+    expect([release.exitCode, main.exitCode]).toEqual([SUCCESS_EXIT_CODE, SUCCESS_EXIT_CODE]);
+  });
+});
+
 describe('Failure report — boundary', () => {
   it('TC-000-154 failure report without failures or without results says so', () => {
     // Arrange: only passed tests; then no results at all.

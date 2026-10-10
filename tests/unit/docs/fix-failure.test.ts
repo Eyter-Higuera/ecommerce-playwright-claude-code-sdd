@@ -22,6 +22,8 @@ const REQUIRED_STEPS = [
   'docs/bug-log.md',
   'never commit or push',
   'never print secrets',
+  'npm run report:failures -- --branch <branch>',
+  'in the main repository on `eyter_dev`',
 ];
 
 describe('fix-failure skill — positive', () => {

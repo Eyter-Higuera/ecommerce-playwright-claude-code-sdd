@@ -17,6 +17,22 @@
       "problemMatcher": []
     },
     {
+      "label": "Tests: run locally on a branch (branch, layer, suite, browser)",
+      "detail": "Spec 000 RF-98: runs the selection on the picked branch on this PC (a local worktree outside the repository for another branch); never starts a pipeline",
+      "type": "shell",
+      "command": "npm run test:branch",
+      "options": {
+        "env": {
+          "BRANCH": "${input:branch}",
+          "SUITE": "${input:suite}",
+          "BROWSER": "${input:browser}",
+          "LAYER": "${input:layer}"
+        }
+      },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
       "label": "Tests: unit tests",
       "detail": "Vitest unit tests of the framework (no network); writes reports/unit-results.json for npm run report:failures",
       "type": "shell",
@@ -52,20 +68,6 @@
       "type": "shell",
       "command": "claude \"/fix-failure\"",
       "problemMatcher": []
-    },
-    {
-      "label": "GitHub: start manual run (branch, suite, browser, layer)",
-      "detail": "Spec 000 RF-80 / RF-93: starts the manual CI run on the picked branch; a regression starts from eyter_dev and continues to release, main and production (RF-91, RF-92)",
-      "type": "shell",
-      "command": "gh workflow run ci.yml --ref ${input:branch} -f suite=${input:suite} -f browser=${input:browser} -f layer=${input:layer}",
-      "problemMatcher": []
-    },
-    {
-      "label": "GitHub: watch run",
-      "detail": "Follows a running workflow run (pick it from the list)",
-      "type": "shell",
-      "command": "gh run watch",
-      "problemMatcher": []
     }
   ],
   "inputs": [
@@ -73,28 +75,46 @@
       "id": "layer",
       "type": "pickString",
       "description": "Tests to run (all = unit, then API and UI)",
-      "options": ["all", "unit", "api", "ui"],
+      "options": [
+        "all",
+        "unit",
+        "api",
+        "ui"
+      ],
       "default": "all"
     },
     {
       "id": "suite",
       "type": "pickString",
       "description": "Test suite",
-      "options": ["smoke", "regression"],
+      "options": [
+        "smoke",
+        "regression"
+      ],
       "default": "smoke"
     },
     {
       "id": "browser",
       "type": "pickString",
       "description": "Browser for the UI tests (API tests always run once)",
-      "options": ["chromium", "firefox", "webkit", "all"],
+      "options": [
+        "chromium",
+        "firefox",
+        "webkit",
+        "all"
+      ],
       "default": "chromium"
     },
     {
       "id": "branch",
       "type": "pickString",
-      "description": "Branch of the manual GitHub run",
-      "options": ["eyter_dev", "release", "main", "production"],
+      "description": "Branch to test locally (another branch runs in a local worktree)",
+      "options": [
+        "eyter_dev",
+        "release",
+        "main",
+        "production"
+      ],
       "default": "eyter_dev"
     }
   ]

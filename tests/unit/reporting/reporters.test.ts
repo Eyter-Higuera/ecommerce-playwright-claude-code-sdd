@@ -6,11 +6,13 @@ import { CLI_TEST_TIMEOUT_MS, fixturePath, makeEmptyDir, runPlaywright } from '.
 
 // Spec 000 — Framework foundation. RF-46 to RF-48: every Playwright run writes an HTML report to
 // playwright-report/ and a JUnit report to reports/junit.xml (kept in the CI artifacts), and only CI
-// retries failed tests (2 times), so local failures are never hidden by a retry.
+// retries failed tests (2 times), so local failures are never hidden by a retry. RF-99: local runs use
+// at most 2 workers, so firefox and webkit do not run out of memory on the PC; CI keeps the default.
 const DEFAULT_ARGV = ['node', 'playwright', 'test'];
 const HTML_REPORT_DIR = 'playwright-report';
 const JUNIT_REPORT_FILE = 'reports/junit.xml';
 const CI_RETRIES = 2;
+const LOCAL_WORKERS = 2;
 
 /** Options of one reporter in the resolved config, or undefined when it is not configured. */
 function reporterOptions(env: Record<string, string | undefined>, name: string): unknown {
@@ -57,9 +59,31 @@ describe('Reporters and retries — boundary', () => {
     // Assert: a local failure is reported at once, never retried.
     expect(retries).toEqual([0, 0]);
   });
+
+  it('TC-000-175 local runs use at most 2 workers', () => {
+    // Arrange: the two non-CI partitions, unset and explicitly false.
+    const envs = [{}, { CI: 'false' }];
+
+    // Act
+    const workers = envs.map((env) => buildPlaywrightConfig(env, DEFAULT_ARGV).workers);
+
+    // Assert: a full local run never starts more than 2 browsers at once.
+    expect(workers).toEqual([LOCAL_WORKERS, LOCAL_WORKERS]);
+  });
 });
 
 describe('Reporters and retries — negative', () => {
+  it('TC-000-176 CI keeps the default worker count', () => {
+    // Arrange
+    const env = { CI: 'true' };
+
+    // Act
+    const config = buildPlaywrightConfig(env, DEFAULT_ARGV);
+
+    // Assert: no limit is set, so Playwright picks its default on the CI runner.
+    expect(config).not.toHaveProperty('workers');
+  });
+
   it('TC-000-70 reports are produced when a test fails', { timeout: CLI_TEST_TIMEOUT_MS }, () => {
     // Arrange: a fixture project built with the real config builder, whose only test fails;
     // its reports go to a temp folder.
