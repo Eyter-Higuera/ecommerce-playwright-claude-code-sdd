@@ -1632,3 +1632,28 @@ RF-58 to RF-82 · TC-000-04, 86 to 89, 93, 94, 98 to 110, 114 to 116, 118
 - A red run of TC-000-151 from a test bug (date pattern without backslashes) was fixed and logged.
 - Quality gates: docs tests 5 passed; unit 153 passed; lint 0 errors; typecheck exit 0;
   `spec:check -- --write` passed (5 specs); test-reviewer PASS.
+
+## Change after validation: report and /fix-failure after VS Code runs (clarification 25)
+
+### T55 — Implement test:local: report in the browser, then /fix-failure on failure
+- Covers RF-100 / TC-000-177 to 183. Tests first (red: module missing), then `scripts/local-run.ts`
+  (`localRun()` with injected run, branch, clock, files, browser opener and Claude starter) and
+  `npm run test:local`. Reuses `worktreesDir()`, `HTML_REPORT_DIR`, `UNIT_RESULTS_FILE`, `BRANCHES`,
+  `summarizeResults()` and `renderSummary()`.
+- The browser opener is `explorer <file>` on Windows (no `start ""` quoting), `open` / `xdg-open`
+  elsewhere, detached; Claude Code starts through the shell on Windows (`claude` is a .cmd shim).
+- Real check inside Claude Code (`CLAUDECODE=1`): `LAYER=api SUITE=smoke npm run test:local -- ci:run-suite`
+  ran 5 passed, opened nothing and started nothing; an unknown script is refused.
+- Quality gates: 7 tests passed; CI tests 51 passed; lint 0 errors; typecheck exit 0;
+  `spec:check -- --write` passed (5 specs); test-reviewer PASS.
+
+### T56 — Point the VS Code run tasks to test:local and document it
+- Covers RF-93, RF-98, RF-100 / TC-000-148, TC-000-150 (both updated). Tests first (red), then
+  `.vscode/tasks.json` (the two run tasks call `npm run test:local -- ci:run-suite` and
+  `-- test:branch`), README "After a run task finishes", AGENTS.md command.
+- Two earlier bugs found and logged: TC-000-148's `gh` pattern had lost its backslashes and never
+  matched anything; the README worktree paths had lost theirs too, one turned into a carriage
+  return (commit `adafd4f`). TC-000-150 now requires the real path and no control character.
+  Text with backslashes is written with the file-editing tools, not through shell scripts.
+- Quality gates: unit 160 passed; CI 51 passed; lint 0 errors; typecheck exit 0;
+  `spec:check -- --write` passed (5 specs); test-reviewer PASS.

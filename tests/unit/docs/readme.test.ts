@@ -13,6 +13,9 @@ const RESULTS_PAGE_URL = 'https://eyter-higuera.github.io/ecommerce-playwright-c
 const BRANCHES = ['eyter_dev', 'release', 'main', 'production'];
 const BROWSERS = ['chromium', 'firefox', 'webkit'];
 const MANUAL_SECTION = '## Running tests manually';
+const WORKTREE_FOLDER = String.raw`%LOCALAPPDATA%\ecommerce-playwright-sdd\worktrees\<branch>`;
+/** Any control character except tab and line feed (a lost backslash can turn `\r` into one). */
+const CONTROL_CHARACTER = /[\u0000-\u0008\u000B-\u001F]/;
 
 /** The README section that starts with `heading`, up to the next `## ` heading. */
 function sectionOf(markdown: string, heading: string): string {
@@ -59,6 +62,9 @@ describe('README — positive', () => {
     expect(guide).toContain('Tasks: Run Task');
     expect(guide).toContain('never start a pipeline');
     expect(guide).toContain('git worktree remove');
+    // ... with the worktree folder written as a real Windows path, no backslash lost (RF-98) ...
+    expect(guide).toContain(WORKTREE_FOLDER);
+    expect(guide).not.toMatch(CONTROL_CHARACTER);
     for (const { label } of tasks) expect(guide, label).toContain(label);
     // ... the manual GitHub run shows the layer choice on each of the four branches (RF-80, RF-90) ...
     for (const branch of BRANCHES) expect(guide, branch).toMatch(new RegExp(`gh workflow run ci\\.yml --ref ${branch} -f suite=\\w+ -f browser=\\w+ -f layer=\\w+`));

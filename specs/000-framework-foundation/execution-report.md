@@ -11,7 +11,7 @@ Legend: ✅ = passed · ❌ = failed
 ## Summary
 | Tasks completed | Passed | Failed |
 |-----------------|--------|--------|
-| 54 / 54 | ✅ 54 | ❌ 0 |
+| 56 / 56 | ✅ 56 | ❌ 0 |
 
 ## Results
 | Task / File | Purpose | Passed | Failed |
@@ -350,8 +350,30 @@ Legend: ✅ = passed · ❌ = failed
 | src/config/playwright-options.ts, README.md | `LOCAL_WORKERS = 2` and `resolveWorkers()`: 2 workers when `CI` is not `true`, Playwright's default in CI; real API smoke run "using 2 workers" | ✅ | |
 | tests/unit/reporting/reporters.test.ts | TC-000-175, TC-000-176 new — 6 passed (TC-000-175 red before the fix) | ✅ | |
 | **T54 — Add the Date column and the Cause and Solution columns to the bug log** | Done when: `npx vitest run tests/unit/docs` passes; lint, typecheck and spec:check exit 0 | ✅ | |
-| docs/bug-log.md, AGENTS.md, .claude/skills/fix-failure/SKILL.md, README.md | Columns `Date | Bug / failure | Passed ✅ | Failed ❌ | Cause | Solution`; marks only in Passed and Failed; 11 rows moved, 1 added | ✅ | |
+| docs/bug-log.md, AGENTS.md, .claude/skills/fix-failure/SKILL.md, README.md | Columns Date, Bug / failure, Passed ✅, Failed ❌, Cause and Solution; marks only in Passed and Failed; 11 rows moved, 1 added | ✅ | |
 | tests/unit/docs/bug-log.test.ts | TC-000-151 updated (red on the old header) — docs tests 5 passed | ✅ | |
+| **T55 — Implement test:local: report in the browser, then /fix-failure on failure** | Done when: `npx vitest run tests/unit/ci/local-run.test.ts` passes | ✅ | |
+| scripts/local-run.ts, package.json | `npm run test:local -- ci:run-suite` or `-- test:branch`: report opened first (unit summary for LAYER=unit), then `/fix-failure` on failure; nothing in CI or inside Claude Code | ✅ | |
+| tests/unit/ci/local-run.test.ts | TC-000-177 to 183 new — 7 passed (red before: module missing) | ✅ | |
+| **T56 — Point the VS Code run tasks to test:local and document it** | Done when: `npm run test:unit`, lint, typecheck and spec:check exit 0 | ✅ | |
+| .vscode/tasks.json, README.md, AGENTS.md, docs/bug-log.md | Run tasks call test:local; README "After a run task finishes"; worktree paths in the README repaired; two bug-log rows | ✅ | |
+| tests/unit/docs/vscode-tasks.test.ts, tests/unit/docs/readme.test.ts | TC-000-148 (test:local commands, gh pattern repaired) and TC-000-150 (real worktree path, no control character) — red first, docs 5 passed | ✅ | |
+
+### Last full run (after T56)
+| Command | Result | Passed | Failed |
+|---------|--------|:------:|:------:|
+| `npm run test:unit` | 160 passed · 0 failed (38 files) | ✅ | |
+| `npm run test:unit -- tests/unit/ci` | 51 passed · 0 failed | ✅ | |
+| `npm run typecheck` / `npm run lint` | exit 0 / 0 errors (10 pre-existing warnings in tests/api) | ✅ | |
+| `npm run spec:check -- --write` | passed (5 specs) | ✅ | |
+| Manual TC-000-184 | Pending: executed at validation from VS Code | | |
+
+### Last full run (after T55)
+| Command | Result | Passed | Failed |
+|---------|--------|:------:|:------:|
+| `npm run test:unit -- tests/unit/ci` | 51 passed · 0 failed | ✅ | |
+| `npm run typecheck` / `npm run lint` | exit 0 / 0 errors (10 pre-existing warnings in tests/api) | ✅ | |
+| `npm run spec:check -- --write` | passed (5 specs) | ✅ | |
 
 ### Last full run (after T54)
 | Command | Result | Passed | Failed |

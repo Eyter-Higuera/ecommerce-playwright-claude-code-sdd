@@ -26,6 +26,9 @@ Spec-Driven Development (SDD). Playwright + TypeScript for API, integration and 
   `eyter_dev` and `chain-next` (`npm run ci:chain`) continues it on release, main and production
 - Local test of any promotion branch (VS Code task, no pipeline): `npm run test:branch` with `BRANCH`,
   `SUITE`, `BROWSER`, `LAYER` (worktrees in `%LOCALAPPDATA%/ecommerce-playwright-sdd/worktrees`)
+- VS Code run tasks: `npm run test:local -- ci:run-suite` or `npm run test:local -- test:branch`; after the
+  run they open the Playwright report in the browser and, on failure, start `/fix-failure`. Inside Claude
+  Code (`CLAUDECODE` set) and in CI they only run the tests, so never use them to start Claude Code
 - Bug log of every failure found and fixed: `docs/bug-log.md`; failed tests of the last local run or of
   a GitHub run (`-- --run <id>`): `npm run report:failures`; explain, fix and record a failure: `/fix-failure`
 - Promotion (CI only, last job): `npm run ci:promote`

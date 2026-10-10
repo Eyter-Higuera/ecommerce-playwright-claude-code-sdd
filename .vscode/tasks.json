@@ -3,9 +3,9 @@
   "tasks": [
     {
       "label": "Tests: run locally (layer, suite, browser)",
-      "detail": "Spec 000 RF-90 / RF-93: runs the picked layer, suite and browser on the checked-out branch through npm run ci:run-suite",
+      "detail": "Spec 000 RF-90 / RF-93 / RF-100: runs the picked layer, suite and browser on the checked-out branch, opens the report in the browser and, on failure, starts Claude Code with /fix-failure",
       "type": "shell",
-      "command": "npm run ci:run-suite",
+      "command": "npm run test:local -- ci:run-suite",
       "options": {
         "env": {
           "SUITE": "${input:suite}",
@@ -18,9 +18,9 @@
     },
     {
       "label": "Tests: run locally on a branch (branch, layer, suite, browser)",
-      "detail": "Spec 000 RF-98: runs the selection on the picked branch on this PC (a local worktree outside the repository for another branch); never starts a pipeline",
+      "detail": "Spec 000 RF-98 / RF-100: runs the selection on the picked branch on this PC (a local worktree outside the repository for another branch), opens the report and, on failure, starts /fix-failure <branch>; never starts a pipeline",
       "type": "shell",
-      "command": "npm run test:branch",
+      "command": "npm run test:local -- test:branch",
       "options": {
         "env": {
           "BRANCH": "${input:branch}",
