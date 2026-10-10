@@ -256,3 +256,12 @@ Legend: ✅ = passed · ❌ = failed
 | `npx playwright test --grep @smoke --project=api --project=chromium` | 11 passed · 0 failed (real site); `report:summary` on its JSON: 11 / 0 / 0 / 0, 00:18 | ✅ | |
 | `npm run check:secrets` | passed (81 files) | ✅ | |
 | Manual TCs TC-000-110, 118, 133, 136 | Pending: executed at validation; TC-000-136 before the repository is made public | | |
+
+### Live GitHub runs for `70a4ede` (2026-10-09)
+| Run | Result | Passed | Failed |
+|-----|--------|:------:|:------:|
+| eyter_dev 37942914229 (TC-000-118) | checks → unit-tests → api → ui-chromium → publish-results → promote, all success | ✅ | |
+| release 37943859009 | api → chromium → firefox → webkit (@regression), publish, promote: success | ✅ | |
+| main 37946344274 | api → chromium → firefox → webkit (@smoke), publish, promote: success | ✅ | |
+| production 37947365291 | api → chromium (@smoke), publish: success; promote skipped | ✅ | |
+| TC-000-133 results page | eyter_dev and release entries read back; main and production not readable because Pages was disabled afterwards; Pages re-enabled, re-check on the next chain | | |

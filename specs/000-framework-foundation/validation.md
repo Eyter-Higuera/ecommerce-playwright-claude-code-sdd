@@ -231,3 +231,17 @@ summaries and coverage (RF-84 to RF-87), GitHub Pages results page and README gu
 - Next, by the maintainer: make the repository public, set Pages source GitHub Actions, and allow
   the four branches in the `github-pages` environment. Then TC-000-118, TC-000-133 and TC-000-110
   run on real GitHub Actions runs.
+- **Live runs for `70a4ede` (2026-10-09), all green:**
+  - TC-000-118 PASS: eyter_dev run 37942914229, jobs in order checks (spec:check, lint, typecheck
+    in parallel) → unit-tests → eyter-dev-api → eyter-dev-ui-chromium → publish-results → promote;
+    the 11 jobs of the other branches were skipped.
+  - Promotion chain PASS: release run 37943859009 (api → chromium → firefox → webkit, regression),
+    main run 37946344274, production run 37947365291 (promote skipped, RF-73).
+  - TC-000-133 PARTIAL: the results page showed eyter_dev (`70a4ede`, passed; unit 119 with
+    56.12 % line coverage, API 5, UI chromium 6) and release (`d3f1f87`, passed; API 45, UI 78 on
+    each browser) and kept eyter_dev when release published (RF-88). The main and production
+    deployments reported success, but GitHub Pages was then found disabled (Pages API and site
+    404), so those two entries could not be read back. Pages was re-enabled
+    (`POST /pages`, `build_type: workflow`; the `github-pages` environment kept its 4 branches).
+    The page refills from the next push chain (404 = first publication); re-checked then.
+- Still to observe: TC-000-110 (a failing job stops the chain), TC-000-89 and 94 (manual).
