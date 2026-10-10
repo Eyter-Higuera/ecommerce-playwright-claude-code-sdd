@@ -11,7 +11,7 @@ Legend: ✅ = passed · ❌ = failed
 ## Summary
 | Tasks completed | Passed | Failed |
 |-----------------|--------|--------|
-| 57 / 57 | ✅ 57 | ❌ 0 |
+| 58 / 58 | ✅ 58 | ❌ 0 |
 
 ## Results
 | Task / File | Purpose | Passed | Failed |
@@ -364,6 +364,18 @@ Legend: ✅ = passed · ❌ = failed
 | tests/unit/smoke/navigation-wait.test.ts | TC-000-186 new (red before: constant missing) — 7 smoke unit tests passed | ✅ | |
 | tests/mocked/login-page-unavailable.spec.ts | TC-000-185 new (red before: `page.goto` timed out waiting until "load") — 5 passed on chromium, firefox and webkit | ✅ | |
 | tests/mocked/auth-login-api-failure.spec.ts (unchanged) | TC-001-14 and TC-001-15 on firefox, `--repeat-each=3` — 6 passed | ✅ | |
+
+| **T58 — Run the unit test files one at a time** | Done when: `npx vitest run tests/unit/setup` and the full `npm run test:unit:report` pass; lint, typecheck and spec:check exit 0 | ✅ | |
+| vitest.config.mts | `fileParallelism: false` (RF-102) | ✅ | |
+| tests/unit/setup/file-parallelism.test.ts | TC-000-187 new (red before: `expected 'import { defineConfig }…' to match /^\s*fileParallelism:\s*false,/m`) — setup tests 9 passed | ✅ | |
+| tests/unit/reporting/no-trace.test.ts (unchanged) | TC-001-37, which failed with exit code `null` at 60.3 s in the parallel full run of 15:41 UTC, took 4.7 s in the full run in series | ✅ | ❌ |
+
+### Last full run (after T58)
+| Command | Result | Passed | Failed |
+|---------|--------|:------:|:------:|
+| `npm run test:unit:report` | 162 passed · 0 failed (40 files, one at a time, 111 s; before: 72 s in parallel with TC-001-37 failing) | ✅ | |
+| `npm run typecheck` / `npm run lint` | exit 0 / 0 errors (10 pre-existing warnings in tests/api) | ✅ | |
+| `npm run spec:check -- --write` | passed (5 specs) | ✅ | |
 
 ### Last full run (after T57)
 | Command | Result | Passed | Failed |

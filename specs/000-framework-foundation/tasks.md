@@ -392,6 +392,14 @@ Manual TC of this change (TC-000-184) is executed at validation.
   - Files: src/config/timeouts.ts, src/pages/login-page.ts, src/pages/dashboard-page.ts, src/pages/cart-page.ts, src/pages/product-detail-page.ts, tests/mocked/login-page-unavailable.spec.ts, tests/unit/smoke/navigation-wait.test.ts
   - Done when: `npx vitest run tests/unit/smoke` and `npx playwright test tests/mocked/login-page-unavailable.spec.ts` pass on chromium, firefox and webkit; lint, typecheck and spec:check exit 0
 
+## Change after validation: unit test files run one at a time (clarification 27)
+
+- [x] T58 — Run the unit test files one at a time
+  - Covers: RF-102 / TC-000-187
+  - Depends on: —
+  - Files: vitest.config.mts, tests/unit/setup/file-parallelism.test.ts
+  - Done when: `npx vitest run tests/unit/setup` and the full `npm run test:unit:report` pass; lint, typecheck and spec:check exit 0
+
 ## Coverage check
 | Test case (Automate: Y) | Task |
 |-------------------------|------|
@@ -547,3 +555,4 @@ Manual TC of this change (TC-000-184) is executed at validation.
 | TC-000-183 | T55 |
 | TC-000-185 | T57 |
 | TC-000-186 | T57 |
+| TC-000-187 | T58 |

@@ -296,6 +296,7 @@ Status: `automated` (test exists) · `skipped` (only skipped tests) · `manual` 
 | 000 | RF-100 | TC-000-184 | — | manual |
 | 000 | RF-101 | TC-000-185 | tests/mocked/login-page-unavailable.spec.ts | automated |
 | 000 | RF-101 | TC-000-186 | tests/unit/smoke/navigation-wait.test.ts | automated |
+| 000 | RF-102 | TC-000-187 | tests/unit/setup/file-parallelism.test.ts | automated |
 | 001 | RF-1 | TC-001-01 | tests/ui/auth-form-login.spec.ts | automated |
 | 001 | RF-1 | TC-001-10 | tests/ui/auth-login-validation.spec.ts | automated |
 | 001 | RF-2 | TC-001-02 | tests/ui/auth-form-login.spec.ts | automated |

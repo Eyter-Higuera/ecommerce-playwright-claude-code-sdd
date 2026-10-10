@@ -283,3 +283,10 @@ budget (RF-53, RF-101).
 - Automated, PASS: TC-000-185 (chromium, firefox, webkit) and TC-000-186 (T57); TC-001-14 and
   TC-001-15 on firefox passed 6 of 6; unit suite 161 passed.
 - Spec 000 stays `validated`: 101 RFs, 181 TCs (162 automated, 19 manual).
+
+### Change after validation: unit test files run one at a time (2026-10-10)
+Spec clarification 27 (Mode C, proposed and approved by the user): Vitest runs the unit test files
+one at a time, locally and in CI, so the CLI-spawning tests no longer run out of memory or reach
+the 60 s spawn limit (RF-102).
+- Automated, PASS: TC-000-187 (T58); unit suite 162 passed in 111 s, TC-001-37 in 4.7 s.
+- Spec 000 stays `validated`: 102 RFs, 182 TCs (163 automated, 19 manual).
