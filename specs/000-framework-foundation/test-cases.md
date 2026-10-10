@@ -4,10 +4,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 <!-- Allowed values: draft | approved -->
 
 ## Summary
-- 157 test cases for 97 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
+- 158 test cases for 97 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
   the positive case of one RF and the negative case of another (decision tables and partitions).
-- Layers: unit 136, api 1, mocked 2, ui 1, integration 17.
-- Automated: 140; manual: 17.
+- Layers: unit 137, api 1, mocked 2, ui 1, integration 17.
+- Automated: 141; manual: 17.
 - Smoke: 2 TCs (2%), both P1.
 - "unit" TCs run in Vitest with no real network: they inspect config, run CLIs (tsc, ESLint,
   Playwright `--list`, spec:check, check:secrets) on local fixtures, or test helpers with stubs.
@@ -94,7 +94,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-75 | TC-000-105 | TC-000-103 | TC-000-105 | — | 2 |
 | RF-76 | TC-000-103, TC-000-109 | TC-000-101 | — | TC-000-101 | 3 |
 | RF-77 | TC-000-103, TC-000-109 | TC-000-108 | — | TC-000-108 | 3 |
-| RF-78 | TC-000-86, TC-000-118 | TC-000-87 | — | — | 3 |
+| RF-78 | TC-000-86, TC-000-118 | TC-000-87, TC-000-162 | — | — | 4 |
 | RF-79 | TC-000-114, TC-000-118 | TC-000-116 | — | TC-000-114 | 3 |
 | RF-80 | TC-000-115, TC-000-141 | TC-000-87 | — | — | 3 |
 | RF-81 | TC-000-116 | TC-000-101 | — | TC-000-116 | 2 |
@@ -2627,6 +2627,22 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Test data       | A temporary folder with a `.env` holding TEST_USER_PASSWORD (TEST_ value) and no such process variable; a Playwright failure whose message contains that value |
 | Steps           | **Given** a password known only from `.env` **When** `report:failures` runs in that folder **Then** it is redacted |
 | Expected result | The output shows `[REDACTED]` and never the password |
+| Automate        | Y |
+
+### TC-000-162 — workflow values with a colon are quoted so GitHub can load the file
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-78 |
+| Priority        | P1 |
+| Type            | Negative |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** every single-line `key: value` is inspected **Then** no unquoted value contains `: ` or ` #` |
+| Expected result | Each such value is quoted, a `${{ }}` expression, or a block scalar; otherwise the test names the line (an unquoted `: ` makes GitHub reject the whole file: "Invalid workflow file", run 38030869300) |
 | Automate        | Y |
 
 ## Out of scope for testing

@@ -323,3 +323,11 @@ Legend: ✅ = passed · ❌ = failed
 | `npm run spec:check -- --write` | passed (5 specs); docs/traceability.md 494 rows | ✅ | |
 | `npm run check:secrets` | passed | ✅ | |
 | Manual TCs TC-000-145, 147, 149, 159 | Pending: executed at validation | | |
+
+### Fix after push: invalid workflow file (2026-10-10, /fix-failure)
+| Run / File | Result | Passed | Failed |
+|-----|--------|:------:|:------:|
+| GitHub run 38030869300 (push of `48d41d8`) | "Invalid workflow file": YAML error on line 82, no job ran | | ❌ |
+| .github/workflows/ci.yml | guard `run:` value single-quoted (it contained `: `); YAML parsed by a real parser: valid, 19 jobs | ✅ | |
+| tests/unit/ci/github-actions.test.ts | TC-000-162 new (red on the old file, naming line 82), TC-000-146 updated — CI tests 35 passed | ✅ | |
+| `npm run test:unit` / lint / typecheck / spec:check | 141 passed / 0 errors / exit 0 / passed (5 specs) | ✅ | |

@@ -198,6 +198,7 @@ Status: `automated` (test exists) · `skipped` (only skipped tests) · `manual` 
 | 000 | RF-77 | TC-000-109 | — | manual |
 | 000 | RF-77 | TC-000-116 | tests/unit/ci/github-actions.test.ts | automated |
 | 000 | RF-78 | TC-000-118 | — | manual |
+| 000 | RF-78 | TC-000-162 | tests/unit/ci/github-actions.test.ts | automated |
 | 000 | RF-78 | TC-000-86 | tests/unit/ci/github-actions.test.ts | automated |
 | 000 | RF-78 | TC-000-87 | tests/unit/ci/github-actions.test.ts | automated |
 | 000 | RF-79 | TC-000-114 | tests/unit/ci/github-actions.test.ts | automated |

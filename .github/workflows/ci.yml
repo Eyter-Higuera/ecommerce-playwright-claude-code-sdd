@@ -79,7 +79,7 @@ jobs:
     steps:
       # RF-92: a manual regression starts from eyter_dev; on a later branch only the chain may start it.
       - if: github.event_name == 'workflow_dispatch' && inputs.suite == 'regression' && github.ref_name != 'eyter_dev' && !inputs.chained
-        run: echo "::error::Regression starts from eyter_dev: run it there, it continues to release, main and production" && exit 1
+        run: 'echo "::error::Regression starts from eyter_dev: run it there, it continues to release, main and production" && exit 1'
       - uses: actions/checkout@v5
       # The container user differs from the checkout owner; without this, git commands exit 128.
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"

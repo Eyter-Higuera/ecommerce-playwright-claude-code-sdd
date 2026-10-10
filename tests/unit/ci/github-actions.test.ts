@@ -457,7 +457,7 @@ describe('GitHub workflow — security', () => {
     // production with the RF-92 message; its condition leaves push runs, smoke runs, eyter_dev and
     // chained runs alone. Every later job needs checks, so nothing else runs.
     expect(steps[1]).toBe(`- ${REGRESSION_GUARD_IF}`);
-    expect(steps[2]).toBe(`run: echo "::error::${REGRESSION_GUARD_MESSAGE}" && exit 1`);
+    expect(steps[2]).toBe(`run: 'echo "::error::${REGRESSION_GUARD_MESSAGE}" && exit 1'`);
     expect(steps[3]).toMatch(/^- uses: actions\/checkout@/);
   });
 
@@ -479,6 +479,23 @@ describe('GitHub workflow — security', () => {
     for (const input of ['suite', 'browser', 'layer']) expect(chainJob, input).toContain(`${input.toUpperCase()}: \${{ inputs.${input} }}`);
     expect(chainJob).toContain('run: npm run ci:chain');
     expect(chainJob).not.toMatch(/ci:promote|report:pages|deploy-pages/);
+  });
+
+  it('TC-000-162 workflow values with a colon are quoted so GitHub can load the file', () => {
+    // Arrange: every single-line `key: value` (also list items `- key: value`) outside comments.
+    const content = workflow();
+
+    // Act: plain (unquoted) values that YAML would read as a nested mapping or cut at a comment.
+    const offending = content
+      .split(/\r?\n/)
+      .map((line, index) => ({ line: index + 1, text: line }))
+      .filter(({ text }) => !text.trim().startsWith('#'))
+      .map(({ line, text }) => ({ line, value: /^\s*(?:- )?[\w.-]+: (.+)$/.exec(text)?.[1] ?? '' }))
+      .filter(({ value }) => value !== '' && !/^['"|>[{]/.test(value) && !value.startsWith('${{'))
+      .filter(({ value }) => value.includes(': ') || value.includes(' #'));
+
+    // Assert: none; an unquoted ": " makes GitHub reject the whole file (run 38030869300).
+    expect(offending).toEqual([]);
   });
 
   it('TC-000-95 CI script check flags environment printing', () => {
