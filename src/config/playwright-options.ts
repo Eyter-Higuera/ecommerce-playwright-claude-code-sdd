@@ -2,7 +2,7 @@ import type { PlaywrightTestConfig } from '@playwright/test';
 import type { EnvValues } from './env';
 import { NAVIGATION_TIMEOUT_MS } from './timeouts';
 
-// Pure builder of the Playwright configuration (Spec 000, RF-8 to RF-11, RF-25, RF-46 to RF-49).
+// Pure builder of the Playwright configuration (Spec 000, RF-8 to RF-11, RF-25, RF-46 to RF-49, RF-99).
 // playwright.config.ts only wraps it, so unit tests can check the resolved settings without
 // loading Playwright Test inside Vitest. Paths are relative to the repository root, where
 // playwright.config.ts lives.
@@ -21,6 +21,8 @@ export const TEST_RESULTS_DIR = 'test-results';
 /** RF-47: retries in CI only. */
 export const CI_RETRIES = 2;
 const LOCAL_RETRIES = 0;
+/** RF-99: local runs start at most 2 browsers at once, so firefox and webkit do not run out of memory. */
+export const LOCAL_WORKERS = 2;
 
 const TESTS_DIR = './tests';
 const API_SUBDIR = 'api';
@@ -33,6 +35,11 @@ const FIXTURES_IGNORE = /[\\/]tests[\\/]fixtures[\\/]/;
 /** RF-47 / RF-48: only `CI=true` enables retries. */
 export function resolveRetries(env: EnvValues): number {
   return env.CI === 'true' ? CI_RETRIES : LOCAL_RETRIES;
+}
+
+/** RF-99: a limit for local runs only; undefined in CI keeps Playwright's default. `--workers` still wins. */
+export function resolveWorkers(env: EnvValues): number | undefined {
+  return env.CI === 'true' ? undefined : LOCAL_WORKERS;
 }
 
 /** True when the Playwright CLI arguments explicitly select a project (`--project=x` or `--project x`). */
@@ -81,12 +88,14 @@ export function buildPlaywrightConfig(env: EnvValues, argv: readonly string[], o
   const { outputDir } = options;
   // A fixture project lives inside tests/fixtures/, so the ignore applies to the real run only.
   const testIgnore = options.testsDir === undefined ? FIXTURES_IGNORE : undefined;
+  const workers = resolveWorkers(env);
   return {
     testDir: testsDir,
     outputDir: under(outputDir, TEST_RESULTS_DIR),
     fullyParallel: true,
     forbidOnly: env.CI === 'true',
     retries: resolveRetries(env),
+    ...(workers !== undefined && { workers }),
     reporter: [
       ['list'],
       ['html', { outputFolder: under(outputDir, HTML_REPORT_DIR), open: 'never' }],

@@ -4,10 +4,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 <!-- Allowed values: draft | approved -->
 
 ## Summary
-- 158 test cases for 97 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
+- 171 test cases for 99 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
   the positive case of one RF and the negative case of another (decision tables and partitions).
-- Layers: unit 137, api 1, mocked 2, ui 1, integration 17.
-- Automated: 141; manual: 17.
+- Layers: unit 149, api 1, mocked 2, ui 1, integration 18.
+- Automated: 153; manual: 18.
 - Smoke: 2 TCs (2%), both P1.
 - "unit" TCs run in Vitest with no real network: they inspect config, run CLIs (tsc, ESLint,
   Playwright `--list`, spec:check, check:secrets) on local fixtures, or test helpers with stubs.
@@ -112,8 +112,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-93 | TC-000-148, TC-000-149 | — | — | — | 2 |
 | RF-94 | TC-000-150 | — | — | — | 1 |
 | RF-95 | TC-000-151, TC-000-159 | — | — | — | 2 |
-| RF-96 | TC-000-152, TC-000-153, TC-000-155, TC-000-160 | TC-000-157 | TC-000-154 | TC-000-156, TC-000-161 | 8 |
+| RF-96 | TC-000-152, TC-000-153, TC-000-155, TC-000-160, TC-000-170 | TC-000-157 | TC-000-154 | TC-000-156, TC-000-161 | 9 |
 | RF-97 | TC-000-158, TC-000-159 | — | — | — | 2 |
+| RF-98 | TC-000-163, TC-000-164, TC-000-169, TC-000-171 | TC-000-166, TC-000-167 | TC-000-165, TC-000-172 | TC-000-168, TC-000-174 | 10 |
+| RF-99 | TC-000-175 | TC-000-176 | TC-000-175 | — | 2 |
 
 ## Test cases
 
@@ -2418,7 +2420,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `.vscode/tasks.json`, `.vscode/extensions.json` |
 | Steps           | **Given** the VS Code configuration **When** it is inspected **Then** every choice and command is there |
-| Expected result | pickString inputs `layer` (all, unit, api, ui), `suite` (smoke, regression), `browser` (chromium, firefox, webkit, all) and `branch` (eyter_dev, release, main, production); a local task runs `npm run ci:run-suite` with SUITE, BROWSER and LAYER from those inputs; tasks run `npm run test:unit:report`, `npm run test:unit:ci` and `npx playwright show-report`; a GitHub task runs `gh workflow run ci.yml --ref ${input:branch} -f suite=${input:suite} -f browser=${input:browser} -f layer=${input:layer}` and another `gh run watch`; extensions.json recommends `ms-playwright.playwright` and `vitest.explorer` |
+| Expected result | pickString inputs `layer` (all, unit, api, ui), `suite` (smoke, regression), `browser` (chromium, firefox, webkit, all) and `branch` (eyter_dev, release, main, production); a local task runs `npm run ci:run-suite` with SUITE, BROWSER and LAYER from those inputs; tasks run `npm run test:unit:report`, `npm run test:unit:ci` and `npx playwright show-report`; a branch task runs `npm run test:branch` with BRANCH, SUITE, BROWSER and LAYER from the pickers; no task runs a `gh` command (local only, RF-93); extensions.json recommends `ms-playwright.playwright` and `vitest.explorer` |
 | Automate        | Y |
 
 ### TC-000-149 — each VS Code task runs from the Command Palette
@@ -2432,9 +2434,9 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Tags            | n/a (manual check) |
 | Browsers        | n/a (pipeline level) |
 | Preconditions   | VS Code with the repository open; `.env` filled in; GitHub CLI logged in |
-| Test data       | Tasks: Run Task → each task once (local api smoke on chromium, local unit, unit with coverage, show report, GitHub manual run on eyter_dev with smoke/chromium/api, watch) |
+| Test data       | Tasks: Run Task → each task once (local api smoke on chromium, branch run on main, local unit, unit with coverage, show report, list last failures) |
 | Steps           | **Given** VS Code **When** each task is run **Then** it does what its name says |
-| Expected result | Every local task ends with the expected exit code and output; the GitHub task starts a manual run visible in Actions; the watch task follows it |
+| Expected result | Every task ends with the expected exit code and its output in the VS Code terminal; no task starts a GitHub Actions run (`gh run list` unchanged) |
 | Automate        | N — needs the VS Code UI; executed at validation |
 
 ### TC-000-150 — README documents the VS Code tasks, the four manual inputs and the regression chain
@@ -2450,7 +2452,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `README.md` |
 | Steps           | **Given** the README **When** it is inspected **Then** the manual runs are fully documented |
-| Expected result | A VS Code section names the tasks and `Tasks: Run Task`; the manual GitHub run section shows `-f layer=` for each of the four branches; the regression chain section says it starts from eyter_dev, continues to release, main and production, never merges, and is refused on a later branch |
+| Expected result | A VS Code section names every task and `Tasks: Run Task` and says they never start a pipeline; the manual GitHub run section shows `-f layer=` for each of the four branches; the regression chain section says it starts from eyter_dev, continues to release, main and production, never merges, and is refused on a later branch |
 | Automate        | Y |
 
 ### TC-000-151 — the bug log has its table and the AI rule
@@ -2466,7 +2468,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `docs/bug-log.md`, `AGENTS.md` |
 | Steps           | **Given** the repository docs **When** they are inspected **Then** the bug log is ready to use |
-| Expected result | `docs/bug-log.md` has the header `| Bug / failure | Passed ✅ | Failed ❌ | How it is fixed | Solution |` and explains each column (Failed = where it failed, Passed = where it passed after the fix, empty until fixed); every row has five cells and a non-empty `Failed ❌`; AGENTS.md requires fixing a red test or pipeline run and recording it in `docs/bug-log.md` before finishing a task |
+| Expected result | `docs/bug-log.md` has the header `| Date | Bug / failure | Passed ✅ | Failed ❌ | Cause | Solution |` and explains each column; every row has six cells: a `YYYY-MM-DD` date, a non-empty bug, `Passed ✅` either empty or exactly `✅`, `Failed ❌` exactly `❌`, and a non-empty cause and solution; AGENTS.md requires fixing a red test or pipeline run and recording it in `docs/bug-log.md` before finishing a task |
 | Automate        | Y |
 
 ### TC-000-152 — failure report lists failed Playwright tests with error and evidence
@@ -2578,7 +2580,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `.claude/skills/fix-failure/SKILL.md`, `.vscode/tasks.json` |
 | Steps           | **Given** the skill and the tasks **When** they are inspected **Then** the one-step flow is defined |
-| Expected result | The skill has `name: fix-failure` and a description; its steps run `npm run report:failures` (and `-- --run <id>`), say `No failure found` and change nothing when nothing failed, handle unit failures before Playwright ones, explain the cause, add a regression test first, propose a spec change for a behavior change, record site outages without a code fix, re-run the failed tests, add one `docs/bug-log.md` row per failure, and never commit, push or print secrets; VS Code has the tasks `Tests: list last failures` (`npm run report:failures`) and `Claude: analyze and fix last failure` (`claude "/fix-failure"`) |
+| Expected result | The skill has `name: fix-failure` and a description; its steps run `npm run report:failures` (and `-- --run <id>`), say `No failure found` and change nothing when nothing failed, handle unit failures before Playwright ones, explain the cause, add a regression test first, propose a spec change for a behavior change, record site outages without a code fix, re-run the failed tests, fix failures of later branches on eyter_dev, add one `docs/bug-log.md` row per failure, and never commit, push or print secrets; VS Code has the tasks `Tests: list last failures` (`npm run report:failures`) and `Claude: analyze and fix last failure` (`claude "/fix-failure"`) |
 | Automate        | Y |
 
 ### TC-000-159 — a deliberate local failure is explained, fixed and logged in one step
@@ -2643,6 +2645,214 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the GitHub workflow **When** every single-line `key: value` is inspected **Then** no unquoted value contains `: ` or ` #` |
 | Expected result | Each such value is quoted, a `${{ }}` expression, or a block scalar; otherwise the test names the line (an unquoted `: ` makes GitHub reject the whole file: "Invalid workflow file", run 38030869300) |
+| Automate        | Y |
+
+### TC-000-163 — test:branch on the checked-out branch runs in place
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-98 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | Stubbed git, npm and test runners recording every command; a temporary repository root; checked-out branch eyter_dev; BRANCH=eyter_dev, SUITE=smoke, BROWSER=chromium, LAYER=api |
+| Steps           | **Given** BRANCH is the checked-out branch **When** `test:branch` runs **Then** the selection runs in the repository itself |
+| Expected result | No `git fetch` or `git worktree` command; the selection runs with the repository (the working copy, uncommitted changes included) as working directory; the output names the branch and the selection; the exit code is the selection's |
+| Automate        | Y |
+
+### TC-000-164 — test:branch on another branch creates its worktree once and moves it later
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-98 |
+| Priority        | P1 |
+| Type            | Positive |
+| Technique       | State transition |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | Stubbed git, npm and test runners recording every command; a temporary repository root; checked-out branch eyter_dev; a `.env` file; BRANCH=release run twice |
+| Steps           | **Given** no worktree yet **When** `test:branch` runs twice for release **Then** the worktree is created, then reused |
+| Expected result | First run: `git fetch origin release`, `git worktree add --detach <worktrees>/release origin/release`, `git check-ignore -q .env` in the worktree, `.env` copied into it, `npm ci` in the worktree, the selection runs there. Second run: `git fetch origin release`, `git -C <worktrees>/release checkout --detach origin/release` (no `worktree add`), no `npm ci` because the lock file equals the recorded one, the selection runs there |
+| Automate        | Y |
+
+### TC-000-165 — test:branch reinstalls only when the branch's lock file changed
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-98 |
+| Priority        | P3 |
+| Type            | Boundary |
+| Technique       | BVA |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | Stubbed git, npm and test runners recording every command; a temporary repository root; an existing worktree whose `package-lock.json` changes between two runs |
+| Steps           | **Given** a changed lock file **When** `test:branch` runs **Then** `npm ci` runs again |
+| Expected result | `npm ci` runs on the run after the change and not on a run without change |
+| Automate        | Y |
+
+### TC-000-166 — test:branch refuses a branch that is not a promotion branch
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-98, RF-62 |
+| Priority        | P2 |
+| Type            | Negative |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | BRANCH=feature/x, BRANCH=Release (wrong case), BRANCH empty |
+| Steps           | **Given** an unsupported BRANCH **When** `test:branch` runs **Then** nothing runs |
+| Expected result | Exit code non-zero; message `Unsupported BRANCH="<value>": allowed values are eyter_dev, release, main, production`; no git, npm or test command |
+| Automate        | Y |
+
+### TC-000-167 — test:branch stops when the branch cannot be fetched
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-98 |
+| Priority        | P2 |
+| Type            | Negative |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | Stubbed git, npm and test runners recording every command; a temporary repository root; `git fetch origin main` exits 128 with `Could not resolve host: github.com` |
+| Steps           | **Given** an unreachable origin **When** `test:branch` runs for main **Then** it stops before touching the worktree |
+| Expected result | Exit code non-zero; message `Cannot fetch main from origin: Could not resolve host: github.com`; no `worktree`, `checkout`, `npm` or test command |
+| Automate        | Y |
+
+### TC-000-168 — test:branch never creates, deletes or pushes a branch
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-98, RF-76 |
+| Priority        | P1 |
+| Type            | Security |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | Every git command recorded by TC-000-163 to 167; `.gitignore` |
+| Steps           | **Given** all the recorded git commands **When** they are inspected **Then** none changes branches |
+| Expected result | No `push`, `branch -d`, `branch -D`, `checkout -b`, `switch -c`, `worktree remove`, `reset --hard` or `merge`; every worktree is `--detach` |
+| Automate        | Y |
+
+### TC-000-169 — test:branch shows the failure report when the branch run is red
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-98, RF-96 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | Stubbed git, npm and test runners recording every command; a temporary repository root; the selection in `<worktrees>/release` exits 1 and leaves a Playwright results file with one failed test |
+| Steps           | **Given** a red run on release **When** `test:branch` ends **Then** the failure report of that worktree follows |
+| Expected result | Exit code non-zero; the output ends with the failure report of `<worktrees>/release` naming the failed test; a green run prints no failure report |
+| Automate        | Y |
+
+### TC-000-170 — report:failures --branch reads the results of that branch's worktree
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-96 |
+| Priority        | P3 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | A temporary worktrees folder (`TEST_BRANCH_WORKTREES`) with `release/reports/results.json` holding one failed test, and no `main` |
+| Steps           | **Given** worktree results **When** `report:failures -- --branch release`, then `--branch main` runs **Then** each reads its own folder |
+| Expected result | release: the failed test is listed with the worktree's results file; main: `No failed tests found in …` naming the missing files; exit code 0 both times |
+| Automate        | Y |
+
+### TC-000-171 — a regression on release from VS Code runs locally and starts no pipeline
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-98, RF-93 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | integration |
+| Tags            | n/a (manual check) |
+| Browsers        | n/a (VS Code, local run) |
+| Preconditions   | VS Code; `.env` filled in; GitHub CLI logged in (only to check the run list) |
+| Test data       | Task `Tests: run locally on a branch (branch, layer, suite, browser)`: release, api, regression, chromium |
+| Steps           | **Given** VS Code **When** the task runs **Then** the tests run on the PC |
+| Expected result | `%LOCALAPPDATA%/ecommerce-playwright-sdd/worktrees/release` exists (nothing new inside the repository or OneDrive); the results appear in the VS Code terminal; `gh run list` shows no new run from the task |
+| Automate        | N — needs VS Code and the real site; executed at validation |
+
+### TC-000-172 — test:branch worktrees live outside the repository and synced folders
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-98 |
+| Priority        | P2 |
+| Type            | Boundary |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | The worktrees folder for a Windows environment (LOCALAPPDATA set), a Linux one (HOME only) and with `TEST_BRANCH_WORKTREES` set |
+| Steps           | **Given** each environment **When** the worktrees folder is computed **Then** it is outside the repository |
+| Expected result | Windows: `<LOCALAPPDATA>/ecommerce-playwright-sdd/worktrees`; Linux: `<HOME>/.cache/ecommerce-playwright-sdd/worktrees`; `TEST_BRANCH_WORKTREES` wins when set; the default folder is never inside the repository root (relative path starts with `..`), so lint, typecheck and OneDrive never see it |
+| Automate        | Y |
+
+### TC-000-174 — test:branch stops instead of copying .env into a branch that does not ignore it
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-98, RF-20 |
+| Priority        | P1 |
+| Type            | Security |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | Stubbed runners; `git check-ignore -q .env` in the worktree exits 1 |
+| Steps           | **Given** a branch whose `.gitignore` does not ignore `.env` **When** `test:branch` runs **Then** the secret file is not copied |
+| Expected result | Exit code non-zero; message `.env is not ignored on <branch>: not copied, nothing run`; no file written into the worktree; no npm or test command |
+| Automate        | Y |
+
+### TC-000-175 — local runs use at most 2 workers
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-99 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | Decision table / BVA |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | `CI` unset; `CI=false` |
+| Steps           | **Given** each non-CI value **When** the config is resolved **Then** the worker count is limited |
+| Expected result | `workers` equals 2 in both cases (a `--workers` value on the command line overrides the config, as Playwright does) |
+| Automate        | Y |
+
+### TC-000-176 — CI keeps the default worker count
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-99 |
+| Priority        | P2 |
+| Type            | Negative |
+| Technique       | Decision table |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | `CI=true` |
+| Steps           | **Given** a CI run **When** the config is resolved **Then** the worker count is not limited |
+| Expected result | `workers` is not set, so Playwright uses its default |
 | Automate        | Y |
 
 ## Out of scope for testing

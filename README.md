@@ -109,34 +109,45 @@ then chromium; `main` runs `@smoke` and `release` runs `@regression` on `api`, t
 firefox and webkit.
 
 ### In VS Code
-The repository ships VS Code tasks (`.vscode/tasks.json`, Spec 000 RF-93). Open the Command
-Palette (`Ctrl+Shift+P`) → **Tasks: Run Task** and pick one; the task then asks for its choices.
-VS Code also suggests the Playwright Test and Vitest extensions, which add a test explorer.
+The repository ships VS Code tasks (`.vscode/tasks.json`, Spec 000 RF-93, RF-98). They run the
+tests **on your PC only**, show the results in the VS Code terminal and never start a pipeline in
+GitHub. Open the Command Palette (`Ctrl+Shift+P`) → **Tasks: Run Task** and pick one; the task then
+asks for its choices. VS Code also suggests the Playwright Test and Vitest extensions, which add a
+test explorer.
 
 | Task | Asks for | Runs |
 |---|---|---|
-| `Tests: run locally (layer, suite, browser)` | layer (all, unit, api, ui), suite (smoke, regression), browser (chromium, firefox, webkit, all) | `npm run ci:run-suite` on the branch you have checked out |
+| `Tests: run locally (layer, suite, browser)` | layer (all, unit, api, ui), suite (smoke, regression), browser (chromium, firefox, webkit, all) | `npm run ci:run-suite` on the branch you have checked out, uncommitted changes included |
+| `Tests: run locally on a branch (branch, layer, suite, browser)` | branch (eyter_dev, release, main, production), layer, suite, browser | `npm run test:branch`: the checked-out branch in place; another branch in a local worktree (see below) |
 | `Tests: unit tests` | — | `npm run test:unit:report` (writes `reports/unit-results.json`) |
 | `Tests: unit tests with coverage` | — | `npm run test:unit:ci` (open `reports/coverage/index.html`) |
 | `Tests: open Playwright report` | — | `npx playwright show-report` |
-| `GitHub: start manual run (branch, suite, browser, layer)` | branch (eyter_dev, release, main, production), suite, browser, layer | `gh workflow run ci.yml --ref <branch> …` (see below) |
-| `GitHub: watch run` | the run to follow | `gh run watch` |
 | `Tests: list last failures` | — | `npm run report:failures` |
 | `Claude: analyze and fix last failure` | — | `claude "/fix-failure"` (see [When a test fails](#when-a-test-fails)) |
 
-The local tasks always test the branch you have checked out; to test another branch, check it
-out first, or start a GitHub manual run on it. The GitHub tasks need the GitHub CLI logged in.
+**Testing another branch locally.** For `release`, `main` or `production` (when it is not the
+branch you have checked out), `Tests: run locally on a branch` fetches the branch from GitHub and
+tests it in a detached git worktree in
+`%LOCALAPPDATA%ecommerce-playwright-sddworktrees<branch>` (`~/.cache/…` on Linux and macOS),
+outside the repository and outside OneDrive. The first run copies your `.env` there and runs
+`npm ci`; later runs move the worktree to the branch's latest commit and reinstall only when its
+`package-lock.json` changed. No branch is created, changed, deleted or pushed. A failure found
+there is fixed on `eyter_dev` (`/fix-failure <branch>`) and reaches the branch through promotion.
+To free the disk space, remove a worktree by hand:
+`git worktree remove "%LOCALAPPDATA%ecommerce-playwright-sddworktreeselease"`.
+Two runs on the same branch at the same time are not supported.
 
 ### In GitHub Actions, on any branch
-A manual run uses the code of the branch you pick. It runs the checks and the unit tests, then
+This **does** start a pipeline in GitHub, so it is not a VS Code task: start it from the
+Actions page or from a terminal. A manual run uses the code of the branch you pick. It runs the checks and the unit tests, then
 `manual-api` and `manual-ui` as separate jobs, each only when the layer includes it (Spec 000
 RF-80, RF-90). It never promotes and never updates the results page; its tables are on the run's
 **Summary** page.
 
-- **Web:** Actions → CI → **Run workflow** → choose the branch, `suite` (smoke | regression),
+- **Web:** GitHub → Actions → CI → **Run workflow** → choose the branch, `suite` (smoke | regression),
   `browser` (chromium | firefox | webkit | all; the API tests always run once) and `layer`
   (all | unit | api | ui). Leave `chained` off: the regression chain sets it.
-- **CLI** (GitHub CLI logged in to this repository), smoke on each branch:
+- **CLI** (a terminal with the GitHub CLI logged in to this repository), smoke on each branch:
 
 | Branch | Everything | Unit only | API only | UI only |
 |---|---|---|---|---|
@@ -164,6 +175,9 @@ A regression started directly on `release`, `main` or `production` is refused at
 ### Good to know
 - **`CI=true` set locally** makes the run behave like CI: 2 retries and `test.only` forbidden.
   Unset it for normal local runs.
+- **Local runs use at most 2 workers** (Spec 000 RF-99): with more, a full run on all browsers
+  can run the PC out of memory and firefox or webkit crash. On a stronger PC, pass
+  `--workers=<n>` on the command line; CI keeps Playwright's default.
 - **Test account recovery (account A or B locked, or its password changed):** the shop is a
   shared public demo, so a third party can change an account. Symptoms:
   - The API smoke test fails with "Login API returned status <code> for the account in
@@ -194,7 +208,8 @@ A regression started directly on `release`, `main` or `production` is refused at
 Claude Code explains the failure, fixes it and records it in one step (Spec 000 RF-96, RF-97):
 
 1. Run the VS Code task **`Claude: analyze and fix last failure`**, or type `/fix-failure` in
-   Claude Code. For a red GitHub run, type `/fix-failure <run-id>` (the id is in the run's URL).
+   Claude Code. For a branch tested with `Tests: run locally on a branch`, type
+   `/fix-failure <branch>`; for a red GitHub run, type `/fix-failure <run-id>` (the id is in the run's URL).
 2. Claude Code runs `npm run report:failures` (or `npm run report:failures -- --run <run-id>`),
    which lists each failed test with its error, trace and screenshot, or each failed job with the
    end of its log, with passwords and tokens redacted.
@@ -209,9 +224,10 @@ Claude Code explains the failure, fixes it and records it in one step (Spec 000 
 To only see what failed, run the task **`Tests: list last failures`** (`npm run report:failures`).
 
 ## Bug log
-Every test or pipeline failure found and fixed is recorded in [docs/bug-log.md](docs/bug-log.md):
-what failed, where it failed (❌) and where it passed after the fix (✅), how it was fixed and the
-change that fixed it (Spec 000 RF-95).
+Every test or pipeline failure found and fixed is recorded in [docs/bug-log.md](docs/bug-log.md),
+one row each (Spec 000 RF-95): the date it was found, what failed, the marks ❌ (failed) and ✅
+(passed again after the fix), the cause (why and where it failed) and the solution (the fix and the
+re-run that proved it).
 
 ## CI/CD (GitHub Actions)
 The repository lives on GitHub (`origin`: https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd)

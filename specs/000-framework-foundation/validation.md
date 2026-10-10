@@ -260,3 +260,10 @@ log (RF-95).
 - Still to run (manual): TC-000-145 (live regression chain from eyter_dev; also resolves the RF-91
   TODO: VERIFY about dispatching with GITHUB_TOKEN), TC-000-147 (direct regression on release
   refused), TC-000-149 (each VS Code task once), and TC-000-110 (a failing job stops the chain).
+
+### Change after validation: local workers and bug-log columns (2026-10-10)
+Spec clarification 24 (Mode C, approved by the user): local Playwright runs use at most 2 workers
+(RF-99) after a full local run failed 50 firefox and webkit tests from lack of memory; the bug log
+gets a `Date` column, marks only in `Passed ✅` and `Failed ❌`, and `Cause` and `Solution` (RF-95).
+- Automated, PASS: TC-000-175, TC-000-176 (T53) and TC-000-151 updated (T54); unit suite 153 passed.
+- Spec 000 stays `validated`: 99 RFs, 171 TCs (153 automated, 18 manual).

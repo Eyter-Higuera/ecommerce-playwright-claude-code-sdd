@@ -57,6 +57,8 @@ describe('README — positive', () => {
 
     // Assert: every VS Code task is named, with how to start it (RF-93) ...
     expect(guide).toContain('Tasks: Run Task');
+    expect(guide).toContain('never start a pipeline');
+    expect(guide).toContain('git worktree remove');
     for (const { label } of tasks) expect(guide, label).toContain(label);
     // ... the manual GitHub run shows the layer choice on each of the four branches (RF-80, RF-90) ...
     for (const branch of BRANCHES) expect(guide, branch).toMatch(new RegExp(`gh workflow run ci\\.yml --ref ${branch} -f suite=\\w+ -f browser=\\w+ -f layer=\\w+`));
