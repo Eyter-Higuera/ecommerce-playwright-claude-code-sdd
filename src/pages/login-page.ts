@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { buildLoginUrl } from '../config/urls';
-import { NAVIGATION_TIMEOUT_MS } from '../config/timeouts';
+import { NAVIGATION_TIMEOUT_MS, NAVIGATION_WAIT_UNTIL } from '../config/timeouts';
 import { loginPageUnavailableMessage } from '../errors/messages';
 import type { LoginCredentials } from '../api/auth-client';
 import { DialogRecorder } from '../components/dialog-recorder';
@@ -118,7 +118,7 @@ export class LoginPage {
     const timeout = options.timeoutMs ?? NAVIGATION_TIMEOUT_MS;
     let status: number | undefined;
     try {
-      const response = await this.page.goto(this.url, { timeout });
+      const response = await this.page.goto(this.url, { timeout, waitUntil: NAVIGATION_WAIT_UNTIL });
       status = response?.status();
     } catch (error) {
       if (error instanceof Error && error.name === 'TimeoutError') {

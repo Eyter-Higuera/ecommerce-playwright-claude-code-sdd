@@ -122,6 +122,7 @@ Status: `automated` (test exists) · `skipped` (only skipped tests) · `manual` 
 | 000 | RF-52 | TC-000-76 | tests/ui/login-page.spec.ts | automated |
 | 000 | RF-52 | TC-000-77 | tests/unit/smoke/login-url.test.ts | automated |
 | 000 | RF-52 | TC-000-78 | tests/mocked/login-page-unavailable.spec.ts | automated |
+| 000 | RF-53 | TC-000-185 | tests/mocked/login-page-unavailable.spec.ts | automated |
 | 000 | RF-53 | TC-000-76 | tests/ui/login-page.spec.ts | automated |
 | 000 | RF-53 | TC-000-78 | tests/mocked/login-page-unavailable.spec.ts | automated |
 | 000 | RF-53 | TC-000-79 | tests/mocked/login-page-unavailable.spec.ts | automated |
@@ -293,6 +294,8 @@ Status: `automated` (test exists) · `skipped` (only skipped tests) · `manual` 
 | 000 | RF-100 | TC-000-182 | tests/unit/ci/local-run.test.ts | automated |
 | 000 | RF-100 | TC-000-183 | tests/unit/ci/local-run.test.ts | automated |
 | 000 | RF-100 | TC-000-184 | — | manual |
+| 000 | RF-101 | TC-000-185 | tests/mocked/login-page-unavailable.spec.ts | automated |
+| 000 | RF-101 | TC-000-186 | tests/unit/smoke/navigation-wait.test.ts | automated |
 | 001 | RF-1 | TC-001-01 | tests/ui/auth-form-login.spec.ts | automated |
 | 001 | RF-1 | TC-001-10 | tests/ui/auth-login-validation.spec.ts | automated |
 | 001 | RF-2 | TC-001-02 | tests/ui/auth-form-login.spec.ts | automated |

@@ -275,3 +275,11 @@ with `/fix-failure` (RF-100).
 - Automated, PASS: TC-000-177 to 183 (T55), TC-000-148 and 150 updated (T56); unit suite 160 passed.
 - Spec 000 stays `validated`: 100 RFs, 179 TCs (160 automated, 19 manual).
 - Still to run (manual): TC-000-184 (a failing and a passing VS Code run on this PC).
+
+### Change after validation: page navigations wait for the document only (2026-10-10)
+Spec clarification 26 (Mode C, approved by the user): page object navigations wait only for the
+page document (`DOMContentLoaded`), so the third-party login background image never uses the 30 s
+budget (RF-53, RF-101).
+- Automated, PASS: TC-000-185 (chromium, firefox, webkit) and TC-000-186 (T57); TC-001-14 and
+  TC-001-15 on firefox passed 6 of 6; unit suite 161 passed.
+- Spec 000 stays `validated`: 101 RFs, 181 TCs (162 automated, 19 manual).
