@@ -47,6 +47,7 @@ Only one spec is active at a time. Claude Code never creates a new spec unless y
 | Tasks | `/tasks-generator` | `tasks.md` |
 | Implementation | `/implementation-generator` | Code and tests for ONE task + entry in `implementation.md`, then stop |
 | Review | `/test-reviewer` | PASS/FAIL report against `docs/test-review-checklist.md` |
+| Failure | `/fix-failure` | Why a test or pipeline run failed, the test-first fix, the green re-run and the `docs/bug-log.md` row |
 | Validation | `/validation-generator` | `validation.md` + verdict; proposes (never creates) the next spec |
 
 Every generator stops at an approval gate and only moves forward on an explicit "yes".
@@ -100,30 +101,65 @@ against the real demo site.
 | Smoke suite (API + UI) | `npx playwright test --grep @smoke --project=api --project=chromium` (add `--project=firefox --project=webkit` for every browser) |
 | Regression suite (API + UI) | `npx playwright test --grep @regression --project=api --project=chromium --project=firefox --project=webkit` |
 | Smoke or regression on one layer | `npx playwright test --grep @smoke --project=api`, `npx playwright test --grep @regression --project=webkit`, … |
-| The same selection as a manual CI run | `SUITE=regression BROWSER=all npm run ci:run-suite` (`SUITE`: smoke, regression · `BROWSER`: chromium, firefox, webkit, all) |
+| The same selection as a manual CI run | `SUITE=regression BROWSER=all LAYER=all npm run ci:run-suite` (`SUITE`: smoke, regression · `BROWSER`: chromium, firefox, webkit, all · `LAYER`: all = unit then api and ui, unit, api, ui) |
 | Results of the last run | `npx playwright show-report` (HTML) · `npm run report:summary -- --title Local` (table) |
 
 The branch gates run the same commands in CI: `eyter_dev` and `production` run `@smoke` on `api`
 then chromium; `main` runs `@smoke` and `release` runs `@regression` on `api`, then chromium,
 firefox and webkit.
 
+### In VS Code
+The repository ships VS Code tasks (`.vscode/tasks.json`, Spec 000 RF-93). Open the Command
+Palette (`Ctrl+Shift+P`) → **Tasks: Run Task** and pick one; the task then asks for its choices.
+VS Code also suggests the Playwright Test and Vitest extensions, which add a test explorer.
+
+| Task | Asks for | Runs |
+|---|---|---|
+| `Tests: run locally (layer, suite, browser)` | layer (all, unit, api, ui), suite (smoke, regression), browser (chromium, firefox, webkit, all) | `npm run ci:run-suite` on the branch you have checked out |
+| `Tests: unit tests` | — | `npm run test:unit:report` (writes `reports/unit-results.json`) |
+| `Tests: unit tests with coverage` | — | `npm run test:unit:ci` (open `reports/coverage/index.html`) |
+| `Tests: open Playwright report` | — | `npx playwright show-report` |
+| `GitHub: start manual run (branch, suite, browser, layer)` | branch (eyter_dev, release, main, production), suite, browser, layer | `gh workflow run ci.yml --ref <branch> …` (see below) |
+| `GitHub: watch run` | the run to follow | `gh run watch` |
+| `Tests: list last failures` | — | `npm run report:failures` |
+| `Claude: analyze and fix last failure` | — | `claude "/fix-failure"` (see [When a test fails](#when-a-test-fails)) |
+
+The local tasks always test the branch you have checked out; to test another branch, check it
+out first, or start a GitHub manual run on it. The GitHub tasks need the GitHub CLI logged in.
+
 ### In GitHub Actions, on any branch
 A manual run uses the code of the branch you pick. It runs the checks and the unit tests, then
-the selected suite through `npm run ci:run-suite`. It never promotes and never updates the
-results page.
+`manual-api` and `manual-ui` as separate jobs, each only when the layer includes it (Spec 000
+RF-80, RF-90). It never promotes and never updates the results page; its tables are on the run's
+**Summary** page.
 
-- **Web:** Actions → CI → **Run workflow** → choose the branch, `suite` (smoke | regression) and
-  `browser` (chromium | firefox | webkit | all; the API tests always run once).
-- **CLI** (GitHub CLI logged in to this repository):
+- **Web:** Actions → CI → **Run workflow** → choose the branch, `suite` (smoke | regression),
+  `browser` (chromium | firefox | webkit | all; the API tests always run once) and `layer`
+  (all | unit | api | ui). Leave `chained` off: the regression chain sets it.
+- **CLI** (GitHub CLI logged in to this repository), smoke on each branch:
 
-| Branch | Smoke | Regression |
-|---|---|---|
-| `eyter_dev` | `gh workflow run ci.yml --ref eyter_dev -f suite=smoke -f browser=chromium` | `gh workflow run ci.yml --ref eyter_dev -f suite=regression -f browser=all` |
-| `release` | `gh workflow run ci.yml --ref release -f suite=smoke -f browser=all` | `gh workflow run ci.yml --ref release -f suite=regression -f browser=all` |
-| `main` | `gh workflow run ci.yml --ref main -f suite=smoke -f browser=all` | `gh workflow run ci.yml --ref main -f suite=regression -f browser=all` |
-| `production` | `gh workflow run ci.yml --ref production -f suite=smoke -f browser=chromium` | `gh workflow run ci.yml --ref production -f suite=regression -f browser=all` |
+| Branch | Everything | Unit only | API only | UI only |
+|---|---|---|---|---|
+| `eyter_dev` | `gh workflow run ci.yml --ref eyter_dev -f suite=smoke -f browser=chromium -f layer=all` | `gh workflow run ci.yml --ref eyter_dev -f suite=smoke -f browser=chromium -f layer=unit` | `gh workflow run ci.yml --ref eyter_dev -f suite=smoke -f browser=chromium -f layer=api` | `gh workflow run ci.yml --ref eyter_dev -f suite=smoke -f browser=all -f layer=ui` |
+| `release` | `gh workflow run ci.yml --ref release -f suite=smoke -f browser=all -f layer=all` | `gh workflow run ci.yml --ref release -f suite=smoke -f browser=all -f layer=unit` | `gh workflow run ci.yml --ref release -f suite=smoke -f browser=all -f layer=api` | `gh workflow run ci.yml --ref release -f suite=smoke -f browser=firefox -f layer=ui` |
+| `main` | `gh workflow run ci.yml --ref main -f suite=smoke -f browser=all -f layer=all` | `gh workflow run ci.yml --ref main -f suite=smoke -f browser=all -f layer=unit` | `gh workflow run ci.yml --ref main -f suite=smoke -f browser=all -f layer=api` | `gh workflow run ci.yml --ref main -f suite=smoke -f browser=webkit -f layer=ui` |
+| `production` | `gh workflow run ci.yml --ref production -f suite=smoke -f browser=chromium -f layer=all` | `gh workflow run ci.yml --ref production -f suite=smoke -f browser=chromium -f layer=unit` | `gh workflow run ci.yml --ref production -f suite=smoke -f browser=chromium -f layer=api` | `gh workflow run ci.yml --ref production -f suite=smoke -f browser=chromium -f layer=ui` |
 
 Then follow it with `gh run watch` and open its **Summary** page for the result tables.
+
+### Regression: it starts from eyter_dev
+A manual regression starts from `eyter_dev` (Spec 000 RF-91, RF-92). When every job of that run
+passes, the last job (`chain-next`) starts the same run (same browser and layer) on the next
+branch, so the regression continues on `release`, `main` and `production`, in order. Each branch
+is tested on its own code at that moment; the chain never merges, pushes or promotes anything. A
+failure stops the chain.
+
+```bash
+gh workflow run ci.yml --ref eyter_dev -f suite=regression -f browser=all -f layer=all
+```
+
+A regression started directly on `release`, `main` or `production` is refused at once with
+"Regression starts from eyter_dev: run it there, it continues to release, main and production".
 
 ### Good to know
 - **`CI=true` set locally** makes the run behave like CI: 2 retries and `test.only` forbidden.
@@ -153,6 +189,29 @@ Then follow it with `gh run watch` and open its **Summary** page for the result 
   pattern that contains `|` breaks. Run the CLI with the real Node binary instead:
   `node node_modules/vitest/vitest.mjs run <file> -t "<pattern>"` or
   `node node_modules/@playwright/test/cli.js test --grep "<pattern>"`.
+
+## When a test fails
+Claude Code explains the failure, fixes it and records it in one step (Spec 000 RF-96, RF-97):
+
+1. Run the VS Code task **`Claude: analyze and fix last failure`**, or type `/fix-failure` in
+   Claude Code. For a red GitHub run, type `/fix-failure <run-id>` (the id is in the run's URL).
+2. Claude Code runs `npm run report:failures` (or `npm run report:failures -- --run <run-id>`),
+   which lists each failed test with its error, trace and screenshot, or each failed job with the
+   end of its log, with passwords and tokens redacted.
+3. It tells you the cause: a test bug, a framework bug, the demo site down, a real defect of the
+   shop, or a behavior change that needs a spec change.
+4. It fixes test bugs and framework bugs test-first, re-runs the failed tests and shows them green.
+   A behavior change is proposed as a spec change instead; a site outage or a shop defect is only
+   recorded.
+5. It adds the row to [docs/bug-log.md](docs/bug-log.md) and stops. It never commits or pushes:
+   you decide when.
+
+To only see what failed, run the task **`Tests: list last failures`** (`npm run report:failures`).
+
+## Bug log
+Every test or pipeline failure found and fixed is recorded in [docs/bug-log.md](docs/bug-log.md):
+what failed, where it failed (❌) and where it passed after the fix (✅), how it was fixed and the
+change that fixed it (Spec 000 RF-95).
 
 ## CI/CD (GitHub Actions)
 The repository lives on GitHub (`origin`: https://github.com/Eyter-Higuera/ecommerce-playwright-claude-code-sdd)

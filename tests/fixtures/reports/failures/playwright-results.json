@@ -1,0 +1,60 @@
+{
+  "config": {},
+  "suites": [
+    {
+      "title": "ui/login-page.spec.ts",
+      "file": "ui/login-page.spec.ts",
+      "specs": [
+        {
+          "title": "TC-900-30 login page shows the form",
+          "file": "ui/login-page.spec.ts",
+          "line": 12,
+          "tests": [{ "projectName": "chromium", "status": "expected", "results": [{ "status": "passed", "errors": [], "attachments": [] }] }]
+        }
+      ],
+      "suites": [
+        {
+          "title": "negative",
+          "file": "ui/login-page.spec.ts",
+          "specs": [
+            {
+              "title": "TC-900-31 shows the error message",
+              "file": "ui/login-page.spec.ts",
+              "line": 27,
+              "tests": [
+                {
+                  "projectName": "chromium",
+                  "status": "unexpected",
+                  "results": [
+                    {
+                      "status": "failed",
+                      "errors": [{ "message": "Error: expect(locator).toHaveText(expected) failed\n\nExpected: \"Incorrect email or password.\"\nReceived: \"Incorrect email or password\"" }],
+                      "attachments": [
+                        { "name": "screenshot", "contentType": "image/png", "path": "test-results/ui-login-page-TC-900-31-chromium/test-failed-1.png" },
+                        { "name": "trace", "contentType": "application/zip", "path": "test-results/ui-login-page-TC-900-31-chromium-retry1/trace.zip" }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "TC-900-32 rejects an empty password",
+              "file": "ui/login-page.spec.ts",
+              "line": 41,
+              "tests": [
+                {
+                  "projectName": "firefox",
+                  "status": "unexpected",
+                  "results": [{ "status": "timedOut", "errors": [{ "message": "Test timeout of 30000ms exceeded." }], "attachments": [] }]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": { "startTime": "2026-10-10T08:00:00.000Z", "duration": 42000, "expected": 1, "skipped": 0, "unexpected": 2, "flaky": 0 }
+}

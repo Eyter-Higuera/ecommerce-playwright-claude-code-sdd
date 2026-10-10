@@ -51,7 +51,7 @@ later job and the promotion (Spec 000 RF-83).
 When every job of a push run on `eyter_dev`, `release` or `main` passes, the workflow's last job
 merges the tested commit into the next branch (`.github/workflows/ci.yml`, Spec 000 RF-72 to RF-77).
 
-Manual runs: "Run workflow" (workflow_dispatch) with the inputs SUITE (smoke/regression) and BROWSER, on the selected branch; they never promote.
+Manual runs: "Run workflow" (workflow_dispatch), or the VS Code tasks, with the inputs SUITE (smoke/regression), BROWSER and LAYER (all/unit/api/ui) on the selected branch; the API and UI tests run as separate jobs. A manual regression starts from `eyter_dev` and, when it passes, continues by itself on `release`, `main` and `production`, each on its own code (Spec 000 RF-91); a regression started directly on a later branch is refused (RF-92). Manual runs never promote and never update the results page. Every failure found and fixed is recorded in `docs/bug-log.md` (RF-95).
 
 ## 7. Entry and exit criteria
 - **Entry:** spec in `test-cases-approved` status; environment reachable; secrets configured.

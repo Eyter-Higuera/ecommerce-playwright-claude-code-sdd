@@ -18,9 +18,10 @@
 # or main passes, the last job `promote` merges the tested commit into the next branch
 # (scripts/ci-promote.ts, RF-72 to RF-77) with the PROMOTION_TOKEN secret: merges made with the
 # default GITHUB_TOKEN would not start the next branch's run. A manual run (workflow_dispatch) runs
-# checks and unit-tests, then selects SUITE and BROWSER through npm run ci:run-suite (RF-60 to RF-63,
-# RF-80) and never promotes or publishes. Credentials come only from GitHub encrypted secrets; nothing
-# prints the environment (RF-64, RF-65, RF-81).
+# checks and unit-tests, then manual-api and manual-ui with the SUITE, BROWSER and LAYER inputs
+# through npm run ci:run-suite (RF-60 to RF-63, RF-80, RF-90); a manual regression starts only from
+# eyter_dev (RF-92). It never promotes or publishes. Credentials come only from GitHub encrypted
+# secrets; nothing prints the environment (RF-64, RF-65, RF-81).
 # tests/unit/ci/github-actions.test.ts checks this file.
 
 name: CI
@@ -40,6 +41,15 @@ on:
         type: choice
         options: [chromium, firefox, webkit, all]
         default: chromium
+      layer:
+        description: Tests to run (all = unit, then API and UI)
+        type: choice
+        options: [all, unit, api, ui]
+        default: all
+      chained:
+        description: Started by the regression chain from the previous branch (set by CI, leave off)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -67,6 +77,9 @@ jobs:
           - task: spec:check
             args: -- --summary
     steps:
+      # RF-92: a manual regression starts from eyter_dev; on a later branch only the chain may start it.
+      - if: github.event_name == 'workflow_dispatch' && inputs.suite == 'regression' && github.ref_name != 'eyter_dev' && !inputs.chained
+        run: echo "::error::Regression starts from eyter_dev: run it there, it continues to release, main and production" && exit 1
       - uses: actions/checkout@v5
       # The container user differs from the checkout owner; without this, git commands exit 128.
       - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -653,8 +666,8 @@ jobs:
 
   # --- Manual run (RF-80) -------------------------------------------------------------------------
 
-  run-suite:
-    if: github.event_name == 'workflow_dispatch'
+  manual-api:
+    if: github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == 'api')
     needs: unit-tests
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.63.0-noble
@@ -662,6 +675,7 @@ jobs:
       HOME: /root
       SUITE: ${{ inputs.suite }}
       BROWSER: ${{ inputs.browser }}
+      LAYER: api
       BASE_URL: ${{ secrets.BASE_URL }}
       API_BASE_URL: ${{ secrets.API_BASE_URL }}
       TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
@@ -677,7 +691,7 @@ jobs:
       - if: always()
         run: npm run report:flaky
       - if: always()
-        run: npm run report:summary -- --title "Manual run"
+        run: npm run report:summary -- --title "Manual API"
       - id: secrets
         if: always()
         run: npm run check:secrets
@@ -698,6 +712,79 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
           path: reports/summary.json
+
+  # Runs after manual-api, and also when manual-api was skipped (layer ui), never after it failed.
+  manual-ui:
+    if: ${{ !cancelled() && !failure() && github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == 'ui') }}
+    needs: [unit-tests, manual-api]
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.63.0-noble
+    env:
+      HOME: /root
+      SUITE: ${{ inputs.suite }}
+      BROWSER: ${{ inputs.browser }}
+      LAYER: ui
+      BASE_URL: ${{ secrets.BASE_URL }}
+      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      TEST_USER_2_EMAIL: ${{ secrets.TEST_USER_2_EMAIL }}
+      TEST_USER_2_PASSWORD: ${{ secrets.TEST_USER_2_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      # The container user differs from the checkout owner; without this, git commands exit 128.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: npm run ci:run-suite
+      - if: always()
+        run: npm run report:flaky
+      - if: always()
+        run: npm run report:summary -- --title "Manual UI"
+      - id: secrets
+        if: always()
+        run: npm run check:secrets
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ github.job }}-reports
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            playwright-report/
+            reports/
+            test-results/
+      - if: always() && steps.secrets.outcome == 'success'
+        uses: actions/upload-artifact@v5
+        with:
+          name: summary-${{ github.job }}
+          retention-days: 7
+          if-no-files-found: ignore
+          path: reports/summary.json
+
+  # --- Regression chain (RF-91) ------------------------------------------------------------------
+
+  # After a green manual regression on eyter_dev, release or main, start the same manual run on the
+  # next branch (chained=true), so a regression started on eyter_dev runs on the four branches in
+  # order, each on its own code. It only starts workflow runs: nothing is merged or promoted.
+  chain-next:
+    if: ${{ !cancelled() && !failure() && github.event_name == 'workflow_dispatch' && inputs.suite == 'regression' && github.ref_name != 'production' }}
+    needs: [checks, unit-tests, manual-api, manual-ui]
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.63.0-noble
+    permissions:
+      actions: write
+      contents: read
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SUITE: ${{ inputs.suite }}
+      BROWSER: ${{ inputs.browser }}
+      LAYER: ${{ inputs.layer }}
+    steps:
+      - uses: actions/checkout@v5
+      # The container user differs from the checkout owner; without this, git commands exit 128.
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - run: npm ci
+      - run: npm run ci:chain
 
   # --- Results page (RF-88) ------------------------------------------------------------------------
 
@@ -741,14 +828,14 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v4
 
-  # --- Promotion (RF-72 to RF-77) ---------------------------------------------------------------
+  # --- Promotion (RF-72 to RF-77)---------------------------------------------------------------
 
   # Last job: it starts only when no other job failed or was canceled (skipped gates of other
   # branches are fine). production is the last branch and never promotes; manual runs never promote.
   # One promotion at a time.
   promote:
     if: ${{ !cancelled() && !failure() && github.event_name == 'push' && (github.ref_name == 'eyter_dev' || github.ref_name == 'release' || github.ref_name == 'main') }}
-    needs: [checks, unit-tests, eyter-dev-api, eyter-dev-ui-chromium, release-api, release-ui-chromium, release-ui-firefox, release-ui-webkit, main-api, main-ui-chromium, main-ui-firefox, main-ui-webkit, production-api, production-ui-chromium, run-suite, publish-results]
+    needs: [checks, unit-tests, eyter-dev-api, eyter-dev-ui-chromium, release-api, release-ui-chromium, release-ui-firefox, release-ui-webkit, main-api, main-ui-chromium, main-ui-firefox, main-ui-webkit, production-api, production-ui-chromium, manual-api, manual-ui, chain-next, publish-results]
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.63.0-noble
     concurrency:

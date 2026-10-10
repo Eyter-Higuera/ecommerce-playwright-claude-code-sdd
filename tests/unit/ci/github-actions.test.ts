@@ -16,7 +16,7 @@ const PROMOTION_BRANCHES = ['eyter_dev', 'release', 'main', 'production'];
 const CHECK_TASKS = ['spec:check', 'lint', 'typecheck'];
 const CHECKS_JOB = 'checks';
 const UNIT_JOB = 'unit-tests';
-const SECRET_NAMES = ['BASE_URL', 'API_BASE_URL', 'TEST_USER_EMAIL', 'TEST_USER_PASSWORD', 'TEST_USER_2_EMAIL', 'TEST_USER_2_PASSWORD', 'PROMOTION_TOKEN'];
+const SECRET_NAMES = ['BASE_URL', 'API_BASE_URL', 'TEST_USER_EMAIL', 'TEST_USER_PASSWORD', 'TEST_USER_2_EMAIL', 'TEST_USER_2_PASSWORD', 'PROMOTION_TOKEN', 'GITHUB_TOKEN'];
 
 interface PushGate {
   branch: string;
@@ -43,7 +43,15 @@ const PUSH_GATES: Record<string, PushGate> = {
   ...gateChain('main', 'main', '@smoke', ['chromium', 'firefox', 'webkit']),
   ...gateChain('production', 'production', '@smoke', ['chromium']),
 };
-const PLAYWRIGHT_JOBS = [...Object.keys(PUSH_GATES), 'run-suite'];
+/** RF-80 / RF-90: the manual run's API and UI jobs, and the LAYER each passes to ci:run-suite. */
+const MANUAL_JOBS = { 'manual-api': { layer: 'api', needs: ['unit-tests'] }, 'manual-ui': { layer: 'ui', needs: ['unit-tests', 'manual-api'] } } as const;
+const PLAYWRIGHT_JOBS = [...Object.keys(PUSH_GATES), ...Object.keys(MANUAL_JOBS)];
+/** RF-92: the guard that refuses a regression started on a later branch. */
+const REGRESSION_GUARD_IF = "if: github.event_name == 'workflow_dispatch' && inputs.suite == 'regression' && github.ref_name != 'eyter_dev' && !inputs.chained";
+const REGRESSION_GUARD_MESSAGE = 'Regression starts from eyter_dev: run it there, it continues to release, main and production';
+/** Jobs allowed to replace the default "previous jobs succeeded" condition, each for a documented reason. */
+const CONDITION_EXCEPTIONS = ['promote', 'manual-ui', 'chain-next'];
+const CHAIN_JOB = 'chain-next';
 /** RF-84 to RF-86: the files the summary steps read and write. */
 const UNIT_RESULTS = 'reports/unit-results.json';
 const COVERAGE_SUMMARY = 'reports/coverage/coverage-summary.json';
@@ -207,13 +215,13 @@ describe('GitHub workflow — positive', () => {
     expect(needs.get(CHECKS_JOB)).toEqual([]);
     expect(checks).toContain('fail-fast: true');
     expect(needs.get(UNIT_JOB)).toEqual([CHECKS_JOB]);
-    expect(needs.get('run-suite')).toEqual([UNIT_JOB]);
+    for (const [name, job] of Object.entries(MANUAL_JOBS)) expect(needs.get(name), name).toEqual(job.needs);
     for (const [name, gate] of Object.entries(PUSH_GATES)) expect(needs.get(name), name).toEqual([gate.needs]);
     // No test job overrides the default "previous jobs succeeded" condition, so a failed or canceled
     // job skips every later one; only promote decides with !cancelled() && !failure(), and only the
     // publish job runs always(), after the test jobs, to report them (RF-88).
     for (const [name, text] of jobs) {
-      if (name === 'promote' || name === PUBLISH_JOB) continue;
+      if (CONDITION_EXCEPTIONS.includes(name) || name === PUBLISH_JOB) continue;
       expect(conditionOf(text), name).not.toMatch(/always\(\)|cancelled\(\)|failure\(\)/);
     }
     expect(conditionOf(jobs.get(PUBLISH_JOB) ?? '')).toContain('always()');
@@ -223,19 +231,41 @@ describe('GitHub workflow — positive', () => {
   it('TC-000-115 GitHub manual run selects the suite through ci:run-suite', () => {
     // Arrange
     const content = workflow();
+    const jobs = jobsOf(content);
 
     // Act
-    const runSuite = jobsOf(content).get('run-suite') ?? '';
+    const manualJobs = Object.keys(MANUAL_JOBS).map((name) => [name, jobs.get(name) ?? ''] as const);
 
     // Assert: the manual run offers the RF-60/RF-61 choices and passes them to the shared runner (RF-80).
     expect(content).toMatch(/workflow_dispatch:\s*\n\s+inputs:/);
     expect(content).toContain('options: [smoke, regression]');
     expect(content).toContain('options: [chromium, firefox, webkit, all]');
-    expect(runSuite).toContain("if: github.event_name == 'workflow_dispatch'");
-    expect(runSuite).toContain('SUITE: ${{ inputs.suite }}');
-    expect(runSuite).toContain('BROWSER: ${{ inputs.browser }}');
-    expect(runSuite).toContain('npm run ci:run-suite');
-    expect(needsOf(runSuite)).toEqual([UNIT_JOB]);
+    for (const [name, text] of manualJobs) {
+      expect(conditionOf(text), name).toContain("github.event_name == 'workflow_dispatch'");
+      expect(text, name).toContain('SUITE: ${{ inputs.suite }}');
+      expect(text, name).toContain('BROWSER: ${{ inputs.browser }}');
+      expect(text, name).toContain('npm run ci:run-suite');
+    }
+  });
+
+  it('TC-000-141 the manual run has a layer input and separate API and UI jobs', () => {
+    // Arrange
+    const content = workflow();
+    const jobs = jobsOf(content);
+
+    // Act
+    const api = jobs.get('manual-api') ?? '';
+    const ui = jobs.get('manual-ui') ?? '';
+
+    // Assert: the layer and chained inputs (RF-90, RF-91); each manual job runs its layer only, the
+    // UI job after the API job, and also when the API job was skipped (layer ui) but never after it
+    // failed; layer unit stops after unit-tests; the old single job is gone (RF-80, RF-83).
+    expect(content).toMatch(/ {6}layer:\s*\n(?: {8}.*\n)*? {8}options: \[all, unit, api, ui\]\s*\n {8}default: all/);
+    expect(content).toMatch(/ {6}chained:\s*\n(?: {8}.*\n)*? {8}type: boolean\s*\n {8}default: false/);
+    expect(conditionOf(api)).toBe("github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == 'api')");
+    expect(conditionOf(ui)).toBe("${{ !cancelled() && !failure() && github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == 'ui') }}");
+    for (const [name, job] of Object.entries(MANUAL_JOBS)) expect(jobs.get(name), name).toContain(`LAYER: ${job.layer}`);
+    expect(jobs.has('run-suite')).toBe(false);
   });
 
   it('TC-000-127 CI jobs write their summaries before the secrets scan', () => {
@@ -331,8 +361,8 @@ describe('GitHub workflow — negative', () => {
     expect(promoteJob).toMatch(/concurrency:\s*\n\s+group: promotion/);
     expect(content).not.toContain('continue-on-error');
     expect(content).not.toMatch(/push\s+(-f|--force|--delete)|branch\s+-[dD]\b/);
-    // The run-suite and production jobs never reach promote (RF-73).
-    expect(jobs.get('run-suite')).not.toContain('ci:promote');
+    // The manual and production jobs never reach promote (RF-73).
+    for (const name of Object.keys(MANUAL_JOBS)) expect(jobs.get(name), name).not.toContain('ci:promote');
     for (const name of gatesOf('production')) expect(jobs.get(name), name).not.toContain('ci:promote');
   });
 });
@@ -412,8 +442,43 @@ describe('GitHub workflow — security', () => {
     expect(step('uses: actions/upload-pages-artifact@')).toBeGreaterThan(step('run: npm run check:secrets'));
     expect(step('uses: actions/deploy-pages@')).toBeGreaterThan(step('uses: actions/upload-pages-artifact@'));
     // The manual run never publishes; the promotion waits for the publication (RF-73).
-    expect(jobs.get('run-suite')).not.toMatch(/report:pages|deploy-pages/);
+    for (const name of Object.keys(MANUAL_JOBS)) expect(jobs.get(name), name).not.toMatch(/report:pages|deploy-pages/);
     expect(needsOf(jobs.get('promote') ?? '')).toContain(PUBLISH_JOB);
+  });
+
+  it('TC-000-146 a regression started directly on a later branch is refused', () => {
+    // Arrange
+    const checks = jobsOf(workflow()).get(CHECKS_JOB) ?? '';
+
+    // Act
+    const steps = lines(checks.slice(checks.indexOf('    steps:'))).filter((line) => !line.startsWith('#'));
+
+    // Assert: the first step, before checkout, stops a direct regression on release, main or
+    // production with the RF-92 message; its condition leaves push runs, smoke runs, eyter_dev and
+    // chained runs alone. Every later job needs checks, so nothing else runs.
+    expect(steps[1]).toBe(`- ${REGRESSION_GUARD_IF}`);
+    expect(steps[2]).toBe(`run: echo "::error::${REGRESSION_GUARD_MESSAGE}" && exit 1`);
+    expect(steps[3]).toMatch(/^- uses: actions\/checkout@/);
+  });
+
+  it('TC-000-144 only the chain job can dispatch runs and it never merges', () => {
+    // Arrange
+    const jobs = jobsOf(workflow());
+    const chainJob = jobs.get(CHAIN_JOB) ?? '';
+
+    // Act
+    const permissions = /^ {4}permissions:\s*\n((?: {6}\S.*\n)*)/m.exec(chainJob)?.[1]?.trim().split(/\s*\n\s*/) ?? [];
+
+    // Assert: it runs only after a green manual regression on eyter_dev, release or main (RF-91),
+    // waits for every manual job, may only start workflow runs, and never merges or promotes.
+    expect(conditionOf(chainJob)).toBe("${{ !cancelled() && !failure() && github.event_name == 'workflow_dispatch' && inputs.suite == 'regression' && github.ref_name != 'production' }}");
+    expect(new Set(needsOf(chainJob))).toEqual(new Set([CHECKS_JOB, UNIT_JOB, ...Object.keys(MANUAL_JOBS)]));
+    expect(permissions).toEqual(['actions: write', 'contents: read']);
+    for (const [name, text] of jobs) if (name !== CHAIN_JOB) expect(text, name).not.toContain('actions: write');
+    expect(chainJob).toContain('GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}');
+    for (const input of ['suite', 'browser', 'layer']) expect(chainJob, input).toContain(`${input.toUpperCase()}: \${{ inputs.${input} }}`);
+    expect(chainJob).toContain('run: npm run ci:chain');
+    expect(chainJob).not.toMatch(/ci:promote|report:pages|deploy-pages/);
   });
 
   it('TC-000-95 CI script check flags environment printing', () => {

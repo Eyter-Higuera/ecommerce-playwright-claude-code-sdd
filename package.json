@@ -11,16 +11,19 @@
     "postinstall": "playwright install chromium firefox webkit",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:unit": "vitest run",
+    "test:unit:report": "vitest run --reporter=default --reporter=json --outputFile.json=reports/unit-results.json",
     "test:unit:ci": "vitest run --coverage --reporter=default --reporter=json --outputFile.json=reports/unit-results.json",
     "lint": "eslint .",
     "build:scripts": "tsc -p tsconfig.scripts.json",
     "report:flaky": "npm run build:scripts --silent && node dist/scripts/flaky-summary.js",
     "report:summary": "npm run build:scripts --silent && node dist/scripts/test-summary.js",
     "report:pages": "npm run build:scripts --silent && node dist/scripts/results-page.js",
+    "report:failures": "npm run build:scripts --silent && node dist/scripts/failure-report.js",
     "spec:check": "npm run build:scripts --silent && node dist/scripts/spec-check/run.js",
     "check:secrets": "npm run build:scripts --silent && node dist/scripts/check-secrets.js",
     "ci:run-suite": "npm run build:scripts --silent && node dist/scripts/ci-run-suite.js",
-    "ci:promote": "npm run build:scripts --silent && node dist/scripts/ci-promote.js"
+    "ci:promote": "npm run build:scripts --silent && node dist/scripts/ci-promote.js",
+    "ci:chain": "npm run build:scripts --silent && node dist/scripts/ci-chain.js"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

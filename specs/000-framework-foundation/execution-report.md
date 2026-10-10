@@ -11,7 +11,7 @@ Legend: ✅ = passed · ❌ = failed
 ## Summary
 | Tasks completed | Passed | Failed |
 |-----------------|--------|--------|
-| 41 / 41 | ✅ 41 | ❌ 0 |
+| 49 / 49 | ✅ 49 | ❌ 0 |
 
 ## Results
 | Task / File | Purpose | Passed | Failed |
@@ -265,3 +265,61 @@ Legend: ✅ = passed · ❌ = failed
 | main 37946344274 | api → chromium → firefox → webkit (@smoke), publish, promote: success | ✅ | |
 | production 37947365291 | api → chromium (@smoke), publish: success; promote skipped | ✅ | |
 | TC-000-133 results page | eyter_dev and release entries read back; main and production not readable because Pages was disabled afterwards; Pages re-enabled, re-check on the next chain | | |
+
+## Change after validation: manual runs by layer, regression chain, VS Code tasks, bug log (clarifications 18 and 19)
+| Task / File | Purpose | Passed | Failed |
+|-------------|---------|:------:|:------:|
+| **T42 — Add LAYER to the manual-run selector** | Done when: `npx vitest run tests/unit/ci/ci-run-suite.test.ts` passes | ✅ | |
+| scripts/ci-run-suite.ts | LAYER all (default) / unit / api / ui; unit tests run first and a failure stops Playwright; invalid LAYER names the allowed values | ✅ | |
+| tests/unit/ci/ci-run-suite.test.ts | TC-000-137, 138, 139, 140 new; TC-000-90 and 92 updated — 7 passed | ✅ | |
+| `LAYER=api SUITE=smoke BROWSER=chromium npm run ci:run-suite` (real) | 5 passed (api only); `LAYER=bogus` refused with the RF-62 message | ✅ | |
+| **T43 — Split the manual run into layer jobs and add the regression guard** | Done when: `npm run test:unit -- tests/unit/ci` passes | ✅ | |
+| .github/workflows/ci.yml | inputs `layer` (all, unit, api, ui) and `chained`; `run-suite` replaced by `manual-api` (LAYER=api) → `manual-ui` (LAYER=ui, runs when manual-api was skipped, never after it failed); first step of `checks` refuses a direct regression on release, main or production (RF-92) | ✅ | |
+| tests/unit/ci/github-actions.test.ts | TC-000-141, 146 new; TC-000-115, 119, 130, 101 updated — CI tests 31 passed | ✅ | |
+| Workflow mutations (3, reverted) | guard without `!inputs.chained`, `always()` on manual-ui, wrong LAYER on manual-api: each caught | ✅ | |
+| **T44 — Implement the regression chain** | Done when: `npm run test:unit -- tests/unit/ci` passes | ✅ | |
+| scripts/ci-chain.ts, package.json (`ci:chain`), scripts/ci-promote.ts (`connectGitHub` exported) | After a green manual regression: `POST …/actions/workflows/ci.yml/dispatches` on the next branch with the same suite, browser and layer and `chained: "true"`; production ends the chain; smoke never chains; a refused dispatch fails naming the next branch; missing token fails before any call | ✅ | |
+| .github/workflows/ci.yml | `chain-next`: manual regression on eyter_dev, release or main, `!cancelled() && !failure()`, needs checks, unit-tests, manual-api, manual-ui; only job with `actions: write`; `GITHUB_TOKEN` from `secrets.GITHUB_TOKEN`; `promote` also needs it | ✅ | |
+| tests/unit/ci/ci-chain.test.ts, tests/unit/ci/github-actions.test.ts | TC-000-142, 143, 144 new; TC-000-116 secret list adds GITHUB_TOKEN — CI tests 34 passed | ✅ | |
+| Workflow mutations (2, reverted) | chain also for smoke, `actions: write` on another job: both caught by TC-000-144 | ✅ | |
+| **T45 — Add the VS Code tasks** | Done when: `npx vitest run tests/unit/docs/vscode-tasks.test.ts` passes | ✅ | |
+| .vscode/tasks.json, .vscode/extensions.json | Pickers layer, suite, browser, branch; tasks: run locally (`ci:run-suite` with SUITE/BROWSER/LAYER), unit, unit with coverage, open report, start manual GitHub run, watch run; recommends Playwright Test and Vitest | ✅ | |
+| tests/unit/docs/vscode-tasks.test.ts | TC-000-148 — 1 passed (TC-000-149, running each task in VS Code, is manual) | ✅ | |
+| **T46 — Add the bug log and its AGENTS.md rule** | Done when: `npx vitest run tests/unit/docs/bug-log.test.ts` passes | ✅ | |
+| docs/bug-log.md, AGENTS.md | Five-column table with legend; 7 rows: the failures found and fixed while building clarifications 14 to 17 (CI git 128, lint, CRLF after stash, Vitest config import, YAML comment, missed permission mutation, Pages disabled); AGENTS.md step 4 makes recording mandatory | ✅ | |
+| tests/unit/docs/bug-log.test.ts | TC-000-151 — 1 passed | ✅ | |
+| **T47 — Document the manual runs in the README** | Done when: `npx vitest run tests/unit/docs` passes; lint, typecheck, test:unit and spec:check exit 0 | ✅ | |
+| README.md, AGENTS.md, docs/test-plan.md | "In VS Code" (every task), manual GitHub run with layer (table for the 4 branches × all/unit/api/ui), "Regression: it starts from eyter_dev", "Bug log" section; AGENTS.md commands; test-plan §6 manual runs | ✅ | |
+| tests/unit/docs/readme.test.ts | TC-000-150 new — docs tests 4 passed | ✅ | |
+
+### Last full run (after T47)
+| Command | Result | Passed | Failed |
+|---------|--------|:------:|:------:|
+| `npm run test:unit` | 131 passed · 0 failed (34 files) | ✅ | |
+| `npm run test:unit -- tests/unit/ci` | 34 passed · 0 failed | ✅ | |
+| `npm run typecheck` / `npm run lint` | exit 0 / 0 errors (10 pre-existing warnings in tests/api) | ✅ | |
+| `npm run spec:check -- --write` | passed (5 specs); docs/traceability.md 478 rows | ✅ | |
+| `npm run check:secrets` | passed | ✅ | |
+| Manual TCs TC-000-145, 147, 149 | Pending: executed at validation after the push | | |
+
+## Change after validation: failure report and /fix-failure (clarifications 20 and 21)
+| Task / File | Purpose | Passed | Failed |
+|-------------|---------|:------:|:------:|
+| **T48 — Implement the failure report and the local unit results** | Done when: `npx vitest run tests/unit/reporting/failure-report.test.ts` passes | ✅ | |
+| scripts/failure-report.ts, package.json (`report:failures`, `test:unit:report`), scripts/ci-run-suite.ts (`UNIT_RUN_ARGS`), scripts/check-secrets.ts (`JWT_SHAPE` exported), .vscode/tasks.json (unit task) | Local Playwright and Vitest failures with date, location, first error line, trace and screenshot; `--run <id>` failed jobs/steps and the last 40 log lines without color codes; passwords from process env and `.env` and JWT tokens redacted; always exit 0; every local unit run writes `reports/unit-results.json` | ✅ | |
+| tests/unit/reporting/failure-report.test.ts, tests/fixtures/reports/failures/ | TC-000-152 to 157, 160, 161 — 8 passed (stubbed gh) | ✅ | |
+| `npm run report:failures` (real) | local: "No failed tests found …"; `-- --run 37918960715`: the failed `checks (test:unit)` job, its step and the TC-000-30 assertion, readable | ✅ | |
+| **T49 — Add the /fix-failure skill, its VS Code tasks and the README section** | Done when: `npx vitest run tests/unit/docs` passes; lint, typecheck, test:unit and spec:check exit 0 | ✅ | |
+| .claude/skills/fix-failure/SKILL.md | Steps: report:failures (local or `--run <id>`), "No failure found", unit failures first, cause classification, regression test first, spec change for behavior changes, no code fix for site outages or shop defects, re-run, bug-log row, never commit or push, never print secrets | ✅ | |
+| .vscode/tasks.json, README.md, AGENTS.md | Tasks "Tests: list last failures" and "Claude: analyze and fix last failure"; README "When a test fails" and skills row; AGENTS.md commands | ✅ | |
+| tests/unit/docs/fix-failure.test.ts, tests/unit/docs/vscode-tasks.test.ts | TC-000-158 new, TC-000-148 updated — docs tests 5 passed | ✅ | |
+
+### Last full run (after T49)
+| Command | Result | Passed | Failed |
+|---------|--------|:------:|:------:|
+| `npm run test:unit` | 140 passed · 0 failed (36 files) | ✅ | |
+| `npm run test:unit -- tests/unit/ci` | 34 passed · 0 failed | ✅ | |
+| `npm run typecheck` / `npm run lint` | exit 0 / 0 errors (10 pre-existing warnings in tests/api) | ✅ | |
+| `npm run spec:check -- --write` | passed (5 specs); docs/traceability.md 494 rows | ✅ | |
+| `npm run check:secrets` | passed | ✅ | |
+| Manual TCs TC-000-145, 147, 149, 159 | Pending: executed at validation | | |

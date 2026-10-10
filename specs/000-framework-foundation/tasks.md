@@ -276,6 +276,62 @@ own TCs pass and the earlier tasks' tests still pass. Manual TCs (TC-000-01, 02,
 Manual TCs of this change (TC-000-110, TC-000-118, TC-000-133, TC-000-136) are executed at validation;
 TC-000-136 runs before the repository is made public.
 
+## Change after validation: manual runs by layer, regression chain, VS Code tasks, bug log (clarifications 18 and 19)
+
+- [x] T42 — Add LAYER to the manual-run selector
+  - Covers: RF-61, RF-62, RF-90 / TC-000-137, TC-000-138, TC-000-139, TC-000-140
+  - Depends on: —
+  - Files: scripts/ci-run-suite.ts, tests/unit/ci/ci-run-suite.test.ts
+  - Done when: `npx vitest run tests/unit/ci/ci-run-suite.test.ts` passes
+
+- [x] T43 — Split the manual run into layer jobs and add the regression guard
+  - Covers: RF-80, RF-83, RF-90, RF-92 / TC-000-141, TC-000-146, TC-000-115, TC-000-119, TC-000-130
+  - Depends on: T42
+  - Files: .github/workflows/ci.yml, tests/unit/ci/github-actions.test.ts
+  - Done when: `npm run test:unit -- tests/unit/ci` passes
+
+- [x] T44 — Implement the regression chain
+  - Covers: RF-81, RF-91 / TC-000-142, TC-000-143, TC-000-144
+  - Depends on: T43
+  - Files: scripts/ci-chain.ts, package.json (`ci:chain`), .github/workflows/ci.yml, tests/unit/ci/ci-chain.test.ts, tests/unit/ci/github-actions.test.ts
+  - Done when: `npm run test:unit -- tests/unit/ci` passes
+
+- [x] T45 — Add the VS Code tasks
+  - Covers: RF-93 / TC-000-148
+  - Depends on: T42
+  - Files: .vscode/tasks.json, .vscode/extensions.json, tests/unit/docs/vscode-tasks.test.ts
+  - Done when: `npx vitest run tests/unit/docs/vscode-tasks.test.ts` passes
+
+- [x] T46 — Add the bug log and its AGENTS.md rule
+  - Covers: RF-95 / TC-000-151
+  - Depends on: —
+  - Files: docs/bug-log.md, AGENTS.md, tests/unit/docs/bug-log.test.ts
+  - Done when: `npx vitest run tests/unit/docs/bug-log.test.ts` passes
+
+- [x] T47 — Document the manual runs in the README
+  - Covers: RF-94 / TC-000-150
+  - Depends on: T43, T44, T45, T46
+  - Files: README.md, AGENTS.md (commands), docs/test-plan.md (§6), tests/unit/docs/readme.test.ts
+  - Done when: `npx vitest run tests/unit/docs` passes; lint, typecheck, test:unit and spec:check exit 0
+
+Manual TCs of this change (TC-000-145, TC-000-147, TC-000-149) are executed at validation.
+
+## Change after validation: failure report and /fix-failure (clarifications 20 and 21)
+
+- [x] T48 — Implement the failure report and the local unit results
+  - Covers: RF-90, RF-93, RF-96 / TC-000-152, TC-000-153, TC-000-154, TC-000-155, TC-000-156, TC-000-157, TC-000-160, TC-000-161
+  - Depends on: —
+  - Files: scripts/failure-report.ts, scripts/ci-run-suite.ts, package.json (`report:failures`, `test:unit:report`), tests/fixtures/reports/failures/, tests/unit/reporting/failure-report.test.ts
+  - Done when: `npx vitest run tests/unit/reporting/failure-report.test.ts` passes
+
+- [x] T49 — Add the /fix-failure skill, its VS Code tasks and the README section
+  - Covers: RF-93, RF-97 / TC-000-158, TC-000-148
+  - Depends on: T48
+  - Files: .claude/skills/fix-failure/SKILL.md, .vscode/tasks.json, README.md, AGENTS.md, tests/unit/docs/fix-failure.test.ts, tests/unit/docs/vscode-tasks.test.ts
+  - Done when: `npx vitest run tests/unit/docs` passes; lint, typecheck, test:unit and spec:check exit 0
+
+Manual TC of this change (TC-000-159) is executed at validation.
+
 ## Coverage check
 | Test case (Automate: Y) | Task |
 |-------------------------|------|
@@ -371,9 +427,9 @@ TC-000-136 runs before the repository is made public.
 | TC-000-100 | T34 |
 | TC-000-101 | T34 |
 | TC-000-114 | T34 |
-| TC-000-115 | T34 |
+| TC-000-115 | T34, T43 |
 | TC-000-116 | T34 |
-| TC-000-119 | T34 |
+| TC-000-119 | T34, T43 |
 | TC-000-120 | T35 |
 | TC-000-121 | T35 |
 | TC-000-122 | T35 |
@@ -387,5 +443,26 @@ TC-000-136 runs before the repository is made public.
 | TC-000-129 | T39 |
 | TC-000-131 | T39 |
 | TC-000-134 | T39 |
-| TC-000-130 | T40 |
+| TC-000-130 | T40, T43 |
 | TC-000-132 | T41 |
+| TC-000-137 | T42 |
+| TC-000-138 | T42 |
+| TC-000-139 | T42 |
+| TC-000-140 | T42 |
+| TC-000-141 | T43 |
+| TC-000-146 | T43 |
+| TC-000-142 | T44 |
+| TC-000-143 | T44 |
+| TC-000-144 | T44 |
+| TC-000-148 | T45, T49 |
+| TC-000-151 | T46 |
+| TC-000-150 | T47 |
+| TC-000-152 | T48 |
+| TC-000-153 | T48 |
+| TC-000-154 | T48 |
+| TC-000-155 | T48 |
+| TC-000-156 | T48 |
+| TC-000-157 | T48 |
+| TC-000-160 | T48 |
+| TC-000-161 | T48 |
+| TC-000-158 | T49 |
