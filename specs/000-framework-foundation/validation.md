@@ -267,3 +267,11 @@ Spec clarification 24 (Mode C, approved by the user): local Playwright runs use 
 gets a `Date` column, marks only in `Passed ✅` and `Failed ❌`, and `Cause` and `Solution` (RF-95).
 - Automated, PASS: TC-000-175, TC-000-176 (T53) and TC-000-151 updated (T54); unit suite 153 passed.
 - Spec 000 stays `validated`: 99 RFs, 171 TCs (153 automated, 18 manual).
+
+### Change after validation: report and /fix-failure after VS Code runs (2026-10-10)
+Spec clarification 25 (Mode C, approved by the user): after a VS Code run task, the Playwright
+report opens in the browser (unit summary for a unit-only run) and a failed run starts Claude Code
+with `/fix-failure` (RF-100).
+- Automated, PASS: TC-000-177 to 183 (T55), TC-000-148 and 150 updated (T56); unit suite 160 passed.
+- Spec 000 stays `validated`: 100 RFs, 179 TCs (160 automated, 19 manual).
+- Still to run (manual): TC-000-184 (a failing and a passing VS Code run on this PC).

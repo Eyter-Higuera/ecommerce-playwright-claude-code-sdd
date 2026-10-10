@@ -282,8 +282,17 @@ Status: `automated` (test exists) · `skipped` (only skipped tests) · `manual` 
 | 000 | RF-98 | TC-000-171 | — | manual |
 | 000 | RF-98 | TC-000-172 | tests/unit/ci/run-branch.test.ts | automated |
 | 000 | RF-98 | TC-000-174 | tests/unit/ci/run-branch.test.ts | automated |
+| 000 | RF-98 | TC-000-179 | tests/unit/ci/local-run.test.ts | automated |
 | 000 | RF-99 | TC-000-175 | tests/unit/reporting/reporters.test.ts | automated |
 | 000 | RF-99 | TC-000-176 | tests/unit/reporting/reporters.test.ts | automated |
+| 000 | RF-100 | TC-000-177 | tests/unit/ci/local-run.test.ts | automated |
+| 000 | RF-100 | TC-000-178 | tests/unit/ci/local-run.test.ts | automated |
+| 000 | RF-100 | TC-000-179 | tests/unit/ci/local-run.test.ts | automated |
+| 000 | RF-100 | TC-000-180 | tests/unit/ci/local-run.test.ts | automated |
+| 000 | RF-100 | TC-000-181 | tests/unit/ci/local-run.test.ts | automated |
+| 000 | RF-100 | TC-000-182 | tests/unit/ci/local-run.test.ts | automated |
+| 000 | RF-100 | TC-000-183 | tests/unit/ci/local-run.test.ts | automated |
+| 000 | RF-100 | TC-000-184 | — | manual |
 | 001 | RF-1 | TC-001-01 | tests/ui/auth-form-login.spec.ts | automated |
 | 001 | RF-1 | TC-001-10 | tests/ui/auth-login-validation.spec.ts | automated |
 | 001 | RF-2 | TC-001-02 | tests/ui/auth-form-login.spec.ts | automated |

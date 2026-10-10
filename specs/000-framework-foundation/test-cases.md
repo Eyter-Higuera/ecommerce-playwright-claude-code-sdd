@@ -4,10 +4,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 <!-- Allowed values: draft | approved -->
 
 ## Summary
-- 171 test cases for 99 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
+- 179 test cases for 100 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
   the positive case of one RF and the negative case of another (decision tables and partitions).
-- Layers: unit 149, api 1, mocked 2, ui 1, integration 18.
-- Automated: 153; manual: 18.
+- Layers: unit 156, api 1, mocked 2, ui 1, integration 19.
+- Automated: 160; manual: 19.
 - Smoke: 2 TCs (2%), both P1.
 - "unit" TCs run in Vitest with no real network: they inspect config, run CLIs (tsc, ESLint,
   Playwright `--list`, spec:check, check:secrets) on local fixtures, or test helpers with stubs.
@@ -116,6 +116,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-97 | TC-000-158, TC-000-159 | — | — | — | 2 |
 | RF-98 | TC-000-163, TC-000-164, TC-000-169, TC-000-171 | TC-000-166, TC-000-167 | TC-000-165, TC-000-172 | TC-000-168, TC-000-174 | 10 |
 | RF-99 | TC-000-175 | TC-000-176 | TC-000-175 | — | 2 |
+| RF-100 | TC-000-177, TC-000-178, TC-000-179, TC-000-184 | TC-000-181, TC-000-182 | TC-000-180 | TC-000-183 | 8 |
 
 ## Test cases
 
@@ -2420,7 +2421,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `.vscode/tasks.json`, `.vscode/extensions.json` |
 | Steps           | **Given** the VS Code configuration **When** it is inspected **Then** every choice and command is there |
-| Expected result | pickString inputs `layer` (all, unit, api, ui), `suite` (smoke, regression), `browser` (chromium, firefox, webkit, all) and `branch` (eyter_dev, release, main, production); a local task runs `npm run ci:run-suite` with SUITE, BROWSER and LAYER from those inputs; tasks run `npm run test:unit:report`, `npm run test:unit:ci` and `npx playwright show-report`; a branch task runs `npm run test:branch` with BRANCH, SUITE, BROWSER and LAYER from the pickers; no task runs a `gh` command (local only, RF-93); extensions.json recommends `ms-playwright.playwright` and `vitest.explorer` |
+| Expected result | pickString inputs `layer` (all, unit, api, ui), `suite` (smoke, regression), `browser` (chromium, firefox, webkit, all) and `branch` (eyter_dev, release, main, production); a local task runs `npm run test:local -- ci:run-suite` with SUITE, BROWSER and LAYER from those inputs (RF-100); tasks run `npm run test:unit:report`, `npm run test:unit:ci` and `npx playwright show-report`; a branch task runs `npm run test:local -- test:branch` with BRANCH, SUITE, BROWSER and LAYER from the pickers; no task runs a `gh` command (local only, RF-93); extensions.json recommends `ms-playwright.playwright` and `vitest.explorer` |
 | Automate        | Y |
 
 ### TC-000-149 — each VS Code task runs from the Command Palette
@@ -2452,7 +2453,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `README.md` |
 | Steps           | **Given** the README **When** it is inspected **Then** the manual runs are fully documented |
-| Expected result | A VS Code section names every task and `Tasks: Run Task` and says they never start a pipeline; the manual GitHub run section shows `-f layer=` for each of the four branches; the regression chain section says it starts from eyter_dev, continues to release, main and production, never merges, and is refused on a later branch |
+| Expected result | A VS Code section names every task and `Tasks: Run Task` and says they never start a pipeline, and shows the worktree folder as `%LOCALAPPDATA%\ecommerce-playwright-sdd\worktrees\<branch>` with no control character in the section; the manual GitHub run section shows `-f layer=` for each of the four branches; the regression chain section says it starts from eyter_dev, continues to release, main and production, never merges, and is refused on a later branch |
 | Automate        | Y |
 
 ### TC-000-151 — the bug log has its table and the AI rule
@@ -2854,6 +2855,134 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Steps           | **Given** a CI run **When** the config is resolved **Then** the worker count is not limited |
 | Expected result | `workers` is not set, so Playwright uses its default |
 | Automate        | Y |
+
+### TC-000-177 — a passing VS Code run opens its report and starts no Claude Code
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-100 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | State transition |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Stubbed run, browser opener, Claude starter and file checks (no real browser, no real Claude); `ci:run-suite` with LAYER=all exits 0; `playwright-report/index.html` written after the run started |
+| Steps           | **Given** a passing run **When** `test:local` finishes it **Then** only the report opens |
+| Expected result | The browser opener is called once with the repository `playwright-report/index.html`; Claude Code is not started; exit code 0 |
+| Automate        | Y |
+
+### TC-000-178 — a failing VS Code run opens its report first, then starts /fix-failure
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-100 |
+| Priority        | P1 |
+| Type            | Positive |
+| Technique       | State transition |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Stubbed run, browser opener, Claude starter and file checks (no real browser, no real Claude); `ci:run-suite` with LAYER=ui exits 1; fresh report |
+| Steps           | **Given** a failing run **When** `test:local` finishes it **Then** the report opens and Claude Code starts |
+| Expected result | Calls in this order: run, open `playwright-report/index.html`, start `claude "/fix-failure"`; exit code 1 (the run's code, kept after Claude Code closes) |
+| Automate        | Y |
+
+### TC-000-179 — a failing run on another branch opens the worktree report and starts /fix-failure <branch>
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-100, RF-98 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Stubbed run, browser opener, Claude starter and file checks (no real browser, no real Claude); checked-out branch eyter_dev; `test:branch` with BRANCH=release exits 1; fresh report in the release worktree |
+| Steps           | **Given** a failing release run **When** `test:local` finishes it **Then** the release results are shown and fixed |
+| Expected result | Opens `<worktrees>/release/playwright-report/index.html`; starts `claude "/fix-failure release"`; exit code 1 |
+| Automate        | Y |
+
+### TC-000-180 — a unit-only run prints the unit summary and opens no browser
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-100 |
+| Priority        | P2 |
+| Type            | Boundary |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Stubbed run, browser opener, Claude starter and file checks (no real browser, no real Claude); LAYER=unit; one passing and one failing run; `reports/unit-results.json` of each |
+| Steps           | **Given** a unit-only run **When** `test:local` finishes it **Then** the summary is printed in the terminal |
+| Expected result | The unit summary table (passed, failed, total) is printed; the browser opener is never called; Claude Code starts only for the failing run |
+| Automate        | Y |
+
+### TC-000-181 — a missing or stale report is not opened
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-100 |
+| Priority        | P2 |
+| Type            | Negative |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Stubbed run, browser opener, Claude starter and file checks (no real browser, no real Claude); LAYER=api; report file missing, then present but older than the run start |
+| Steps           | **Given** no report written by this run **When** `test:local` finishes **Then** an old report is never shown as the result |
+| Expected result | Prints "No Playwright report was written by this run" both times; the browser opener is never called |
+| Automate        | Y |
+
+### TC-000-182 — Claude Code missing prints how to start /fix-failure
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-100 |
+| Priority        | P3 |
+| Type            | Negative |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Stubbed run, browser opener, Claude starter and file checks (no real browser, no real Claude); failing run; starting `claude` fails (command not found) |
+| Steps           | **Given** Claude Code cannot start **When** the run failed **Then** the user is told what to do |
+| Expected result | Prints "Claude Code is not available: open it and type /fix-failure"; the report was opened; exit code is the run's (1), not the starter's |
+| Automate        | Y |
+
+### TC-000-183 — CI and Claude Code sessions open no browser and start no Claude Code
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-100 |
+| Priority        | P1 |
+| Type            | Security |
+| Technique       | Decision table |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Stubbed run, browser opener, Claude starter and file checks (no real browser, no real Claude); failing run with `CI=true`; failing run with `CLAUDECODE=1` |
+| Steps           | **Given** a CI run or a run inside Claude Code **When** `test:local` finishes **Then** nothing is opened or started |
+| Expected result | Neither the browser opener nor the Claude starter is called in both cases (no browser in CI, Claude Code never starts itself); exit code 1 |
+| Automate        | Y |
+
+### TC-000-184 — a failing VS Code run shows its report in the browser and opens Claude Code
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-100 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | Exploratory |
+| Layer           | integration |
+| Tags            | n/a (manual check in VS Code) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out, Claude Code installed |
+| Test data       | Task "Tests: run locally (layer, suite, browser)" with a test made to fail on purpose and reverted afterwards |
+| Steps           | **Given** VS Code on this PC **When** the task runs a failing and then a passing selection **Then** the report and Claude Code appear as specified |
+| Expected result | Failing run: the HTML report opens in the default browser, then Claude Code starts `/fix-failure` in the task terminal. Passing run: only the report opens |
+| Automate        | N |
 
 ## Out of scope for testing
 - Business flows (catalog, cart, checkout, orders) and login scenarios beyond RF-54 — later specs.

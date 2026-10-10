@@ -368,6 +368,22 @@ Manual TC of this change (TC-000-171) is executed at validation.
   - Files: docs/bug-log.md, AGENTS.md, .claude/skills/fix-failure/SKILL.md, README.md, tests/unit/docs/bug-log.test.ts
   - Done when: `npx vitest run tests/unit/docs` passes; lint, typecheck and spec:check exit 0
 
+## Change after validation: report and /fix-failure after VS Code runs (clarification 25)
+
+- [x] T55 — Implement test:local: report in the browser, then /fix-failure on failure
+  - Covers: RF-100 / TC-000-177, TC-000-178, TC-000-179, TC-000-180, TC-000-181, TC-000-182, TC-000-183
+  - Depends on: —
+  - Files: scripts/local-run.ts, package.json (`test:local`), tests/unit/ci/local-run.test.ts
+  - Done when: `npx vitest run tests/unit/ci/local-run.test.ts` passes
+
+- [x] T56 — Point the VS Code run tasks to test:local and document it
+  - Covers: RF-93, RF-98, RF-100 / TC-000-148, TC-000-150
+  - Depends on: T55
+  - Files: .vscode/tasks.json, README.md, AGENTS.md, docs/bug-log.md, tests/unit/docs/vscode-tasks.test.ts, tests/unit/docs/readme.test.ts
+  - Done when: `npm run test:unit`, lint, typecheck and spec:check exit 0
+
+Manual TC of this change (TC-000-184) is executed at validation.
+
 ## Coverage check
 | Test case (Automate: Y) | Task |
 |-------------------------|------|
@@ -490,9 +506,9 @@ Manual TC of this change (TC-000-171) is executed at validation.
 | TC-000-142 | T44 |
 | TC-000-143 | T44 |
 | TC-000-144 | T44 |
-| TC-000-148 | T45, T49, T51 |
+| TC-000-148 | T45, T49, T51, T56 |
 | TC-000-151 | T46, T54 |
-| TC-000-150 | T47, T52 |
+| TC-000-150 | T47, T52, T56 |
 | TC-000-152 | T48 |
 | TC-000-153 | T48 |
 | TC-000-154 | T48 |
@@ -514,3 +530,10 @@ Manual TC of this change (TC-000-171) is executed at validation.
 | TC-000-170 | T51 |
 | TC-000-175 | T53 |
 | TC-000-176 | T53 |
+| TC-000-177 | T55 |
+| TC-000-178 | T55 |
+| TC-000-179 | T55 |
+| TC-000-180 | T55 |
+| TC-000-181 | T55 |
+| TC-000-182 | T55 |
+| TC-000-183 | T55 |
