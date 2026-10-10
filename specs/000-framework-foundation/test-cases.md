@@ -4,10 +4,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 <!-- Allowed values: draft | approved -->
 
 ## Summary
-- 132 test cases for 89 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
+- 158 test cases for 97 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
   the positive case of one RF and the negative case of another (decision tables and partitions).
-- Layers: unit 115, api 1, mocked 2, ui 1, integration 13.
-- Automated: 119; manual: 13.
+- Layers: unit 137, api 1, mocked 2, ui 1, integration 17.
+- Automated: 141; manual: 17.
 - Smoke: 2 TCs (2%), both P1.
 - "unit" TCs run in Vitest with no real network: they inspect config, run CLIs (tsc, ESLint,
   Playwright `--list`, spec:check, check:secrets) on local fixtures, or test helpers with stubs.
@@ -77,8 +77,8 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-58 | TC-000-86, TC-000-88 | TC-000-87 | — | — | 3 |
 | RF-59 | TC-000-88 | TC-000-89 | — | — | 2 |
 | RF-60 | TC-000-90 | TC-000-91 | — | — | 2 |
-| RF-61 | TC-000-90 | TC-000-91 | — | — | 2 |
-| RF-62 | TC-000-90 | TC-000-91 | TC-000-91 | — | 2 |
+| RF-61 | TC-000-90, TC-000-137 | TC-000-91 | — | — | 3 |
+| RF-62 | TC-000-90 | TC-000-91, TC-000-139 | TC-000-91 | — | 3 |
 | RF-63 | TC-000-90 | TC-000-92 | — | — | 2 |
 | RF-64 | TC-000-93 | TC-000-94, TC-000-116 | — | TC-000-93, TC-000-94, TC-000-116 | 3 |
 | RF-65 | TC-000-86 | TC-000-95 | — | TC-000-95 | 2 |
@@ -94,9 +94,9 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-75 | TC-000-105 | TC-000-103 | TC-000-105 | — | 2 |
 | RF-76 | TC-000-103, TC-000-109 | TC-000-101 | — | TC-000-101 | 3 |
 | RF-77 | TC-000-103, TC-000-109 | TC-000-108 | — | TC-000-108 | 3 |
-| RF-78 | TC-000-86, TC-000-118 | TC-000-87 | — | — | 3 |
+| RF-78 | TC-000-86, TC-000-118 | TC-000-87, TC-000-162 | — | — | 4 |
 | RF-79 | TC-000-114, TC-000-118 | TC-000-116 | — | TC-000-114 | 3 |
-| RF-80 | TC-000-115 | TC-000-87 | — | — | 2 |
+| RF-80 | TC-000-115, TC-000-141 | TC-000-87 | — | — | 3 |
 | RF-81 | TC-000-116 | TC-000-101 | — | TC-000-116 | 2 |
 | RF-82 | TC-000-04, TC-000-86 | TC-000-05 | — | — | 3 |
 | RF-83 | TC-000-119 | TC-000-110, TC-000-87 | — | — | 3 |
@@ -106,6 +106,14 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-87 | — | TC-000-125 | — | — | 1 |
 | RF-88 | TC-000-128, TC-000-133 | TC-000-130, TC-000-134 | TC-000-129 | TC-000-130, TC-000-131, TC-000-136 | 7 |
 | RF-89 | TC-000-132, TC-000-133 | — | — | — | 2 |
+| RF-90 | TC-000-137, TC-000-138, TC-000-141 | TC-000-139 | TC-000-140 | — | 5 |
+| RF-91 | TC-000-142, TC-000-145 | TC-000-143 | — | TC-000-144 | 4 |
+| RF-92 | TC-000-146 | TC-000-146, TC-000-147 | — | — | 2 |
+| RF-93 | TC-000-148, TC-000-149 | — | — | — | 2 |
+| RF-94 | TC-000-150 | — | — | — | 1 |
+| RF-95 | TC-000-151, TC-000-159 | — | — | — | 2 |
+| RF-96 | TC-000-152, TC-000-153, TC-000-155, TC-000-160 | TC-000-157 | TC-000-154 | TC-000-156, TC-000-161 | 8 |
+| RF-97 | TC-000-158, TC-000-159 | — | — | — | 2 |
 
 ## Test cases
 
@@ -1898,7 +1906,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the GitHub workflow **When** the manual run is inspected **Then** it reuses the shared selector |
-| Expected result | `workflow_dispatch` has `suite` (smoke, regression) and `browser` (chromium, firefox, webkit, all) choice inputs; `run-suite` needs `unit-tests` and passes them as SUITE and BROWSER to `npm run ci:run-suite` |
+| Expected result | `workflow_dispatch` has `suite` (smoke, regression) and `browser` (chromium, firefox, webkit, all) choice inputs; `manual-api` and `manual-ui` (after `unit-tests`) pass them as SUITE and BROWSER to `npm run ci:run-suite` |
 | Automate        | Y |
 
 ### TC-000-116 — GitHub workflow is read-only, never ignores a failure, prints no environment and never pushes
@@ -1946,7 +1954,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the GitHub workflow **When** the `needs` of every job are inspected **Then** they form one chain per branch |
-| Expected result | `checks` has no `needs` and `fail-fast: true` (a failing check cancels the others); no job except `publish-results` uses `always()` in its condition and only `promote` uses `!cancelled() && !failure()`, so a failed or canceled job skips every later stage; `unit-tests` needs exactly `checks`; each branch API job and `run-suite` need exactly `unit-tests`; the first UI job of each branch needs exactly its API job; on `release` and `main` the firefox job needs exactly the chromium job and the webkit job needs exactly the firefox job; no Playwright job runs `npm run test:unit` |
+| Expected result | `checks` has no `needs` and `fail-fast: true` (a failing check cancels the others); no job except `publish-results` uses `always()` in its condition and only `promote`, `chain-next` and `manual-ui` use `!cancelled() && !failure()` (each documented in the workflow), so a failed or canceled job skips every later stage; `unit-tests` needs exactly `checks`; each branch API job and `run-suite` need exactly `unit-tests`; the first UI job of each branch needs exactly its API job; on `release` and `main` the firefox job needs exactly the chromium job and the webkit job needs exactly the firefox job; no Playwright job runs `npm run test:unit` |
 | Automate        | Y |
 
 ### TC-000-120 — test summary reports a Playwright run
@@ -2122,7 +2130,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Preconditions   | Repository checked out |
 | Test data       | `.github/workflows/ci.yml` |
 | Steps           | **Given** the GitHub workflow **When** the publish job and the permissions are inspected **Then** publishing is limited and scanned |
-| Expected result | `publish-results` runs with `always()` only for push events and needs every test job; it is the only job with `pages: write` and `id-token: write`; the top-level permissions stay `contents: read`; it uses the `github-pages` environment and `concurrency` group `pages`; `npm run report:pages` and `npm run check:secrets` run before `upload-pages-artifact`, which comes before `deploy-pages`; `run-suite` never publishes; `promote` needs `publish-results` |
+| Expected result | `publish-results` runs with `always()` only for push events and needs every test job; it is the only job with `pages: write` and `id-token: write`; the top-level permissions stay `contents: read`; it uses the `github-pages` environment and `concurrency` group `pages`; `npm run report:pages` and `npm run check:secrets` run before `upload-pages-artifact`, which comes before `deploy-pages`; the manual jobs (`manual-api`, `manual-ui`, `chain-next`) never publish; `promote` needs `publish-results` |
 | Automate        | Y |
 
 ### TC-000-131 — results page escapes test titles
@@ -2220,6 +2228,422 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Steps           | **Given** the whole history **When** it is searched for the `.env` password values (plain and URL-encoded) and JWT-shaped tokens **Then** nothing is found |
 | Expected result | Zero matches; the search command and its result (counts only, never the values) are recorded in validation.md before the visibility change |
 | Automate        | N — one-off check of the real history with real secret values; executed at validation, before the repository is made public |
+
+### TC-000-137 — manual-run selector picks the projects of each layer
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-90, RF-61 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | Decision table |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | LAYER × BROWSER: api × chromium, ui × chromium, ui × all, all × firefox; SUITE=smoke; a stub runner |
+| Steps           | **Given** each LAYER and BROWSER **When** the selection is built **Then** only that layer's projects are selected |
+| Expected result | api → `--project=api` only; ui × chromium → `--project=chromium` only; ui × all → chromium, firefox and webkit, no api; all × firefox → unit tests first, then `--project=api --project=firefox`; every Playwright selection has `--grep @smoke`; LAYER unset behaves as `all` |
+| Automate        | Y |
+
+### TC-000-138 — LAYER=unit runs only the unit tests
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-90 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | LAYER=unit, SUITE=smoke, BROWSER=chromium; a stub runner whose unit run exits 0, then 1 |
+| Steps           | **Given** LAYER=unit **When** `ci:run-suite` runs **Then** only Vitest runs |
+| Expected result | The unit runner is called once; Playwright is neither listed nor run; the exit code is the unit run's (0, then 1) |
+| Automate        | Y |
+
+### TC-000-139 — an unsupported LAYER is refused naming the allowed values
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-62, RF-90 |
+| Priority        | P2 |
+| Type            | Negative |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | LAYER=e2e and LAYER=API (wrong case) |
+| Steps           | **Given** an unsupported LAYER **When** `ci:run-suite` runs **Then** it fails before running anything |
+| Expected result | Exit code non-zero; message `Unsupported LAYER="e2e": allowed values are all, unit, api, ui` (same for `API`); no test runs |
+| Automate        | Y |
+
+### TC-000-140 — LAYER=all stops before Playwright when the unit tests fail
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-90 |
+| Priority        | P2 |
+| Type            | Boundary |
+| Technique       | State transition |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | LAYER=all, SUITE=regression, BROWSER=webkit; a stub runner whose unit run exits 1 |
+| Steps           | **Given** failing unit tests **When** `ci:run-suite` runs with LAYER=all **Then** the API and UI tests do not start |
+| Expected result | Exit code non-zero; Playwright is neither listed nor run; the output says the unit tests failed |
+| Automate        | Y |
+
+### TC-000-141 — the manual run has a layer input and separate API and UI jobs
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-80, RF-90, RF-83 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | Decision table |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** the manual-run inputs and jobs are inspected **Then** each layer maps to its jobs |
+| Expected result | `workflow_dispatch` has `layer` (options all, unit, api, ui; default all) and `chained` (boolean, default false); `manual-api` needs `unit-tests`, runs only for layer all or api with LAYER=api through `npm run ci:run-suite`; `manual-ui` needs `manual-api`, runs only for layer all or ui (also when `manual-api` was skipped, never after it failed) with LAYER=ui; both write their summary, scan and upload like every Playwright job; `run-suite` no longer exists |
+| Automate        | Y |
+
+### TC-000-142 — a passing regression run dispatches the same run on the next branch
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-91 |
+| Priority        | P1 |
+| Type            | Positive |
+| Technique       | State transition |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | Stub GitHub API; GITHUB_REF_NAME=eyter_dev, then release, then main; SUITE=regression, BROWSER=all, LAYER=api; a token |
+| Steps           | **Given** a green regression run on a branch **When** `ci:chain` runs **Then** it dispatches the next branch |
+| Expected result | One `POST /repos/<repo>/actions/workflows/ci.yml/dispatches` with `ref` release, main and production respectively and inputs `{suite: regression, browser: all, layer: api, chained: "true"}`; the token only in the Authorization header; message `Regression continues on <next>`; exit 0; no merge or other request |
+| Automate        | Y |
+
+### TC-000-143 — the chain stops on production, on smoke and on a refused dispatch
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-91 |
+| Priority        | P1 |
+| Type            | Negative |
+| Technique       | Decision table |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | Stub GitHub API; production with regression; eyter_dev with smoke; eyter_dev with regression and a 403 answer; a missing token |
+| Steps           | **Given** each case **When** `ci:chain` runs **Then** it dispatches nothing or fails clearly |
+| Expected result | production: exit 0, `production is the last branch: the regression chain ends here`, no request; smoke: exit 0, no request; 403: exit non-zero naming `release` and GitHub's message; missing token: exit non-zero naming `GITHUB_TOKEN`, no request |
+| Automate        | Y |
+
+### TC-000-144 — only the chain job can dispatch runs and it never merges
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-91, RF-81 |
+| Priority        | P1 |
+| Type            | Security |
+| Technique       | Decision table |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** the chain job and the permissions are inspected **Then** chaining is limited |
+| Expected result | `chain-next` runs only for `workflow_dispatch` with suite regression on eyter_dev, release or main, with `!cancelled() && !failure()`, after `checks`, `unit-tests`, `manual-api` and `manual-ui`; it runs `npm run ci:chain` with `GITHUB_TOKEN`; it is the only job with `actions: write`; it never runs `ci:promote`, `git push` or `git merge`; `promote` and `publish-results` never run for manual runs |
+| Automate        | Y |
+
+### TC-000-145 — a manual regression from eyter_dev runs on the four branches without merging
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-91 |
+| Priority        | P1 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | integration |
+| Tags            | n/a (manual check) |
+| Browsers        | n/a (pipeline level) |
+| Preconditions   | Workflow with the chain pushed; all branches green |
+| Test data       | A manual run on eyter_dev: suite regression, browser all, layer all |
+| Steps           | **Given** a manual regression on eyter_dev **When** it passes **Then** the same run follows on release, main and production |
+| Expected result | Four manual runs in order, the last three with `chained=true`; each tests its branch's head commit; no branch moves (heads equal before and after); production starts nothing |
+| Automate        | N — requires real GitHub Actions runs; executed at validation |
+
+### TC-000-146 — a regression started directly on a later branch is refused
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-92 |
+| Priority        | P1 |
+| Type            | Negative |
+| Technique       | Decision table |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** the first step of `checks` is inspected **Then** it guards the regression start |
+| Expected result | Before checkout, a step that runs only for `workflow_dispatch` with `inputs.suite == 'regression'`, `github.ref_name != 'eyter_dev'` and `!inputs.chained` prints `Regression starts from eyter_dev: run it there, it continues to release, main and production` and exits 1, so every later job is skipped; push runs, smoke runs, a regression on eyter_dev and a chained regression (`chained: true`) are never stopped by it |
+| Automate        | Y |
+
+### TC-000-147 — a direct regression on release fails at the guard
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-92 |
+| Priority        | P2 |
+| Type            | Negative |
+| Technique       | EP |
+| Layer           | integration |
+| Tags            | n/a (manual check) |
+| Browsers        | n/a (pipeline level) |
+| Preconditions   | Workflow with the guard pushed |
+| Test data       | A manual run on release: suite regression, chained false |
+| Steps           | **Given** a direct regression on release **When** it starts **Then** it stops at once |
+| Expected result | `checks` fails with the RF-92 message; every other job is skipped; no test runs and nothing is dispatched |
+| Automate        | N — requires a real GitHub Actions run; executed at validation |
+
+### TC-000-148 — VS Code tasks cover every local and GitHub selection
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-93 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.vscode/tasks.json`, `.vscode/extensions.json` |
+| Steps           | **Given** the VS Code configuration **When** it is inspected **Then** every choice and command is there |
+| Expected result | pickString inputs `layer` (all, unit, api, ui), `suite` (smoke, regression), `browser` (chromium, firefox, webkit, all) and `branch` (eyter_dev, release, main, production); a local task runs `npm run ci:run-suite` with SUITE, BROWSER and LAYER from those inputs; tasks run `npm run test:unit:report`, `npm run test:unit:ci` and `npx playwright show-report`; a GitHub task runs `gh workflow run ci.yml --ref ${input:branch} -f suite=${input:suite} -f browser=${input:browser} -f layer=${input:layer}` and another `gh run watch`; extensions.json recommends `ms-playwright.playwright` and `vitest.explorer` |
+| Automate        | Y |
+
+### TC-000-149 — each VS Code task runs from the Command Palette
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-93 |
+| Priority        | P3 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | integration |
+| Tags            | n/a (manual check) |
+| Browsers        | n/a (pipeline level) |
+| Preconditions   | VS Code with the repository open; `.env` filled in; GitHub CLI logged in |
+| Test data       | Tasks: Run Task → each task once (local api smoke on chromium, local unit, unit with coverage, show report, GitHub manual run on eyter_dev with smoke/chromium/api, watch) |
+| Steps           | **Given** VS Code **When** each task is run **Then** it does what its name says |
+| Expected result | Every local task ends with the expected exit code and output; the GitHub task starts a manual run visible in Actions; the watch task follows it |
+| Automate        | N — needs the VS Code UI; executed at validation |
+
+### TC-000-150 — README documents the VS Code tasks, the four manual inputs and the regression chain
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-94 |
+| Priority        | P3 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `README.md` |
+| Steps           | **Given** the README **When** it is inspected **Then** the manual runs are fully documented |
+| Expected result | A VS Code section names the tasks and `Tasks: Run Task`; the manual GitHub run section shows `-f layer=` for each of the four branches; the regression chain section says it starts from eyter_dev, continues to release, main and production, never merges, and is refused on a later branch |
+| Automate        | Y |
+
+### TC-000-151 — the bug log has its table and the AI rule
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-95 |
+| Priority        | P3 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `docs/bug-log.md`, `AGENTS.md` |
+| Steps           | **Given** the repository docs **When** they are inspected **Then** the bug log is ready to use |
+| Expected result | `docs/bug-log.md` has the header `| Bug / failure | Passed ✅ | Failed ❌ | How it is fixed | Solution |` and explains each column (Failed = where it failed, Passed = where it passed after the fix, empty until fixed); every row has five cells and a non-empty `Failed ❌`; AGENTS.md requires fixing a red test or pipeline run and recording it in `docs/bug-log.md` before finishing a task |
+| Automate        | Y |
+
+### TC-000-152 — failure report lists failed Playwright tests with error and evidence
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-96 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `tests/fixtures/reports/failures/` Playwright results with 3 tests: 1 passed, 1 failed with trace and screenshot attachments, 1 failed without attachments |
+| Steps           | **Given** the Playwright results **When** `report:failures` runs **Then** each failed test is listed |
+| Expected result | The results file is named with its modification date; two entries, in report order, each with the title, the project, `file:line` and the first line of the first error; the first also shows its trace and screenshot paths; the passed test is not listed; exit code 0 |
+| Automate        | Y |
+
+### TC-000-153 — failure report lists failed Vitest tests
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-96 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `tests/fixtures/reports/failures/` Vitest results with 1 failed test (multi-line failure message) and 2 passed tests |
+| Steps           | **Given** the Vitest results **When** `report:failures` runs **Then** the failed test is listed |
+| Expected result | One entry with the title, the test file and the first line of its failure message; exit code 0 |
+| Automate        | Y |
+
+### TC-000-154 — failure report without failures or without results says so
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-96 |
+| Priority        | P3 |
+| Type            | Boundary |
+| Technique       | BVA |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | Results with only passed tests; then a folder with no results files |
+| Steps           | **Given** nothing failed, then no results **When** `report:failures` runs **Then** it says no failure was found |
+| Expected result | Both print `No failed tests found in reports/results.json, reports/unit-results.json` (the second also says which files are missing); exit code 0 |
+| Automate        | Y |
+
+### TC-000-155 — failure report of a GitHub run lists the failed jobs, steps and log lines
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-96 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | A stubbed `gh` runner: `run view 123 --json jobs` answers 3 jobs (1 failed with 1 failed step); `run view 123 --log-failed` answers 60 log lines |
+| Steps           | **Given** a GitHub run with a failed job **When** `report:failures -- --run 123` runs **Then** the failed job is reported |
+| Expected result | `gh` is called with exactly those two argument lists; the output names the failed job and step and shows the last 40 log lines of that step; passed jobs are not listed; exit code 0 |
+| Automate        | Y |
+
+### TC-000-156 — failure report redacts secrets
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-96, RF-20, RF-22 |
+| Priority        | P1 |
+| Type            | Security |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | A Playwright error message and a `--log-failed` line that contain the TEST_USER_PASSWORD value and a JWT-shaped token; TEST_USER_PASSWORD set in the environment |
+| Steps           | **Given** failures whose text holds secrets **When** `report:failures` runs locally and with `--run` **Then** no secret is printed |
+| Expected result | Both outputs show `[REDACTED]` in place of the password and the token; neither value appears anywhere in the output |
+| Automate        | Y |
+
+### TC-000-157 — failure report of a GitHub run that cannot be read explains why
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-96 |
+| Priority        | P3 |
+| Type            | Negative |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | A stubbed `gh` runner that exits 1 with `run 999 not found` |
+| Steps           | **Given** a run that cannot be read **When** `report:failures -- --run 999` runs **Then** it explains the problem |
+| Expected result | The output says `Cannot read GitHub run 999: run 999 not found` (also when gh is not installed or not logged in); exit code 0 |
+| Automate        | Y |
+
+### TC-000-158 — the fix-failure skill and its VS Code tasks are in place
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-97 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.claude/skills/fix-failure/SKILL.md`, `.vscode/tasks.json` |
+| Steps           | **Given** the skill and the tasks **When** they are inspected **Then** the one-step flow is defined |
+| Expected result | The skill has `name: fix-failure` and a description; its steps run `npm run report:failures` (and `-- --run <id>`), say `No failure found` and change nothing when nothing failed, handle unit failures before Playwright ones, explain the cause, add a regression test first, propose a spec change for a behavior change, record site outages without a code fix, re-run the failed tests, add one `docs/bug-log.md` row per failure, and never commit, push or print secrets; VS Code has the tasks `Tests: list last failures` (`npm run report:failures`) and `Claude: analyze and fix last failure` (`claude "/fix-failure"`) |
+| Automate        | Y |
+
+### TC-000-159 — a deliberate local failure is explained, fixed and logged in one step
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-97, RF-95 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | integration |
+| Tags            | n/a (manual check) |
+| Browsers        | n/a (VS Code and Claude Code) |
+| Preconditions   | VS Code with Claude Code installed; `.env` filled in |
+| Test data       | A temporary wrong expected text in one UI smoke test |
+| Steps           | **Given** a red local run **When** the task `Claude: analyze and fix last failure` runs **Then** the failure is handled end to end |
+| Expected result | Claude Code names the failing test and its cause, fixes it, re-runs it green and adds a bug-log row with Failed ❌, Passed ✅, how it was fixed and the solution; nothing is committed or pushed |
+| Automate        | N — needs VS Code and an interactive Claude Code session; executed at validation |
+
+### TC-000-160 — every local unit-test run writes the results the failure report reads
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-96, RF-93, RF-90 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | EP |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `package.json`, `scripts/ci-run-suite.ts` (`UNIT_RUN_ARGS`), `.vscode/tasks.json` |
+| Steps           | **Given** the unit-test commands **When** they are inspected **Then** each writes the Vitest JSON results |
+| Expected result | `test:unit:report` and `test:unit:ci` run Vitest with `--reporter=default --reporter=json --outputFile.json=reports/unit-results.json`; `ci:run-suite` runs the unit layer with the same arguments; the VS Code task `Tests: unit tests` runs `npm run test:unit:report`; `test:unit` is unchanged |
+| Automate        | Y |
+
+### TC-000-161 — failure report redacts a password that is only in .env
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-96, RF-20 |
+| Priority        | P1 |
+| Type            | Security |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | A temporary folder with a `.env` holding TEST_USER_PASSWORD (TEST_ value) and no such process variable; a Playwright failure whose message contains that value |
+| Steps           | **Given** a password known only from `.env` **When** `report:failures` runs in that folder **Then** it is redacted |
+| Expected result | The output shows `[REDACTED]` and never the password |
+| Automate        | Y |
+
+### TC-000-162 — workflow values with a colon are quoted so GitHub can load the file
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-78 |
+| Priority        | P1 |
+| Type            | Negative |
+| Technique       | Error guessing |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | Repository checked out |
+| Test data       | `.github/workflows/ci.yml` |
+| Steps           | **Given** the GitHub workflow **When** every single-line `key: value` is inspected **Then** no unquoted value contains `: ` or ` #` |
+| Expected result | Each such value is quoted, a `${{ }}` expression, or a block scalar; otherwise the test names the line (an unquoted `: ` makes GitHub reject the whole file: "Invalid workflow file", run 38030869300) |
+| Automate        | Y |
 
 ## Out of scope for testing
 - Business flows (catalog, cart, checkout, orders) and login scenarios beyond RF-54 — later specs.

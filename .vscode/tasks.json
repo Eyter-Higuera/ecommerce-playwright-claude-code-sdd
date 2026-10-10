@@ -1,0 +1,101 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Tests: run locally (layer, suite, browser)",
+      "detail": "Spec 000 RF-90 / RF-93: runs the picked layer, suite and browser on the checked-out branch through npm run ci:run-suite",
+      "type": "shell",
+      "command": "npm run ci:run-suite",
+      "options": {
+        "env": {
+          "SUITE": "${input:suite}",
+          "BROWSER": "${input:browser}",
+          "LAYER": "${input:layer}"
+        }
+      },
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: unit tests",
+      "detail": "Vitest unit tests of the framework (no network); writes reports/unit-results.json for npm run report:failures",
+      "type": "shell",
+      "command": "npm run test:unit:report",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: unit tests with coverage",
+      "detail": "As in CI: results in reports/unit-results.json, coverage in reports/coverage/index.html",
+      "type": "shell",
+      "command": "npm run test:unit:ci",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: open Playwright report",
+      "detail": "Opens the HTML report of the last local Playwright run",
+      "type": "shell",
+      "command": "npx playwright show-report",
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: list last failures",
+      "detail": "Spec 000 RF-96: lists the failed tests of the last local run with their error, trace and screenshot (secrets redacted)",
+      "type": "shell",
+      "command": "npm run report:failures",
+      "problemMatcher": []
+    },
+    {
+      "label": "Claude: analyze and fix last failure",
+      "detail": "Spec 000 RF-97: opens Claude Code with /fix-failure: explains the cause, fixes it test-first, re-runs it and records it in docs/bug-log.md (no commit, no push)",
+      "type": "shell",
+      "command": "claude \"/fix-failure\"",
+      "problemMatcher": []
+    },
+    {
+      "label": "GitHub: start manual run (branch, suite, browser, layer)",
+      "detail": "Spec 000 RF-80 / RF-93: starts the manual CI run on the picked branch; a regression starts from eyter_dev and continues to release, main and production (RF-91, RF-92)",
+      "type": "shell",
+      "command": "gh workflow run ci.yml --ref ${input:branch} -f suite=${input:suite} -f browser=${input:browser} -f layer=${input:layer}",
+      "problemMatcher": []
+    },
+    {
+      "label": "GitHub: watch run",
+      "detail": "Follows a running workflow run (pick it from the list)",
+      "type": "shell",
+      "command": "gh run watch",
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "layer",
+      "type": "pickString",
+      "description": "Tests to run (all = unit, then API and UI)",
+      "options": ["all", "unit", "api", "ui"],
+      "default": "all"
+    },
+    {
+      "id": "suite",
+      "type": "pickString",
+      "description": "Test suite",
+      "options": ["smoke", "regression"],
+      "default": "smoke"
+    },
+    {
+      "id": "browser",
+      "type": "pickString",
+      "description": "Browser for the UI tests (API tests always run once)",
+      "options": ["chromium", "firefox", "webkit", "all"],
+      "default": "chromium"
+    },
+    {
+      "id": "branch",
+      "type": "pickString",
+      "description": "Branch of the manual GitHub run",
+      "options": ["eyter_dev", "release", "main", "production"],
+      "default": "eyter_dev"
+    }
+  ]
+}

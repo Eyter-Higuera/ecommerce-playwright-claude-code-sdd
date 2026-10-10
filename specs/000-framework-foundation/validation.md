@@ -245,3 +245,18 @@ summaries and coverage (RF-84 to RF-87), GitHub Pages results page and README gu
     (`POST /pages`, `build_type: workflow`; the `github-pages` environment kept its 4 branches).
     The page refills from the next push chain (404 = first publication); re-checked then.
 - Still to observe: TC-000-110 (a failing job stops the chain), TC-000-89 and 94 (manual).
+- **TC-000-133 GitHub Pages shows the results of a real push run — PASS (2026-10-10).** Chain for
+  `ad6969b`: eyter_dev 38026249336 → release 38026556885 → main 38027628226 → production
+  38028080415, all green. The results page lists the four branches, each `passed`: eyter_dev
+  `ad6969b` (4 stages), release `4e20f6e` (6 stages), main `5aee761` (6 stages), production
+  `10e657a` (4 stages); each publication kept the earlier branches' entries (RF-88).
+
+### Change after validation: manual runs by layer, regression chain, VS Code tasks, bug log (2026-10-10)
+Spec clarifications 18 and 19 (Mode C, approved by the user): LAYER for manual runs (RF-90), the
+regression chain from eyter_dev (RF-91, RF-92), VS Code tasks (RF-93), README (RF-94) and the bug
+log (RF-95).
+- Automated, PASS: TC-000-137 to 144, 146, 148, 150 and 151 (tasks T42 to T47); unit suite 131 passed.
+- Spec 000 stays `validated`: 97 RFs, 157 TCs (140 automated, 17 manual) after clarifications 20 and 21 (T48, T49: TC-000-152 to 158, 160, 161 PASS).
+- Still to run (manual): TC-000-145 (live regression chain from eyter_dev; also resolves the RF-91
+  TODO: VERIFY about dispatching with GITHUB_TOKEN), TC-000-147 (direct regression on release
+  refused), TC-000-149 (each VS Code task once), and TC-000-110 (a failing job stops the chain).
