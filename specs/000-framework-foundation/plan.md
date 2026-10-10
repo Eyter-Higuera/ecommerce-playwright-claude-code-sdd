@@ -383,3 +383,29 @@ Inputs: `suite`, `browser`, `layer` (all, unit, api, ui; default all), `chained`
 |----------|--------|-----------------------|
 | Fixed limit of 2 local workers | The failing PC has 7.6 GB RAM; the failed tests passed with 2 workers; simple and predictable | A limit computed from free memory (varies between runs, hard to test) |
 | CI unchanged | CI runners are sized for Playwright's default and all CI runs were green | One limit everywhere (slower CI for no reason) |
+
+## Change after validation: report and /fix-failure after VS Code runs (clarification 25)
+- **`scripts/local-run.ts`** (`npm run test:local -- <ci:run-suite | test:branch>`): `localRun(env, deps)`
+  with injected `run(script)` (the selected npm script, output streamed), `openInBrowser(file)`,
+  `startClaude(prompt)` (returns false when `claude` cannot start), `files` (exists, modified time,
+  read), `currentBranch()` and `now()`. Steps: record the start time → run → follow-up unless
+  `CI=true` or `CLAUDECODE` is set → exit with the run's code.
+  - Root of the results: the repository, or `worktreesDir(env)/<BRANCH>` (`scripts/lib/worktrees.ts`)
+    for `test:branch` on a branch other than the checked-out one.
+  - LAYER=unit: `summarizeResults()` + `renderSummary()` from `scripts/test-summary.ts` on
+    `reports/unit-results.json` (pure; `runSummary()` is not used because it writes files).
+  - Other layers: `<root>/playwright-report/index.html` (`HTML_REPORT_DIR`) opened only when its
+    modified time is not older than the start time.
+  - Failed run: `/fix-failure`, or `/fix-failure <branch>` for another branch.
+  - Real dependencies: the npm script through `npm_execpath` with `stdio: 'inherit'`; the opener is
+    `cmd /c start "" <file>` on Windows, `open` on macOS, `xdg-open` elsewhere (detached, no
+    shell string); `claude <prompt>` with `stdio: 'inherit'` (`shell: true` on Windows, where
+    `claude` is a `.cmd` shim).
+- **VS Code**: the two run tasks call `npm run test:local -- ci:run-suite` and
+  `npm run test:local -- test:branch`; the other tasks stay. README "In VS Code" and AGENTS.md.
+
+| Decision | Reason | Discarded alternative |
+|----------|--------|-----------------------|
+| Open `index.html` from the file | The task ends and the terminal is free for Claude Code; no server left running | `npx playwright show-report` (blocks the terminal until stopped; traces still open through the existing task) |
+| Report first, then `/fix-failure` | `/fix-failure` re-runs tests and overwrites the report (user decision) | Copy the report and open it after Claude Code |
+| A wrapper used only by the VS Code tasks, guarded by `CI` and `CLAUDECODE` | Terminal and CI runs keep their behavior; Claude Code never starts itself | Follow-up inside `ci:run-suite` (would also run in CI and in Claude Code's own runs) |

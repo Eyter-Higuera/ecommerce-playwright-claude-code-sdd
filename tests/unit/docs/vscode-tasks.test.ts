@@ -5,8 +5,9 @@ import { REPO_ROOT } from '../helpers/run-cli';
 
 // Spec 000 — Framework foundation. RF-93 / RF-98: VS Code tasks run tests on the user's PC only, with
 // the results in the VS Code terminal: the picked layer, suite and browser on the checked-out branch
-// or on a picked branch (in a local worktree). No task ever starts or watches a GitHub run. The
-// task files are plain JSON (no comments).
+// or on a picked branch (in a local worktree). RF-100: both run tasks go through `test:local`, which
+// then opens the report and starts /fix-failure on failure. No task ever starts or watches a GitHub
+// run. The task files are plain JSON (no comments).
 const VSCODE_DIR = join(REPO_ROOT, '.vscode');
 const PICKERS = {
   layer: ['all', 'unit', 'api', 'ui'],
@@ -36,21 +37,21 @@ describe('VS Code tasks — positive', () => {
 
     // Act
     const commandOf = (command: string) => tasks.find((task) => task.command === command);
-    const local = commandOf('npm run ci:run-suite');
-    const onBranch = commandOf('npm run test:branch');
+    const local = commandOf('npm run test:local -- ci:run-suite');
+    const onBranch = commandOf('npm run test:local -- test:branch');
 
     // Assert: one picker per choice with exactly the allowed values ...
     for (const [id, options] of Object.entries(PICKERS)) {
       expect(inputs.find((input) => input.id === id), id).toMatchObject({ type: 'pickString', options });
     }
-    // ... the local run passes the picked values to the shared selector (RF-90) ...
+    // ... the local runs pass the picked values to the shared selector (RF-90) through test:local (RF-100) ...
     expect(local?.options?.env).toEqual({ SUITE: '${input:suite}', BROWSER: '${input:browser}', LAYER: '${input:layer}' });
     expect(onBranch?.options?.env).toEqual({ BRANCH: '${input:branch}', SUITE: '${input:suite}', BROWSER: '${input:browser}', LAYER: '${input:layer}' });
     for (const command of ['npm run test:unit:report', 'npm run test:unit:ci', 'npx playwright show-report', 'npm run report:failures']) {
       expect(commandOf(command), command).toBeDefined();
     }
     // ... no task talks to GitHub (local only) ...
-    for (const task of tasks) expect(task.command, task.label).not.toMatch(/(^|s)ghs/);
+    for (const task of tasks) expect(task.command, task.label).not.toMatch(/(^|\s)gh\s/);
     // ... and the editor suggests the test explorers.
     expect(recommendations).toEqual(expect.arrayContaining(['ms-playwright.playwright', 'vitest.explorer']));
   });

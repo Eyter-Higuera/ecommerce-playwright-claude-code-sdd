@@ -117,24 +117,35 @@ test explorer.
 
 | Task | Asks for | Runs |
 |---|---|---|
-| `Tests: run locally (layer, suite, browser)` | layer (all, unit, api, ui), suite (smoke, regression), browser (chromium, firefox, webkit, all) | `npm run ci:run-suite` on the branch you have checked out, uncommitted changes included |
-| `Tests: run locally on a branch (branch, layer, suite, browser)` | branch (eyter_dev, release, main, production), layer, suite, browser | `npm run test:branch`: the checked-out branch in place; another branch in a local worktree (see below) |
+| `Tests: run locally (layer, suite, browser)` | layer (all, unit, api, ui), suite (smoke, regression), browser (chromium, firefox, webkit, all) | `npm run test:local -- ci:run-suite` on the branch you have checked out, uncommitted changes included |
+| `Tests: run locally on a branch (branch, layer, suite, browser)` | branch (eyter_dev, release, main, production), layer, suite, browser | `npm run test:local -- test:branch`: the checked-out branch in place; another branch in a local worktree (see below) |
 | `Tests: unit tests` | — | `npm run test:unit:report` (writes `reports/unit-results.json`) |
 | `Tests: unit tests with coverage` | — | `npm run test:unit:ci` (open `reports/coverage/index.html`) |
 | `Tests: open Playwright report` | — | `npx playwright show-report` |
 | `Tests: list last failures` | — | `npm run report:failures` |
 | `Claude: analyze and fix last failure` | — | `claude "/fix-failure"` (see [When a test fails](#when-a-test-fails)) |
 
+**After a run task finishes** (Spec 000 RF-100), passed or failed:
+1. The HTML Playwright report of that run opens in your default browser (for another branch, the
+   report of its worktree). A unit-only run (`layer` = unit) prints its summary table in the
+   terminal instead. To see traces, use `Tests: open Playwright report`, which serves the report.
+2. If tests failed, Claude Code starts in the same terminal with `/fix-failure` (`/fix-failure
+   <branch>` for another branch): it explains the cause, fixes it and records it in the bug log.
+   The report opens first because `/fix-failure` re-runs the failed tests and overwrites it.
+
+This happens only in these two tasks: `npm run ci:run-suite` or `npm run test:branch` typed in a
+terminal, CI runs and runs started by Claude Code itself open nothing.
+
 **Testing another branch locally.** For `release`, `main` or `production` (when it is not the
 branch you have checked out), `Tests: run locally on a branch` fetches the branch from GitHub and
 tests it in a detached git worktree in
-`%LOCALAPPDATA%ecommerce-playwright-sddworktrees<branch>` (`~/.cache/…` on Linux and macOS),
+`%LOCALAPPDATA%\ecommerce-playwright-sdd\worktrees\<branch>` (`~/.cache/…` on Linux and macOS),
 outside the repository and outside OneDrive. The first run copies your `.env` there and runs
 `npm ci`; later runs move the worktree to the branch's latest commit and reinstall only when its
 `package-lock.json` changed. No branch is created, changed, deleted or pushed. A failure found
 there is fixed on `eyter_dev` (`/fix-failure <branch>`) and reaches the branch through promotion.
 To free the disk space, remove a worktree by hand:
-`git worktree remove "%LOCALAPPDATA%ecommerce-playwright-sddworktreeselease"`.
+`git worktree remove "%LOCALAPPDATA%\ecommerce-playwright-sdd\worktrees\release"`.
 Two runs on the same branch at the same time are not supported.
 
 ### In GitHub Actions, on any branch
