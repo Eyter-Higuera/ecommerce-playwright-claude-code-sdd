@@ -4,10 +4,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 <!-- Allowed values: draft | approved -->
 
 ## Summary
-- 181 test cases for 101 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
+- 182 test cases for 102 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
   the positive case of one RF and the negative case of another (decision tables and partitions).
-- Layers: unit 157, api 1, mocked 3, ui 1, integration 19.
-- Automated: 162; manual: 19.
+- Layers: unit 158, api 1, mocked 3, ui 1, integration 19.
+- Automated: 163; manual: 19.
 - Smoke: 2 TCs (2%), both P1.
 - "unit" TCs run in Vitest with no real network: they inspect config, run CLIs (tsc, ESLint,
   Playwright `--list`, spec:check, check:secrets) on local fixtures, or test helpers with stubs.
@@ -118,6 +118,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-99 | TC-000-175 | TC-000-176 | TC-000-175 | — | 2 |
 | RF-100 | TC-000-177, TC-000-178, TC-000-179, TC-000-184 | TC-000-181, TC-000-182 | TC-000-180 | TC-000-183 | 8 |
 | RF-101 | TC-000-186 | — | TC-000-185 | — | 2 |
+| RF-102 | TC-000-187 | — | — | — | 1 |
 
 ## Test cases
 
@@ -3015,6 +3016,22 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Test data       | Every `page.goto(` call in `src/pages/*.ts` |
 | Steps           | **Given** the page objects **When** their navigation calls are read **Then** each one waits for the document only |
 | Expected result | The shared wait constant equals `domcontentloaded`, and every `page.goto(` call in `src/pages` passes it as `waitUntil`; at least one call is found |
+| Automate        | Y |
+
+### TC-000-187 — unit test files run one at a time
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-102 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | Static analysis |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | The repository `vitest.config.mts` and the `test:unit`, `test:unit:report` and `test:unit:ci` scripts of `package.json` |
+| Steps           | **Given** the Vitest configuration and the unit-test scripts **When** they are read **Then** test files never run in parallel |
+| Expected result | The Vitest configuration sets `fileParallelism` to `false`, and none of the three scripts passes an option that turns file parallelism back on (`--fileParallelism`, `--file-parallelism`) |
 | Automate        | Y |
 
 ## Out of scope for testing
