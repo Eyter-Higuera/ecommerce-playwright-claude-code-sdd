@@ -6,9 +6,11 @@ import { DEFAULT_DOTENV_FILE, loadEnv, type EnvValues } from '../src/config/env'
 import { JSON_REPORT_FILE } from '../src/config/playwright-options';
 import { REDACTED, getSensitiveValues, redact } from '../src/security/redact';
 import { JWT_SHAPE } from './check-secrets';
+import { worktreesDir } from './lib/worktrees';
 
 // Failure report (Spec 000, RF-96): `npm run report:failures` lists why the last local run failed
-// (Playwright reports/results.json and Vitest reports/unit-results.json), or, with `--run <id>`, which
+// (Playwright reports/results.json and Vitest reports/unit-results.json), or of a `test:branch`
+// worktree with `--branch <name>` (RF-98), or, with `--run <id>`, which
 // jobs and steps of a GitHub Actions run failed and the end of their log. The user and the
 // `/fix-failure` skill (RF-97) start from it. Passwords (process environment and .env) and
 // JWT-shaped tokens are redacted from everything printed, and the command always exits 0.
@@ -33,6 +35,8 @@ export interface FailureReportOptions {
   processEnv: EnvValues;
   /** A GitHub Actions run id: report that run instead of the local results. */
   run?: string;
+  /** A promotion branch: report the results of its `test:branch` worktree. */
+  branch?: string;
   gh?: GhRunner;
 }
 
@@ -145,6 +149,14 @@ export function failureReport(options: FailureReportOptions): { exitCode: number
     return { exitCode: SUCCESS, output: hide(githubRunReport(options.run, gh)) };
   }
 
+  if (options.branch !== undefined) {
+    const dir = join(worktreesDir(options.processEnv), options.branch);
+    const report = failureReport({ ...options, branch: undefined, rootDir: dir });
+    return { exitCode: SUCCESS, output: `Worktree of ${options.branch}: ${dir}
+
+${report.output}` };
+  }
+
   const sources = [
     { label: 'Playwright', file: JSON_REPORT_FILE, read: playwrightFailures },
     { label: 'Vitest', file: UNIT_RESULTS_FILE, read: vitestFailures },
@@ -161,12 +173,12 @@ export function failureReport(options: FailureReportOptions): { exitCode: number
 }
 
 function main(): void {
-  const { values } = parseArgs({ options: { run: { type: 'string' } } });
+  const { values } = parseArgs({ options: { run: { type: 'string' }, branch: { type: 'string' } } });
   const gh: GhRunner = (args) => {
     const result = spawnSync('gh', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
     return result.error === undefined ? result : { status: 1, stdout: '', stderr: 'the GitHub CLI (gh) is not installed or not on PATH' };
   };
-  const result = failureReport({ rootDir: process.cwd(), processEnv: process.env, run: values.run, gh });
+  const result = failureReport({ rootDir: process.cwd(), processEnv: process.env, run: values.run, branch: values.branch, gh });
   console.log(result.output);
   process.exitCode = result.exitCode;
 }

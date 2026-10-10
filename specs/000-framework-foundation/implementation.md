@@ -1585,3 +1585,50 @@ RF-58 to RF-82 · TC-000-04, 86 to 89, 93, 94, 98 to 110, 114 to 116, 118
 - Quality gates: unit 140 passed; CI 34 passed; lint 0 errors; typecheck exit 0;
   `spec:check -- --write` passed (5 specs); check:secrets passed; test-reviewer PASS.
 - Pending at validation: TC-000-159 (deliberate local failure handled end to end from VS Code).
+
+## Change after validation: local-only VS Code tasks and test:branch (clarifications 22 and 23)
+
+### T50 — Implement test:branch with worktrees outside the repository
+- Covers RF-98 / TC-000-163 to 169, 172, 174. Tests first (red: module missing), then
+  `scripts/run-branch.ts` (`worktreesDir()`, `runBranch()` with injected git, npm, selection,
+  failure report and file operations) and `npm run test:branch`.
+- The selection runs the main repository's compiled `ci-run-suite.js` with the worktree as working
+  directory, so the branch's own tests, config and `node_modules` are used. npm runs through
+  `npm_execpath` (no shell, no DEP0190 warning on Windows).
+- Real run on release (api smoke): worktree created detached at `9c80fbc`, 5 passed, nothing
+  started on GitHub.
+- Quality gates: 9 tests passed; lint 0 errors; typecheck exit 0; test-reviewer PASS.
+
+### T51 — Make the VS Code tasks local only and add report:failures --branch
+- Covers RF-93, RF-96, RF-97 / TC-000-148, 158 (updated), 170 (new). Tests first (red), then
+  `.vscode/tasks.json` (GitHub tasks removed, branch task added), `report:failures -- --branch`,
+  `scripts/lib/worktrees.ts` (shared by run-branch.ts and failure-report.ts) and the skill note
+  "fix in the main repository on eyter_dev".
+- Quality gates: reporting and CI tests passed; lint 0 errors; typecheck exit 0; test-reviewer PASS.
+
+### T52 — Document local manual tests and the GitHub manual run separately
+- Covers RF-94 / TC-000-150. Test extended first (red), then README ("In VS Code" local only, the
+  branch task, worktree location and `git worktree remove` cleanup; "In GitHub Actions" starts a
+  pipeline from Actions or a terminal; `/fix-failure <branch>`), AGENTS.md and the bug-log rows.
+- Quality gates: unit 151 passed; CI 44 passed; lint 0 errors; typecheck exit 0; spec:check passed;
+  check:secrets passed; test-reviewer PASS.
+
+## Change after validation: local workers and bug-log columns (clarification 24)
+
+### T53 — Limit local Playwright runs to 2 workers
+- Covers RF-99 / TC-000-175, TC-000-176. Tests first (red: `workers` undefined locally), then
+  `LOCAL_WORKERS` and `resolveWorkers()` in `src/config/playwright-options.ts`; README "Good to know".
+- Cause: a full local run (4 workers, all projects) failed 50 firefox and webkit tests from lack of
+  memory; `--last-failed --workers=2` passed all 50 (bug log, 2026-10-10).
+- Real check: `npx playwright test --project=api --grep @smoke` prints "Running 5 tests using 2 workers", 5 passed.
+- Quality gates: unit 153 passed; lint 0 errors; typecheck exit 0; `spec:check -- --write` passed
+  (5 specs); test-reviewer PASS.
+
+### T54 — Add the Date column and the Cause and Solution columns to the bug log
+- Covers RF-95 / TC-000-151 (updated). Test first (red on the old header), then `docs/bug-log.md`
+  (header `| Date | Bug / failure | Passed ✅ | Failed ❌ | Cause | Solution |`, legend, the 11
+  existing rows moved: where it failed → `Cause`, where it passed → `Solution`, dates from each
+  run or commit), AGENTS.md, the `/fix-failure` skill step 6 and the README "Bug log" section.
+- A red run of TC-000-151 from a test bug (date pattern without backslashes) was fixed and logged.
+- Quality gates: docs tests 5 passed; unit 153 passed; lint 0 errors; typecheck exit 0;
+  `spec:check -- --write` passed (5 specs); test-reviewer PASS.

@@ -4,12 +4,15 @@ import { describe, expect, it } from 'vitest';
 import { REPO_ROOT } from '../helpers/run-cli';
 
 // Spec 000 — Framework foundation. RF-95: every test or pipeline failure found and fixed is recorded
-// in docs/bug-log.md, one row per failure in a five-column table, and AGENTS.md makes the AI fix and
-// record any red run before finishing a task.
+// in docs/bug-log.md, one row per failure in a six-column table (date, bug, the ✅ and ❌ marks only,
+// cause and solution), and AGENTS.md makes the AI fix and record any red run before finishing a task.
 const BUG_LOG = join(REPO_ROOT, 'docs', 'bug-log.md');
 const AGENTS = join(REPO_ROOT, 'AGENTS.md');
-const HEADER = '| Bug / failure | Passed ✅ | Failed ❌ | How it is fixed | Solution |';
-const COLUMNS = 5;
+const COLUMN_NAMES = ['Date', 'Bug / failure', 'Passed ✅', 'Failed ❌', 'Cause', 'Solution'];
+const HEADER = `| ${COLUMN_NAMES.join(' | ')} |`;
+const DATE_FORMAT = /^\d{4}-\d{2}-\d{2}$/;
+const PASSED_MARK = '✅';
+const FAILED_MARK = '❌';
 
 /** Cells of a Markdown table row (pipes inside backticks are not used in the log). */
 const cellsOf = (row: string): string[] => row.trim().replace(/^\||\|$/g, '').split('|').map((cell) => cell.trim());
@@ -26,13 +29,18 @@ describe('Bug log — positive', () => {
 
     // Assert: the agreed header and a legend for every column ...
     expect(tableLines[0]).toBe(HEADER);
-    for (const column of ['Bug / failure', 'Passed ✅', 'Failed ❌', 'How it is fixed', 'Solution']) expect(log, column).toContain(`**${column}**`);
-    // ... every row has the five cells and says where it failed ...
+    for (const column of COLUMN_NAMES) expect(log, column).toContain(`**${column}**`);
+    // ... every row has a date, the bug, only the marks in Passed and Failed, a cause and a solution ...
+    expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
-      const cells = cellsOf(row);
-      expect(cells, row).toHaveLength(COLUMNS);
-      expect(cells[0], row).not.toBe('');
-      expect(cells[2], row).not.toBe('');
+      const [date, bug, passed, failed, cause, solution] = cellsOf(row);
+      expect(cellsOf(row), row).toHaveLength(COLUMN_NAMES.length);
+      expect(date, row).toMatch(DATE_FORMAT);
+      expect(bug, row).not.toBe('');
+      expect(['', PASSED_MARK], row).toContain(passed);
+      expect(failed, row).toBe(FAILED_MARK);
+      expect(cause, row).not.toBe('');
+      expect(solution, row).not.toBe('');
     }
     // ... and the agent must fix and record any red run before finishing a task.
     expect(agents).toMatch(/red test or pipeline run[^\n]*docs\/bug-log\.md/);

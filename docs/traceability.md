@@ -48,6 +48,7 @@ Status: `automated` (test exists) · `skipped` (only skipped tests) · `manual` 
 | 000 | RF-20 | TC-000-136 | — | manual |
 | 000 | RF-20 | TC-000-156 | tests/unit/reporting/failure-report.test.ts | automated |
 | 000 | RF-20 | TC-000-161 | tests/unit/reporting/failure-report.test.ts | automated |
+| 000 | RF-20 | TC-000-174 | tests/unit/ci/run-branch.test.ts | automated |
 | 000 | RF-20 | TC-000-33 | tests/unit/security/redaction.test.ts | automated |
 | 000 | RF-20 | TC-000-34 | tests/unit/security/redaction.test.ts | automated |
 | 000 | RF-21 | TC-000-35 | tests/unit/security/redaction.test.ts | automated |
@@ -146,6 +147,7 @@ Status: `automated` (test exists) · `skipped` (only skipped tests) · `manual` 
 | 000 | RF-61 | TC-000-90 | tests/unit/ci/ci-run-suite.test.ts | automated |
 | 000 | RF-61 | TC-000-91 | tests/unit/ci/ci-run-suite.test.ts | automated |
 | 000 | RF-62 | TC-000-139 | tests/unit/ci/ci-run-suite.test.ts | automated |
+| 000 | RF-62 | TC-000-166 | tests/unit/ci/run-branch.test.ts | automated |
 | 000 | RF-62 | TC-000-90 | tests/unit/ci/ci-run-suite.test.ts | automated |
 | 000 | RF-62 | TC-000-91 | tests/unit/ci/ci-run-suite.test.ts | automated |
 | 000 | RF-63 | TC-000-90 | tests/unit/ci/ci-run-suite.test.ts | automated |
@@ -193,6 +195,7 @@ Status: `automated` (test exists) · `skipped` (only skipped tests) · `manual` 
 | 000 | RF-76 | TC-000-101 | tests/unit/ci/github-actions.test.ts | automated |
 | 000 | RF-76 | TC-000-103 | tests/unit/ci/ci-promote.test.ts | automated |
 | 000 | RF-76 | TC-000-109 | — | manual |
+| 000 | RF-76 | TC-000-168 | tests/unit/ci/run-branch.test.ts | automated |
 | 000 | RF-77 | TC-000-103 | tests/unit/ci/ci-promote.test.ts | automated |
 | 000 | RF-77 | TC-000-108 | tests/unit/ci/ci-promote.test.ts | automated |
 | 000 | RF-77 | TC-000-109 | — | manual |
@@ -253,6 +256,7 @@ Status: `automated` (test exists) · `skipped` (only skipped tests) · `manual` 
 | 000 | RF-93 | TC-000-148 | tests/unit/docs/vscode-tasks.test.ts | automated |
 | 000 | RF-93 | TC-000-149 | — | manual |
 | 000 | RF-93 | TC-000-160 | tests/unit/reporting/failure-report.test.ts | automated |
+| 000 | RF-93 | TC-000-171 | — | manual |
 | 000 | RF-94 | TC-000-150 | tests/unit/docs/readme.test.ts | automated |
 | 000 | RF-95 | TC-000-151 | tests/unit/docs/bug-log.test.ts | automated |
 | 000 | RF-95 | TC-000-159 | — | manual |
@@ -264,8 +268,22 @@ Status: `automated` (test exists) · `skipped` (only skipped tests) · `manual` 
 | 000 | RF-96 | TC-000-157 | tests/unit/reporting/failure-report.test.ts | automated |
 | 000 | RF-96 | TC-000-160 | tests/unit/reporting/failure-report.test.ts | automated |
 | 000 | RF-96 | TC-000-161 | tests/unit/reporting/failure-report.test.ts | automated |
+| 000 | RF-96 | TC-000-169 | tests/unit/ci/run-branch.test.ts | automated |
+| 000 | RF-96 | TC-000-170 | tests/unit/reporting/failure-report.test.ts | automated |
 | 000 | RF-97 | TC-000-158 | tests/unit/docs/fix-failure.test.ts | automated |
 | 000 | RF-97 | TC-000-159 | — | manual |
+| 000 | RF-98 | TC-000-163 | tests/unit/ci/run-branch.test.ts | automated |
+| 000 | RF-98 | TC-000-164 | tests/unit/ci/run-branch.test.ts | automated |
+| 000 | RF-98 | TC-000-165 | tests/unit/ci/run-branch.test.ts | automated |
+| 000 | RF-98 | TC-000-166 | tests/unit/ci/run-branch.test.ts | automated |
+| 000 | RF-98 | TC-000-167 | tests/unit/ci/run-branch.test.ts | automated |
+| 000 | RF-98 | TC-000-168 | tests/unit/ci/run-branch.test.ts | automated |
+| 000 | RF-98 | TC-000-169 | tests/unit/ci/run-branch.test.ts | automated |
+| 000 | RF-98 | TC-000-171 | — | manual |
+| 000 | RF-98 | TC-000-172 | tests/unit/ci/run-branch.test.ts | automated |
+| 000 | RF-98 | TC-000-174 | tests/unit/ci/run-branch.test.ts | automated |
+| 000 | RF-99 | TC-000-175 | tests/unit/reporting/reporters.test.ts | automated |
+| 000 | RF-99 | TC-000-176 | tests/unit/reporting/reporters.test.ts | automated |
 | 001 | RF-1 | TC-001-01 | tests/ui/auth-form-login.spec.ts | automated |
 | 001 | RF-1 | TC-001-10 | tests/ui/auth-login-validation.spec.ts | automated |
 | 001 | RF-2 | TC-001-02 | tests/ui/auth-form-login.spec.ts | automated |
