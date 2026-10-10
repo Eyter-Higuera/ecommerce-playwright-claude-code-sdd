@@ -4,10 +4,10 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 <!-- Allowed values: draft | approved -->
 
 ## Summary
-- 179 test cases for 100 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
+- 181 test cases for 101 RFs (TC-000-111, 112, 113 and 117 removed by clarification 14). Several TCs cover more than one RF when one scenario proves
   the positive case of one RF and the negative case of another (decision tables and partitions).
-- Layers: unit 156, api 1, mocked 2, ui 1, integration 19.
-- Automated: 160; manual: 19.
+- Layers: unit 157, api 1, mocked 3, ui 1, integration 19.
+- Automated: 162; manual: 19.
 - Smoke: 2 TCs (2%), both P1.
 - "unit" TCs run in Vitest with no real network: they inspect config, run CLIs (tsc, ESLint,
   Playwright `--list`, spec:check, check:secrets) on local fixtures, or test helpers with stubs.
@@ -69,7 +69,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-50 | TC-000-73 | TC-000-74 | — | — | 2 |
 | RF-51 | TC-000-75 | TC-000-74 | — | — | 2 |
 | RF-52 | TC-000-76 | TC-000-78 | TC-000-77 | — | 3 |
-| RF-53 | TC-000-76 | TC-000-78 | TC-000-79 | — | 3 |
+| RF-53 | TC-000-76 | TC-000-78 | TC-000-79, TC-000-185 | — | 4 |
 | RF-54 | TC-000-80 | TC-000-81 | — | — | 2 |
 | RF-55 | TC-000-80 | TC-000-81 | — | TC-000-81 | 2 |
 | RF-56 | TC-000-80 | TC-000-82 | TC-000-83 | — | 3 |
@@ -117,6 +117,7 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | RF-98 | TC-000-163, TC-000-164, TC-000-169, TC-000-171 | TC-000-166, TC-000-167 | TC-000-165, TC-000-172 | TC-000-168, TC-000-174 | 10 |
 | RF-99 | TC-000-175 | TC-000-176 | TC-000-175 | — | 2 |
 | RF-100 | TC-000-177, TC-000-178, TC-000-179, TC-000-184 | TC-000-181, TC-000-182 | TC-000-180 | TC-000-183 | 8 |
+| RF-101 | TC-000-186 | — | TC-000-185 | — | 2 |
 
 ## Test cases
 
@@ -2983,6 +2984,38 @@ Source spec: specs/000-framework-foundation/spec.md · Ticket: N/A · Status: ap
 | Steps           | **Given** VS Code on this PC **When** the task runs a failing and then a passing selection **Then** the report and Claude Code appear as specified |
 | Expected result | Failing run: the HTML report opens in the default browser, then Claude Code starts `/fix-failure` in the task terminal. Passing run: only the report opens |
 | Automate        | N |
+
+### TC-000-185 — login page opens while a third-party image never answers
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-53, RF-101 |
+| Priority        | P2 |
+| Type            | Boundary |
+| Technique       | Error guessing |
+| Layer           | mocked |
+| Tags            | @regression @mocked |
+| Browsers        | chromium, firefox, webkit (msedge on explicit local request) |
+| Preconditions   | Every image request of the login page held without an answer; navigation budget injected as 10 s for this test |
+| Test data       | No answer for any image (as the third-party background image that timed out on firefox, bug log 2026-10-10) |
+| Steps           | **Given** a login page whose images never arrive **When** the login page is opened **Then** opening ends within the budget and the form is usable |
+| Expected result | `open()` resolves without the "Login page unavailable" error; email input, password input and Login button visible |
+| Automate        | Y |
+
+### TC-000-186 — every page object navigation waits only for the document
+| Field           | Value |
+|-----------------|-------|
+| Requirement     | RF-101 |
+| Priority        | P2 |
+| Type            | Positive |
+| Technique       | Static analysis |
+| Layer           | unit |
+| Tags            | n/a (Vitest unit test; tags apply to Playwright tests only) |
+| Browsers        | n/a (no browser) |
+| Preconditions   | None |
+| Test data       | Every `page.goto(` call in `src/pages/*.ts` |
+| Steps           | **Given** the page objects **When** their navigation calls are read **Then** each one waits for the document only |
+| Expected result | The shared wait constant equals `domcontentloaded`, and every `page.goto(` call in `src/pages` passes it as `waitUntil`; at least one call is found |
+| Automate        | Y |
 
 ## Out of scope for testing
 - Business flows (catalog, cart, checkout, orders) and login scenarios beyond RF-54 — later specs.
