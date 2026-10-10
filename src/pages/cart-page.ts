@@ -1,6 +1,6 @@
 import type { Locator, Page, Response } from '@playwright/test';
 import { CART_API_PATHS, buildCartUrl } from '../config/urls';
-import { API_TIMEOUT_MS, NAVIGATION_TIMEOUT_MS } from '../config/timeouts';
+import { API_TIMEOUT_MS, NAVIGATION_TIMEOUT_MS, NAVIGATION_WAIT_UNTIL } from '../config/timeouts';
 import { CART } from './cart.constants';
 
 // Page Object of the cart page (Spec 004, RF-6 to RF-13): locators and actions only, no assertions.
@@ -31,7 +31,7 @@ export class CartPage {
 
   /** Opens the cart route; without a session the shop redirects to the login route (RF-15). */
   async open(): Promise<void> {
-    await this.page.goto(this.url, { timeout: NAVIGATION_TIMEOUT_MS });
+    await this.page.goto(this.url, { timeout: NAVIGATION_TIMEOUT_MS, waitUntil: NAVIGATION_WAIT_UNTIL });
   }
 
   /**

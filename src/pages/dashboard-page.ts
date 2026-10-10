@@ -4,7 +4,7 @@ import { DialogRecorder } from '../components/dialog-recorder';
 import { FilterPanel } from '../components/filter-panel';
 import { ProductList } from '../components/product-list';
 import { buildDashboardUrl } from '../config/urls';
-import { NAVIGATION_TIMEOUT_MS } from '../config/timeouts';
+import { NAVIGATION_TIMEOUT_MS, NAVIGATION_WAIT_UNTIL } from '../config/timeouts';
 
 // Page Object of the dashboard (Spec 001, RF-3, RF-12, RF-20 to RF-23; Spec 002, plan D-7):
 // navigation, the header controls, and the product list and filter panel of the catalog; no
@@ -38,7 +38,7 @@ export class DashboardPage {
 
   /** Opens the dashboard route; without a session the shop redirects to the login route (RF-23). */
   async open(): Promise<void> {
-    await this.page.goto(this.url, { timeout: NAVIGATION_TIMEOUT_MS });
+    await this.page.goto(this.url, { timeout: NAVIGATION_TIMEOUT_MS, waitUntil: NAVIGATION_WAIT_UNTIL });
   }
 
   /**
@@ -75,6 +75,6 @@ export class DashboardPage {
       { key: SESSION_STORAGE_KEY, value: token },
     );
     await this.open();
-    await this.page.reload({ timeout: NAVIGATION_TIMEOUT_MS });
+    await this.page.reload({ timeout: NAVIGATION_TIMEOUT_MS, waitUntil: NAVIGATION_WAIT_UNTIL });
   }
 }

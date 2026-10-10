@@ -409,3 +409,18 @@ Inputs: `suite`, `browser`, `layer` (all, unit, api, ui; default all), `chained`
 | Open `index.html` from the file | The task ends and the terminal is free for Claude Code; no server left running | `npx playwright show-report` (blocks the terminal until stopped; traces still open through the existing task) |
 | Report first, then `/fix-failure` | `/fix-failure` re-runs tests and overwrites the report (user decision) | Copy the report and open it after Claude Code |
 | A wrapper used only by the VS Code tasks, guarded by `CI` and `CLAUDECODE` | Terminal and CI runs keep their behavior; Claude Code never starts itself | Follow-up inside `ci:run-suite` (would also run in CI and in Claude Code's own runs) |
+
+## Change after validation: page navigations wait for the document only (clarification 26)
+- **`src/config/timeouts.ts`**: new `NAVIGATION_WAIT_UNTIL = 'domcontentloaded'` next to
+  `NAVIGATION_TIMEOUT_MS`, so the wait and the budget live together and a unit test can read them.
+- **Page objects** (`src/pages/login-page.ts`, `dashboard-page.ts`, `cart-page.ts`,
+  `product-detail-page.ts`): every `page.goto(` (and the dashboard `page.reload(`) passes
+  `waitUntil: NAVIGATION_WAIT_UNTIL`. `LoginPage.open()` keeps its RF-53 error handling.
+- **Tests**: TC-000-185 in `tests/mocked/login-page-unavailable.spec.ts` (every image request is
+  held, `open({ timeoutMs })` with 10 s must resolve and the form must be visible); TC-000-186 in
+  `tests/unit/smoke/navigation-wait.test.ts` (reads `src/pages/*.ts` as text).
+
+| Decision | Reason | Discarded alternative |
+|----------|--------|-----------------------|
+| `domcontentloaded` for every page object | The form is ready in about 2 s while a third-party image can take the whole budget; assertions already wait for their elements | `test.slow()` (tried, the navigation still passed 30 s); blocking the image host (hides what users see) |
+| One shared constant | One place to change, checked by TC-000-186 | A literal in each page object |

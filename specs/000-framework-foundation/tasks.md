@@ -384,6 +384,14 @@ Manual TC of this change (TC-000-171) is executed at validation.
 
 Manual TC of this change (TC-000-184) is executed at validation.
 
+## Change after validation: page navigations wait for the document only (clarification 26)
+
+- [x] T57 — Make page object navigations wait for the document only
+  - Covers: RF-53, RF-101 / TC-000-185, TC-000-186
+  - Depends on: —
+  - Files: src/config/timeouts.ts, src/pages/login-page.ts, src/pages/dashboard-page.ts, src/pages/cart-page.ts, src/pages/product-detail-page.ts, tests/mocked/login-page-unavailable.spec.ts, tests/unit/smoke/navigation-wait.test.ts
+  - Done when: `npx vitest run tests/unit/smoke` and `npx playwright test tests/mocked/login-page-unavailable.spec.ts` pass on chromium, firefox and webkit; lint, typecheck and spec:check exit 0
+
 ## Coverage check
 | Test case (Automate: Y) | Task |
 |-------------------------|------|
@@ -537,3 +545,5 @@ Manual TC of this change (TC-000-184) is executed at validation.
 | TC-000-181 | T55 |
 | TC-000-182 | T55 |
 | TC-000-183 | T55 |
+| TC-000-185 | T57 |
+| TC-000-186 | T57 |
