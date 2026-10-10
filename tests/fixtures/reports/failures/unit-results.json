@@ -1,0 +1,22 @@
+{
+  "numTotalTests": 3,
+  "numPassedTests": 2,
+  "numFailedTests": 1,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "startTime": 1791540000000,
+  "success": false,
+  "testResults": [
+    {
+      "name": "<ROOT>/tests/unit/config/env.test.ts",
+      "startTime": 1791540000100,
+      "endTime": 1791540001000,
+      "status": "failed",
+      "assertionResults": [
+        { "title": "TC-900-40 reads the base URL", "status": "passed", "failureMessages": [] },
+        { "title": "TC-900-41 rejects a malformed URL", "status": "failed", "failureMessages": ["AssertionError: expected 'ok' to be 'Invalid BASE_URL'\n    at tests/unit/config/env.test.ts:30:5"] },
+        { "title": "TC-900-42 trims the value", "status": "passed", "failureMessages": [] }
+      ]
+    }
+  ]
+}

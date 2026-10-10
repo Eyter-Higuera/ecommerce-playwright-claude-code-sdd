@@ -46,4 +46,21 @@ describe('README — positive', () => {
     // ... and the manual GitHub Actions run on each branch.
     for (const branch of BRANCHES) expect(guide, branch).toContain(`gh workflow run ci.yml --ref ${branch} -f suite=`);
   });
+
+  it('TC-000-150 README documents the VS Code tasks, the four manual inputs and the regression chain', () => {
+    // Arrange
+    const readme = readFileSync(README, 'utf8').replaceAll('\r\n', '\n');
+    const tasks = (JSON.parse(readFileSync(join(REPO_ROOT, '.vscode', 'tasks.json'), 'utf8')) as { tasks: { label: string }[] }).tasks;
+
+    // Act
+    const guide = sectionOf(readme, MANUAL_SECTION);
+
+    // Assert: every VS Code task is named, with how to start it (RF-93) ...
+    expect(guide).toContain('Tasks: Run Task');
+    for (const { label } of tasks) expect(guide, label).toContain(label);
+    // ... the manual GitHub run shows the layer choice on each of the four branches (RF-80, RF-90) ...
+    for (const branch of BRANCHES) expect(guide, branch).toMatch(new RegExp(`gh workflow run ci\\.yml --ref ${branch} -f suite=\\w+ -f browser=\\w+ -f layer=\\w+`));
+    // ... and the regression chain: from eyter_dev on, never merging, refused elsewhere (RF-91, RF-92).
+    for (const text of ['starts from `eyter_dev`', 'continues on `release`, `main` and `production`', 'never merges', 'refused']) expect(guide, text).toContain(text);
+  });
 });

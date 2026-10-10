@@ -19,8 +19,13 @@ Spec-Driven Development (SDD). Playwright + TypeScript for API, integration and 
   (`github-actions.test.ts`: branch gates, safe.directory, scan before upload, `promote` last and
   only on success, no `continue-on-error`, no force push or branch deletion, no environment
   printing, secrets only from `secrets.*`, Playwright image version; `ci-promote.test.ts`:
-  promotion script against a stub GitHub API; `ci-run-suite.test.ts`: SUITE/BROWSER selection)
-- Manual suite run (Actions "Run workflow"): `npm run ci:run-suite` with `SUITE` and `BROWSER`
+  promotion script against a stub GitHub API; `ci-chain.test.ts`: regression chain dispatch;
+  `ci-run-suite.test.ts`: SUITE/BROWSER/LAYER selection)
+- Manual suite run (Actions "Run workflow" or the VS Code tasks in `.vscode/tasks.json`): `npm run ci:run-suite`
+  with `SUITE`, `BROWSER` and `LAYER` (all, unit, api, ui); a manual regression starts from
+  `eyter_dev` and `chain-next` (`npm run ci:chain`) continues it on release, main and production
+- Bug log of every failure found and fixed: `docs/bug-log.md`; failed tests of the last local run or of
+  a GitHub run (`-- --run <id>`): `npm run report:failures`; explain, fix and record a failure: `/fix-failure`
 - Promotion (CI only, last job): `npm run ci:promote`
 
 ## Style and conventions
@@ -80,4 +85,6 @@ duration) to the run's Summary page and runs `check:secrets` before its artifact
 2. Run the `test-reviewer` skill against `docs/test-review-checklist.md`; every item must PASS.
 3. Run `npm run lint`, `npm run typecheck` and `npm run spec:check`. If the task touched
    `.github/workflows/ci.yml` or a CI script, also run `npm run test:unit -- tests/unit/ci`.
-4. Tick the task in `tasks.md`, state which RF/TC it covers, and STOP.
+4. If you saw any red test or pipeline run, fix the cause and add or update its row in docs/bug-log.md
+   (`Bug / failure | Passed ✅ | Failed ❌ | How it is fixed | Solution`, Spec 000 RF-95).
+5. Tick the task in `tasks.md`, state which RF/TC it covers, and STOP.

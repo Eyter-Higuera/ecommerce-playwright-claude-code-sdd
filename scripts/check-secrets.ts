@@ -29,7 +29,7 @@ export interface SecretsScanResult {
 export const SCANNED_FOLDERS = ['reports', 'playwright-report', 'test-results'];
 export const TOKEN_LABEL = 'auth token';
 // The shop's auth token is a JWT: header and payload are base64url JSON, so both start with "eyJ".
-const JWT_SHAPE = /eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/;
+export const JWT_SHAPE = /eyJ[A-Za-z0-9_-]{8,}\.eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/;
 const EMBEDDED_ZIP = /data:application\/zip;base64,([A-Za-z0-9+/=]+)/g;
 const ZIP_MAGIC = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
 const SUCCESS = 0;

@@ -1512,3 +1512,76 @@ RF-58 to RF-82 · TC-000-04, 86 to 89, 93, 94, 98 to 110, 114 to 116, 118
 - Pending at validation: TC-000-136 (history scan, before the repository is made public), then the
   maintainer setup (public, Pages source GitHub Actions, `github-pages` environment branches), then
   TC-000-118, TC-000-133 and TC-000-110 on real runs.
+
+## Change after validation: manual runs by layer, regression chain, VS Code tasks, bug log (clarifications 18 and 19)
+
+### T42 — Add LAYER to the manual-run selector
+- Covers RF-61, RF-62, RF-90 / TC-000-137 to 140 (TC-000-90 and 92 updated). Tests first (5 red),
+  then `scripts/ci-run-suite.ts`: `selectRun()` returns `{ ok, unit, args? }`, `runSuite()` runs
+  the unit tests first through the new `runUnit()` runner and stops on failure. LAYER unset = all,
+  so `ci:run-suite` now also runs the unit tests by default.
+- Quality gates: 7 tests passed; real API smoke through the selector passed; lint 0 errors;
+  typecheck exit 0; test-reviewer PASS.
+
+### T43 — Split the manual run into layer jobs and add the regression guard
+- Covers RF-80, RF-83, RF-90, RF-92 / TC-000-141, 146 (TC-000-115, 119, 130, 101 updated). Tests
+  first (9 red), then the workflow: `layer` and `chained` inputs; `manual-api` and `manual-ui`
+  replace `run-suite`; the RF-92 guard is the first step of every `checks` leg, before checkout.
+  `manual-ui` is the documented exception to the default job condition (`!cancelled() && !failure()`),
+  so layer=ui runs although `manual-api` is skipped.
+- Quality gates: CI tests 31 passed; 3 mutations caught; lint 0 errors; typecheck exit 0;
+  test-reviewer PASS.
+
+### T44 — Implement the regression chain
+- Covers RF-81, RF-91 / TC-000-142, 143, 144. Tests first (red: module missing; TC-000-144 and
+  TC-000-116 red), then `scripts/ci-chain.ts` (same structure as `ci-promote.ts`; reuses
+  `nextBranch()` and the now exported `connectGitHub()`), `npm run ci:chain`, and the `chain-next`
+  job. The dispatch uses the job's `GITHUB_TOKEN` (`permissions: actions: write`), read from
+  `secrets.GITHUB_TOKEN` so RF-81 and TC-000-116 still hold. Whether that dispatch starts a run is
+  verified live in TC-000-145 (spec TODO: VERIFY).
+- Quality gates: CI tests 34 passed; 2 mutations caught; lint 0 errors; typecheck exit 0;
+  test-reviewer PASS.
+
+### T45 — Add the VS Code tasks
+- Covers RF-93 / TC-000-148. Test first (red), then `.vscode/tasks.json` (plain JSON so the test
+  can parse it) and `.vscode/extensions.json`. The local task passes the pickers as SUITE, BROWSER
+  and LAYER environment variables, which works in PowerShell, cmd and bash alike.
+- Quality gates: 1 test passed; lint 0 errors; typecheck exit 0; test-reviewer PASS.
+
+### T46 — Add the bug log and its AGENTS.md rule
+- Covers RF-95 / TC-000-151. Test first (red), then `docs/bug-log.md` with the legend and the 7
+  failures already found and fixed (each with where it failed, where it passed, cause and commit),
+  and step 4 of AGENTS.md "When finishing any task".
+- Quality gates: 1 test passed; test-reviewer PASS.
+
+### T47 — Document the manual runs in the README
+- Covers RF-94 / TC-000-150. Test first (red), then README.md ("In VS Code", the manual GitHub run
+  with `-f layer=` for the four branches, "Regression: it starts from eyter_dev", "Bug log"),
+  AGENTS.md (commands, CI test list) and docs/test-plan.md §6.
+- Quality gates: unit 131 passed; CI 34 passed; lint 0 errors; typecheck exit 0;
+  `spec:check -- --write` passed (5 specs); check:secrets passed; test-reviewer PASS.
+- Pending at validation: TC-000-145 (live regression chain), TC-000-147 (direct regression on
+  release refused), TC-000-149 (each VS Code task run once).
+
+## Change after validation: failure report and /fix-failure (clarifications 20 and 21)
+
+### T48 — Implement the failure report and the local unit results
+- Covers RF-90, RF-93, RF-96 / TC-000-152 to 157, 160, 161. Tests first (red: module missing),
+  then `scripts/failure-report.ts` (`playwrightFailures`, `vitestFailures`, the GitHub run report
+  through an injected `gh` runner, `failureReport`), `UNIT_RUN_ARGS` in `ci-run-suite.ts`, the
+  `test:unit:report` and `report:failures` scripts, and the VS Code unit task.
+- Playwright `file` is relative to `config.rootDir` (the tests folder) and attachment paths are
+  absolute; both are shown relative to the repository. A real run showed that
+  `gh run view --log-failed` prints colors as the caret text `^[[31m`; both that and the ESC form
+  are removed (TC-000-155 covers it).
+- TC-000-148 still expects the old unit-task command until T49 updates it.
+- Quality gates: 8 tests passed; real local and GitHub reports checked; lint 0 errors; typecheck
+  exit 0; test-reviewer PASS.
+
+### T49 — Add the /fix-failure skill, its VS Code tasks and the README section
+- Covers RF-93, RF-97 / TC-000-158 (TC-000-148 updated). Tests first (red), then the skill
+  (`.claude/skills/fix-failure/SKILL.md`), the two VS Code tasks, README "When a test fails" and the
+  skills row, and AGENTS.md commands. Claude Code lists the new skill as soon as the file exists.
+- Quality gates: unit 140 passed; CI 34 passed; lint 0 errors; typecheck exit 0;
+  `spec:check -- --write` passed (5 specs); check:secrets passed; test-reviewer PASS.
+- Pending at validation: TC-000-159 (deliberate local failure handled end to end from VS Code).

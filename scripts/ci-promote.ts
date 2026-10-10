@@ -94,8 +94,8 @@ export async function promote(env: EnvValues, deps: PromoteDeps): Promise<Promot
   }
 }
 
-/** Real GitHub API over fetch; the token travels only in the Authorization header. */
-function connectGitHub(apiUrl: string, token: string): GitHubHttp {
+/** Real GitHub API over fetch; the token travels only in the Authorization header. Also used by ci-chain.ts. */
+export function connectGitHub(apiUrl: string, token: string, userAgent = 'ci-promote'): GitHubHttp {
   const base = apiUrl.replace(/\/+$/, '');
   return {
     async request(method, path, body) {
@@ -105,7 +105,7 @@ function connectGitHub(apiUrl: string, token: string): GitHubHttp {
           Authorization: `Bearer ${token}`,
           Accept: 'application/vnd.github+json',
           'X-GitHub-Api-Version': API_VERSION,
-          'User-Agent': 'ci-promote',
+          'User-Agent': userAgent,
           ...(body === undefined ? {} : { 'content-type': 'application/json' }),
         },
         body: body === undefined ? undefined : JSON.stringify(body),
